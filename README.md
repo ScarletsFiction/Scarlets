@@ -13,6 +13,17 @@ Scarlets have a build-in traffic monitor for any hacking activity or another sec
 
 ## Installation instruction
 
+Install with composer
+> $ composer require scarletsfiction/scarlets
+
+Then load it to your PHP script
+> include "vendor/autoload.php";
+
+Clone/download this repository and put it on a folder
+
+Then load it to your PHP script
+> include_once "{PATH_TO}/Scarlets/require.php";
+
 ```js
     // Will be added
 ```
