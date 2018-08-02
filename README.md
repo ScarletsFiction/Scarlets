@@ -1,7 +1,8 @@
 <a href="https://www.patreon.com/stefansarya"><img src="http://anisics.stream/assets/img/support-badge.png" height="20"></a>
 
-[![Written by](https://img.shields.io/badge/Written%20by-ScarletsFiction-%231e87ff.svg)](LICENSE)
+[![Written by](https://img.shields.io/badge/Written%20by-ScarletsFiction-%231e87ff.svg)](https://github.com/ScarletsFiction/)
 [![Software License](https://img.shields.io/badge/License-MIT-brightgreen.svg)](LICENSE)
+[![Build Status](https://api.travis-ci.org/ScarletsFiction/SFDatabase-js.svg?branch=master)](https://travis-ci.org/ScarletsFiction/Scarlets)
 
 # Scarlets
 > Still underdevelopment, don't use it on production

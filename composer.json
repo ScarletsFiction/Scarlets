@@ -6,9 +6,7 @@
     },
     "license": "MIT",
     "keywords": ["website", "php", "framework", "scarlets"],
-    "autoload": {
-        "classmap": ["src/LittleYoutube.php"]
-    },
+    "autoload": {"files":["require.php"]},
     "authors": [
         {"name": "ScarletsFiction"}
     ]
