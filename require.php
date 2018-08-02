@@ -10,7 +10,7 @@
 | include this file.
 |
 */
-function test()
-{
+
+function test(){
 	return "Testing";
 }
