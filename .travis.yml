@@ -7,4 +7,5 @@ sudo: false
 dist: trusty
 install:
 - composer install
-script: phpunit --configuration phpunit.xml --coverage-text
+script: phpunit --fail-on-warning --configuration phpunit.xml --coverage-text
+warnings_are_errors: true
