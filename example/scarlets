@@ -1,6 +1,7 @@
 #!/usr/bin/env php
 <?php
 	// Control command line with Scarlets Framework
-	require __DIR__.'/../root.php';
+	require __DIR__.'/root.php';
 	
+	// Use the console system
 	Scarlets::Console();

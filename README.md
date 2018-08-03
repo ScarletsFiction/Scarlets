@@ -16,22 +16,22 @@ Scarlets have a build-in traffic monitor for any hacking activity or another sec
 Install with composer
 > $ composer require scarletsfiction/scarlets
 
-Then load it to your PHP script
-> include "vendor/autoload.php";
+```php
+// Then load it to your PHP script
+include "vendor/autoload.php";
+```
 
 Clone/download this repository and put it on a folder
 
-Then load it to your PHP script
-> include_once "{PATH_TO}/Scarlets/require.php";
-
-```js
-    // Will be added
+```php
+// Then load it to your PHP script
+include_once "{PATH_TO}/Scarlets/require.php";
 ```
 
 ## Basic usage
 
 ```js
-    // Will be added
+// Will be added
 ```
 
 ## Contribution
@@ -39,6 +39,16 @@ Then load it to your PHP script
 If you want to help in Scarlets framework, please fork this project and edit on your repository, then make a pull request to here.
 
 Keep the code simple and clear.
+
+## Support
+
+If you have any question please ask on stackoverflow with tags 'scarlets-php'.
+But if you found bug or feature request, you post an issue on this repository.
+
+For any private support, you can contact the author of this framework:
+
+StefansArya (Indonesia, English)
+stefansarya1 at gmail
 
 ## License
 
