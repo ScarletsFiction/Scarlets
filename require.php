@@ -59,37 +59,39 @@ class Scarlets{
 	public static $registry = ['framework_path'=>__DIR__, 'full_url'=>''];
 }
 
-include_once __DIR__."/src/Loader.php";
+include_once __DIR__."/src/Config.php";
+include_once __DIR__."/src/Error.php";
 
-Scarlets::onShutdown(function(){
+\Scarlets::onShutdown(function(){
     $isError = false;
-
     if ($error = error_get_last()){
     	$type = $error['type'];
-    	if($type === E_PARSE || $type === E_CORE_ERROR || $type === E_COMPILE_ERROR)
+    	if($type === E_ERROR || $type === E_PARSE || $type === E_CORE_ERROR || $type === E_COMPILE_ERROR)
 	        $isError = true;
     }
 
     if($isError)
-		Scarlets\Error::ErrorHandler($error['type'], $error['message'], $error['file'], $error['line']);
+		\Scarlets\Error::ErrorHandler($error['type'], $error['message'], $error['file'], $error['line'], true);
 });
 
 // Framework initialization
-Scarlets::$registry['Initialize'] = function($configOnly = false){
+\Scarlets::$registry['Initialize'] = function($configOnly = false){
 
 	if(!$configOnly){
 		// Get the project root directory
 		$path = dirname(debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 2)[1]['file']);
-		Scarlets::$registry['app_path'] = $path;
+		\Scarlets::$registry['app_path'] = $path;
 
 		if(isset($_SERVER['HTTP_HOST']))
-			Scarlets::$registry['domain'] = 'http'.(isset($_SERVER['HTTPS'])?'s':'').'://'.$_SERVER['HTTP_HOST'];
+			\Scarlets::$registry['domain'] = 'http'.(isset($_SERVER['HTTPS'])?'s':'').'://'.$_SERVER['HTTP_HOST'];
 	}
 
 	// Initialize configuration
 	$configPath = $path.'/config';
-	if(!Scarlets\Config\Path($configPath))
+	if(!\Scarlets\Config\Path($configPath))
 		return;
 
-	unset(Scarlets::$registry['Initialize']);
-}; Scarlets::$registry['Initialize']();
+	unset(\Scarlets::$registry['Initialize']);
+}; \Scarlets::$registry['Initialize']();
+
+include_once __DIR__."/src/Loader.php";

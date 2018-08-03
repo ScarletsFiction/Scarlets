@@ -14,6 +14,7 @@ namespace Scarlets;
 | https://github.com/msgpack/msgpack-php
 |
 */
+
 class Cache{
 
 	// This will be deleted on exit

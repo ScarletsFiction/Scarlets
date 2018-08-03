@@ -11,8 +11,6 @@
 */
 
 
-include_once "Config.php";
-include_once "Error.php";
 include_once "Cache.php";
 include_once "Library.php";
 

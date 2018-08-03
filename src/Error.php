@@ -22,20 +22,22 @@ class Error{
 	public static function ErrorHandler($severity, $message, $file, $line){
 	    if(!(error_reporting() & $severity))
 	        return; // This error code is not included in error_reporting
-
-		self::ExceptionHandler(new \ErrorException($message, 0, $severity, $file, $line));
-	}
-
-	// Uncaught exception handler.
-	public static function ExceptionHandler($e){
-		$severity = $e->getSeverity();
+	    
+	    $trace = explode("\nStack trace:", $message);
+	    if(count($trace) === 1){
+			$exception = new \ErrorException($message, 0, $severity, $file, $line);
+			$trace = $e->getTraceAsString();
+	    } else {
+	    	$message = $trace[0];
+	    	$trace = $trace[1];
+	    }
 
 $message = "Exception type: ".self::ErrorType($severity)."; <br>
-Message: {$e->getMessage()}; <br>
-File: {$e->getFile()}; <br>
-Line: {$e->getLine()}; <br>
+Message: {$message}; <br>
+File: {$file}; <br>
+Line: {$line}; <br>
 URL: ".\Scarlets::$registry['domain'].$_SERVER['REQUEST_URI']." <br>
-Trace: {$e->getTraceAsString()}; <br><br>\n\n";
+Trace: {$trace}; <br><br>\n\n";
 
 		$appConfig = \Scarlets::$registry['config']['app'];
 
