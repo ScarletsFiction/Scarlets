@@ -12,7 +12,7 @@ const path = __DIR__."/library";
 | be available on your auto-completion.
 |
 */
-use Scarlets\Library;
+//use Scarlets\Library;
 
 function Database($databaseID){
 	include_once $library."Database.php";

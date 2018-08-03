@@ -5,24 +5,39 @@
 | Web Routes
 |--------------------------------------------------------------------------
 |
-| Here is where you can register web routes for your application. These
-| routes are loaded by the RouteServiceProvider within a group which
-| contains the "web" middleware group. Now create something great!
+| Here is you can register web routes for your application.
 |
 */
 
-Route::get('/', function () {
+Route::get('/', function(){
     return view('welcome');
 });
 
-Route::get('/hello/{message?}', function ($message = null) {
-    $msg = 'Example: /hello/good-bye';
-    if ($message != null) {
-        $msg = 'Hello, ' . $message;
-    }
-    // resources/views/hello.blade.php
-    return view('hello', ['message' => $msg]);
+Route::get('/text', function(){
+    return 'Hello, world';
 });
 
-Route::get('/world/{message?}', 'WorldController@show');
+Route::get('/hello/{message?}', function($message = null){
+    if($message !== null)
+        $message = 'world';
 
+    return view('hello', ['message' => 'Hello, '.$message]);
+});
+
+Route::get('/test', function(){
+	Route::get('/hello/{message?}', 'Self route');
+});
+
+
+/*
+|--------------------------------------------------------------------------
+| API Routes
+|--------------------------------------------------------------------------
+|
+| You can also register API routes for your application.
+|
+*/
+
+Route::get('/api/user', function($request){
+    return $request->user();
+}, 'auth:api');

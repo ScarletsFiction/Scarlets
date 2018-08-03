@@ -1,15 +1,12 @@
 <?php 
 
-namespace Scarlets\Config;
+namespace Scarlets\Error;
 
 /*
 ---------------------------------------------------------------------------
-| Scarlets Config
+| Scarlets Error
 ---------------------------------------------------------------------------
 |
-| Any configuration can be accessed here
+| Description haven't added
 |
 */
-function Path($where){
-	
-}

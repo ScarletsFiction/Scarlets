@@ -40,6 +40,4 @@ class Scarlets{
 	public static $registry = ['root_path'=>__DIR__];
 }
 
-include_once __DIR__."/src/Config.php";
-include_once __DIR__."/src/Cache.php";
-include_once __DIR__."/src/Library.php";
+include_once __DIR__."/src/Main.php";

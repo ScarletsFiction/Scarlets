@@ -244,7 +244,7 @@ echo '<tr><td>Constant</td><td>'.
   ($avg_test6+$func_overhead).' ms</td></tr>';
 
 echo '<tr><td>Object (class getter & setter)</td><td>'.
-  $avg_test7.' ms</td><td>'.
+  $avg_test7.' ms</td><td>&gt;'.
   ($avg_test7+$var_overhead).' ms</td><td>'.
   ($avg_test7+$func_overhead).' ms</td></tr>';
 

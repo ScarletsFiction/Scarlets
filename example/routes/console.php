@@ -1,18 +1,19 @@
 <?php
 
-use Illuminate\Foundation\Inspiring;
-
 /*
 |--------------------------------------------------------------------------
 | Console Routes
 |--------------------------------------------------------------------------
 |
-| This file is where you may define all of your Closure based console
-| commands. Each Closure is bound to a command instance allowing a
-| simple approach to interacting with each command's IO methods.
+| This is where you can register console command.
 |
 */
 
-Artisan::command('inspire', function () {
-    $this->comment(Inspiring::quote());
-})->describe('Display an inspiring quote');
+Console::command('display', function($message, $optional = null){
+	$temp = "I got: ".$message;
+
+	if($optional !== null)
+		$temp .= ' - '.$optional;
+
+    return $temp;
+}, '1 argument are required');
