@@ -9,7 +9,7 @@
 | to the Scarlets Framework and be used globally for your project
 |
 */
-include_once __DIR__."/../../require.php";
+include_once __DIR__."/../require.php";
 
 /*
 ---------------------------------------------------------------------------
