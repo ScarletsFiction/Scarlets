@@ -152,10 +152,11 @@ $start = microtime(true) * 1000;
 for($i = 0; $i < 1000000; $i ++) $test = Test6;
 $_SESSION['test6'][] = microtime(true) * 1000 - $start;
 
-// Test 7
+// Test 7 (Slowest, no need to test anymore)
 $start = microtime(true) * 1000;
-for($i = 0; $i < 1000000; $i ++) $test = &$test7->data;
-$_SESSION['test7'][] = microtime(true) * 1000 - $start;
+//for($i = 0; $i < 1000000; $i ++) $test = &$test7->data;
+//$_SESSION['test7'][] = microtime(true) * 1000 - $start;
+$_SESSION['test7'][] = 1000;
 
 // Test 8
 $start = microtime(true) * 1000;
