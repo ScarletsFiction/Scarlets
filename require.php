@@ -51,28 +51,16 @@ class Scarlets{
 		else self::$registry['shutdown'][] = $function;
 	}
 
-	// Framework initialization
-	public static function Initialize(){
-
-		// Get the project root directory
-		$path = dirname(debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 2)[1]['file']);
-		\Scarlets::$registry['app_path'] = $path;
-
-		if(isset($_SERVER['HTTP_HOST']))
-			\Scarlets::$registry['domain'] = 'http'.(isset($_SERVER['HTTPS'])?'s':'').'://'.$_SERVER['HTTP_HOST'];
-
-		// Initialize configuration
-		$configPath = $path.'/config';
-		if(!\Scarlets\Config\Path($configPath))
-			return;
-	}
-
 	/*
 		This registry store required data for the framework
 		to be used globally for scarlet library. This registry
 		is volatile (deleted when process exit)
 	*/
 	public static $registry = ['framework_path'=>__DIR__, 'full_url'=>''];
+	public static function registryExec($zxc){
+		$ref = &self::$registry;
+		$ref[$zxc]();
+	}
 }
 
 include_once __DIR__."/src/Config.php";
@@ -90,6 +78,22 @@ include_once __DIR__."/src/Error.php";
 		\Scarlets\Error::ErrorHandler($error['type'], $error['message'], $error['file'], $error['line'], true);
 });
 
-\Scarlets::Initialize();
+// Framework initialization (local scope)
+\Scarlets::$registry['Initialize'] = function(){
+
+	// Get the project root directory
+	$path = dirname(debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 2)[1]['file']);
+	\Scarlets::$registry['app_path'] = $path;
+
+	if(isset($_SERVER['HTTP_HOST']))
+		\Scarlets::$registry['domain'] = 'http'.(isset($_SERVER['HTTPS'])?'s':'').'://'.$_SERVER['HTTP_HOST'];
+
+	// Initialize configuration
+	$configPath = $path.'/config';
+	if(!\Scarlets\Config\Path($configPath))
+		return;
+
+	unset(\Scarlets::$registry['Initialize']);
+}; \Scarlets::registryExec('Initialize');
 
 include_once __DIR__."/src/Loader.php";

@@ -8,6 +8,17 @@
 <?php
 session_start();
 
+/* Based this test on my PHP 5.6 (StefansArya)
+   1. Namespaced Static Class 66ms
+   2. Static Class 68ms | self::data 104ms
+   3. Array 68ms (indexing: 492ms)
+   4. Class 89ms (indexing: 610ms) | this->data 114ms
+   5. Constant 210ms
+
+   From this result, Scarlets framework will prioritize static class
+   And Array.
+*/
+
 // Reset
 if(isset($_GET['reset']))
 {
@@ -34,9 +45,11 @@ if(!isset($_SESSION['test5'])) $_SESSION['test5'] = array();
 if(!isset($_SESSION['test6'])) $_SESSION['test6'] = array();
 if(!isset($_SESSION['test7'])) $_SESSION['test7'] = array();
 if(!isset($_SESSION['test8'])) $_SESSION['test8'] = array();
-if(!isset($_SESSION['test9'])) $_SESSION['test9'] = array();
+// if(!isset($_SESSION['test9'])) $_SESSION['test9'] = array();
 if(!isset($_SESSION['test10'])) $_SESSION['test10'] = array();
 if(!isset($_SESSION['test11'])) $_SESSION['test11'] = array();
+if(!isset($_SESSION['test12'])) $_SESSION['test12'] = array();
+if(!isset($_SESSION['test13'])) $_SESSION['test13'] = array();
 
 
 // Calling function will give more overload rather than getting variable value
@@ -49,7 +62,6 @@ class TempObject {
   public function __set($property, $val){
       $this->o_data[$property] = &$val;
   }
-
   public function &ref(){
       return $this->o_data;
   }
@@ -57,6 +69,14 @@ class TempObject {
 
 class ObjectStatic { // This will be used for global ScarletsRegistry 
   public static $o_data = [];
+  public static $test = 'Hello world!';
+
+  public static function test(){
+      $test_ = '';
+      $start = microtime(true) * 1000;
+      for($i = 0; $i < 1000000; $i ++) $test_ = self::$test;
+      $_SESSION['test13'][] = microtime(true) * 1000 - $start;
+  }
 }
 
 // Test variable for assignment performance
@@ -77,8 +97,16 @@ class test1 {
 
 // Class attribute
 class test2 {
-   public $data = 'Hello world!';
-   public $array = []; // Direct access is more faster rather than TempObject's getter and setter
+  public $data = 'Hello world!';
+  public $array = []; // Direct access is more faster rather than TempObject's getter and setter
+
+  private $test = 'Hello world!';
+  public function test(){
+      $test_ = '';
+      $start = microtime(true) * 1000;
+      for($i = 0; $i < 1000000; $i ++) $test_ = $this->test;
+      $_SESSION['test12'][] = microtime(true) * 1000 - $start;
+  }
 }
 $test2 = new test2();
 
@@ -164,27 +192,37 @@ for($i = 0; $i < 1000000; $i ++) $test = $test8->data;
 $_SESSION['test8'][] = microtime(true) * 1000 - $start;
 
 // Test 9
-$start = microtime(true) * 1000;
-for($i = 0; $i < 1000000; $i ++) $test = ObjectStatic::$o_data['data'];
-$_SESSION['test9'][] = microtime(true) * 1000 - $start;
+//$start = microtime(true) * 1000;
+//for($i = 0; $i < 1000000; $i ++) $test = ObjectStatic::$o_data['data'];
+//$_SESSION['test9'][] = microtime(true) * 1000 - $start;
 
-for($i = 0; $i < 1000000; $i ++) $test3['a'.$i] = 'Hello world!';
-for($i = 0; $i < 1000000; $i ++) $test8->{'a'.$i} = 'Hello world!';
 
 
 $start = microtime(true) * 1000;
 for($i = 0; $i < 1000000; $i ++) $test = 'a'.$i;
 $concatOverload = microtime(true) * 1000 - $start - $var_overhead;
 
+for($i = 0; $i < 1000000; $i ++) $test3['a'.$i] = 'Hello world!';
+
 // Test 10
 $start = microtime(true) * 1000;
 for($i = 0; $i < 1000000; $i ++) $test = $test3['a'.$i];
 $_SESSION['test10'][] = microtime(true) * 1000 - $start - $concatOverload;
+$test3 = null;
+
+for($i = 0; $i < 1000000; $i ++) $test8->{'a'.$i} = 'Hello world!';
 
 // Test 11
 $start = microtime(true) * 1000;
 for($i = 0; $i < 1000000; $i ++) $test = $test8->{'a'.$i};
 $_SESSION['test11'][] = microtime(true) * 1000 - $start - $concatOverload;
+$test8 = null;
+
+// Test 12
+$test2->test();
+
+// Test 13
+ObjectStatic::test();
 
 // Show results (each refresh increases accuracy average)
 $avg_test1 = array_average($_SESSION['test1']) - $var_overhead;
@@ -195,9 +233,11 @@ $avg_test5 = array_average($_SESSION['test5']) - $var_overhead;
 $avg_test6 = array_average($_SESSION['test6']) - $var_overhead;
 $avg_test7 = array_average($_SESSION['test7']) - $var_overhead;
 $avg_test8 = array_average($_SESSION['test8']) - $var_overhead;
-$avg_test9 = array_average($_SESSION['test9']) - $var_overhead;
+// $avg_test9 = array_average($_SESSION['test9']) - $var_overhead;
 $avg_test10 = array_average($_SESSION['test10']) - $var_overhead;
 $avg_test11 = array_average($_SESSION['test11']) - $var_overhead;
+$avg_test12 = array_average($_SESSION['test12']) - $var_overhead;
+$avg_test13 = array_average($_SESSION['test13']) - $var_overhead;
 
 echo 'Variable load overhead: '.$var_overhead.' ms<br>';
 echo 'Function call overhead: '.$func_overhead.' ms<br><br>';
@@ -233,7 +273,7 @@ echo '<tr><td>Object (json)</td><td>'.
   ($avg_test4+$var_overhead).' ms</td><td>'.
   ($avg_test4+$func_overhead).' ms</td></tr>';
 
-echo '<tr><td>Namespace</td><td>'.
+echo '<tr><td>Namespaced static class</td><td>'.
   $avg_test5.' ms</td><td>'.
   ($avg_test5+$var_overhead).' ms</td><td>'.
   ($avg_test5+$func_overhead).' ms</td></tr>';
@@ -253,10 +293,10 @@ echo '<tr><td>Object (stdClass)</td><td>'.
   ($avg_test8+$var_overhead).' ms</td><td>'.
   ($avg_test8+$func_overhead).' ms</td></tr>';
 
-echo '<tr><td>ObjectStatic (class)</td><td>'.
-  $avg_test9.' ms</td><td>'.
-  ($avg_test9+$var_overhead).' ms</td><td>'.
-  ($avg_test9+$func_overhead).' ms</td></tr>';
+// echo '<tr><td>Static Class</td><td>'.
+//   $avg_test9.' ms</td><td>'.
+//   ($avg_test9+$var_overhead).' ms</td><td>'.
+//   ($avg_test9+$func_overhead).' ms</td></tr>';
 
 echo '<tr><td>Array indexing</td><td>'.
   $avg_test10.' ms</td><td>'.
@@ -267,6 +307,16 @@ echo '<tr><td>Object (stdClass) indexing</td><td>'.
   $avg_test11.' ms</td><td>'.
   ($avg_test11+$var_overhead).' ms</td><td>'.
   ($avg_test11+$func_overhead).' ms</td></tr>';
+
+echo '<tr><td>Static Class (self::data)</td><td>'.
+  $avg_test12.' ms</td><td>'.
+  ($avg_test12+$var_overhead).' ms</td><td>'.
+  ($avg_test12+$func_overhead).' ms</td></tr>';
+
+echo '<tr><td>Class (this->data)</td><td>'.
+  $avg_test13.' ms</td><td>'.
+  ($avg_test13+$var_overhead).' ms</td><td>'.
+  ($avg_test13+$func_overhead).' ms</td></tr>';
 ?>
 
 </tbody></table>
