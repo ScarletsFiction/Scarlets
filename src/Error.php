@@ -93,7 +93,13 @@ Trace: {$trace}; <br><br>\n\n";
 	}
 }
 
-ini_set('display_errors', 0);
-ini_set('log_errors', 0);
+// Always show error on travis
+if(getenv('CI')){
+	ini_set('display_errors', 1);
+	ini_set('log_errors', 1);
+} else {
+	ini_set('display_errors', 0);
+	ini_set('log_errors', 0);
+	set_error_handler(['\\Scarlets\\Error', "ErrorHandler"], E_ALL);
+}
 ini_set('error_reporting', E_ALL);
-set_error_handler(['\\Scarlets\\Error', "ErrorHandler"], E_ALL);
