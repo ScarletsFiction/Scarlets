@@ -26,7 +26,7 @@ class Error{
 	    $trace = explode("\nStack trace:", $message);
 	    if(count($trace) === 1){
 			$exception = new \ErrorException($message, 0, $severity, $file, $line);
-			$trace = $e->getTraceAsString();
+			$trace = $exception->getTraceAsString();
 	    } else {
 	    	$message = $trace[0];
 	    	$trace = $trace[1];
