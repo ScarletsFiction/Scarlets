@@ -57,9 +57,26 @@ class Scarlets{
 		is volatile (deleted when process exit)
 	*/
 	public static $registry = ['framework_path'=>__DIR__, 'full_url'=>''];
-	public static function registryExec($zxc){
+
+	/*
+		> Registry Execute
+		This function is used for executing function
+		referenced on the registry
+	
+		(keys) Can be array if it's very deep
+	*/
+	public static function registryExec($keys){
 		$ref = &self::$registry;
-		$ref[$zxc]();
+
+		if(is_array($keys)){
+			for($i=0; $i < count($keys); $i++){ 
+				if(isset($ref[$keys[$i]]))
+					$ref = &$ref[$keys[$i]];
+				else
+					return null;
+			}
+			return $ref();
+		} else return $ref[$keys]();
 	}
 }
 
