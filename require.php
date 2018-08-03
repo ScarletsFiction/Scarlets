@@ -20,7 +20,7 @@ class Scarlets{
 		as website router
 	*/
 	public static function Website(){
-
+		include_once __DIR__."/src/Router.php";
 	}
 
 	/*
@@ -29,20 +29,27 @@ class Scarlets{
 		as console handler
 	*/
 	public static function Console(){
-
+		include_once __DIR__."/src/Console.php";
 	}
 
+
+	/*
+		> Listen to shutdown event
+		Here you can register a event handler on shutdown
+
+		(function) function
+	*/
 	public static function onShutdown($function){
 		if(!isset(self::$registry['shutdown'])){
 			function beforeShutdown(){
-				if(!isset(\Scarlets::$registry['shutdown']))
+				if(!isset(Scarlets::$registry['shutdown']))
 					return;
 
-				$list = \Scarlets::$registry['shutdown'];
+				$list = Scarlets::$registry['shutdown'];
 				foreach ($list as &$function)
 					$function();
 
-				\Scarlets::$registry['shutdown'];
+				Scarlets::$registry['shutdown'];
 			}
 
 			self::$registry['shutdown'] = [$function];
@@ -83,34 +90,36 @@ class Scarlets{
 include_once __DIR__."/src/Config.php";
 include_once __DIR__."/src/Error.php";
 
-\Scarlets::onShutdown(function(){
+// Handle uncaught error on shutdown
+Scarlets::onShutdown(function(){
     $isError = false;
-    if ($error = error_get_last()){
+    
+    if($error = error_get_last()){
     	$type = $error['type'];
     	if($type === E_ERROR || $type === E_PARSE || $type === E_CORE_ERROR || $type === E_COMPILE_ERROR)
 	        $isError = true;
     }
 
     if($isError)
-		\Scarlets\Error::ErrorHandler($error['type'], $error['message'], $error['file'], $error['line'], true);
+		Scarlets\Error::ErrorHandler($error['type'], $error['message'], $error['file'], $error['line'], true);
 });
 
-// Framework initialization (local scope)
-\Scarlets::$registry['Initialize'] = function(){
+// Framework initialization (volatile)
+Scarlets::$registry['Initialize'] = function(){
 
 	// Get the project root directory
 	$path = dirname(debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 2)[1]['file']);
-	\Scarlets::$registry['app_path'] = $path;
+	Scarlets::$registry['app_path'] = $path;
 
 	if(isset($_SERVER['HTTP_HOST']))
-		\Scarlets::$registry['domain'] = 'http'.(isset($_SERVER['HTTPS'])?'s':'').'://'.$_SERVER['HTTP_HOST'];
+		Scarlets::$registry['domain'] = 'http'.(isset($_SERVER['HTTPS'])?'s':'').'://'.$_SERVER['HTTP_HOST'];
 
 	// Initialize configuration
 	$configPath = $path.'/config';
-	if(!\Scarlets\Config\Path($configPath))
+	if(!Scarlets\Config::Path($configPath))
 		return;
 
-	unset(\Scarlets::$registry['Initialize']);
-}; \Scarlets::registryExec('Initialize');
+	unset(Scarlets::$registry['Initialize']);
+}; Scarlets::registryExec('Initialize');
 
 include_once __DIR__."/src/Loader.php";

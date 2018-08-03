@@ -4,13 +4,13 @@ namespace Scarlets;
 
 /*
 ---------------------------------------------------------------------------
-| Scarlets Log
+| Scarlets Router
 ---------------------------------------------------------------------------
 |
 | Description haven't added
 |
 */
 
-class Log{
+class Router{
 	
 }
