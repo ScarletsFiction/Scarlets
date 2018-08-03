@@ -9,7 +9,7 @@
 |
 */
 
-Console::command('display', function($message, $optional = null){
+Console::command('display {0} {1}', function($message, $optional = null){
 	$temp = "I got: ".$message;
 
 	if($optional !== null)

@@ -20,7 +20,8 @@ class Scarlets{
 		as website router
 	*/
 	public static function Website(){
-		include_once __DIR__."/src/Router.php";
+		include_once __DIR__."/src/Route.php";
+		include_once self::$registry['app_path']."/routes/web.php";
 	}
 
 	/*
@@ -30,6 +31,7 @@ class Scarlets{
 	*/
 	public static function Console(){
 		include_once __DIR__."/src/Console.php";
+		include_once self::$registry['app_path']."/routes/console.php";
 	}
 
 
@@ -72,18 +74,17 @@ class Scarlets{
 	
 		(keys) Can be array if it's very deep
 	*/
-	public static function registryExec($keys){
-		$ref = &self::$registry;
-
+	public static function registryExec($keys, $params = []){
 		if(is_array($keys)){
-			for($i=0; $i < count($keys); $i++){ 
+			$ref = &self::$registry;
+			for($i=0; $i < count($keys); $i++){
 				if(isset($ref[$keys[$i]]))
 					$ref = &$ref[$keys[$i]];
 				else
 					return null;
 			}
-			return $ref();
-		} else return $ref[$keys]();
+			return call_user_func_array($ref, $params);
+		} else return call_user_func_array(self::$registry[$keys], $params);
 	}
 }
 
@@ -92,23 +93,24 @@ include_once __DIR__."/src/Error.php";
 
 // Handle uncaught error on shutdown
 Scarlets::onShutdown(function(){
-    $isError = false;
-    
-    if($error = error_get_last()){
-    	$type = $error['type'];
-    	if($type === E_ERROR || $type === E_PARSE || $type === E_CORE_ERROR || $type === E_COMPILE_ERROR)
-	        $isError = true;
-    }
-
-    if($isError)
-		Scarlets\Error::ErrorHandler($error['type'], $error['message'], $error['file'], $error['line'], true);
+	$error = error_get_last();
+    if($error && (!isset(Scarlets::$registry['error']) || !Scarlets::$registry['error']))
+		Scarlets\Error::ErrorHandler($error['type'], $error['message'], $error['file'], $error['line']);
 });
 
 // Framework initialization (volatile)
 Scarlets::$registry['Initialize'] = function(){
 
 	// Get the project root directory
-	$path = dirname(debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 2)[1]['file']);
+	$path = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS);
+	foreach($path as &$value){
+		if($value['function'] !== 'include_once')
+			continue;
+		if(strpos($value['file'], 'root.php') !== false){
+			$path = dirname($value['file']);
+			break;
+		}
+	}
 	Scarlets::$registry['app_path'] = $path;
 
 	if(isset($_SERVER['HTTP_HOST']))

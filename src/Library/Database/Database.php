@@ -1,8 +1,6 @@
 <?php
 	namespace Scarlets\Library\Database;
 
-	$connectedDB = [];
-
 	/*
 		> Initialize
 		This function will return the connected database handler.

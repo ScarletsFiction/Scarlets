@@ -23,6 +23,8 @@ class Error{
 	    if(!(error_reporting() & $severity))
 	        return; // This error code is not included in error_reporting
 	    
+	    \Scarlets::$registry['error'] = true;
+	    
 	    $trace = explode("\nStack trace:", $message);
 	    if(count($trace) === 1){
 			$exception = new \ErrorException($message, 0, $severity, $file, $line);
