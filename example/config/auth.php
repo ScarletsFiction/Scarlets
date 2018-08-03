@@ -1,3 +1,6 @@
 <?php
 
-namespace Scarlets\Config\Auth;
+return [
+
+
+];

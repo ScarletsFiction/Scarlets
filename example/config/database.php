@@ -1,6 +1,6 @@
 <?php
 
-namespace Scarlets\Config\Database;
+return [
 
 /*
 |--------------------------------------------------------------------------
@@ -12,7 +12,7 @@ namespace Scarlets\Config\Database;
 | have many database connection by using database library.
 |
 */
-const select = 'database1';
+'select' => 'database1',
 
 /*
 |--------------------------------------------------------------------------
@@ -24,7 +24,7 @@ const select = 'database1';
 |
 */
 
-const credentials = [
+'credentials' => [
     // 'sqlite'=>[
     //     'driver' => 'sqlite'
     //     'database' => './../sqlite.db',
@@ -41,4 +41,6 @@ const credentials = [
         'charset' => 'utf8',
         'collation' => 'utf8_unicode_ci',
     ]
+],
+
 ];

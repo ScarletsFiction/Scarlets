@@ -1,6 +1,6 @@
 <?php
 
-namespace Scarlets\Config\Cache;
+return [
 
 /*
 |--------------------------------------------------------------------------
@@ -11,7 +11,7 @@ namespace Scarlets\Config\Cache;
 | Supported: "database", "file"
 |
 */
-const select = 'file';
+'select' => 'file',
 
 /*
 |--------------------------------------------------------------------------
@@ -21,13 +21,15 @@ const select = 'file';
 | Here you can define available cache storage for your application
 |
 */
-const storage = [
+'storage' => [
     // 'database' => [
     //     'database_id' => 'scarlets',
     //     'table' => 'cache',
     // ]
 
-    'file' => [
-        'path' => $AppPath.'framework/cache',
-    ]
+    // 'file' => [
+    //     'path' => $AppPath.'framework/cache',
+    // ]
+],
+
 ];

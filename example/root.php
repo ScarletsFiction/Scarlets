@@ -1,24 +1,27 @@
 <?php
 
 /*
----------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------
 | Scarlets Framework Root Folder
----------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------
 |
-| Here you need to set the relative or absolute path
-| to the Scarlets Framework and be used globally for your project
+| Here you can run any script before you load Scarlets Framework
+| for your project. This 'root.php' must be placed on project
+| root directory.
 |
 */
 include_once __DIR__."/../require.php";
 
 /*
----------------------------------------------------------------------------
-| Application Configuration Path
----------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------
+| Directory Structure
+--------------------------------------------------------------------------------------------
 |
-| When you're put a different config folder for your application
-| you must change this path so Scarlets Framework know
-| where to load the configurations.
-|
+| - /root.php  (This file)
+| - /scarlets  (Console)
+| - /config/   (Configuration files that will automatically loaded on initialization)
+| - /public/   (Website root directory, set it on apache virtualhost or nginx server block)
+| - /resource/ (Required framework resources)
+| - /routes/   (Route Handler)
+| - /storage/  (Application and framework storage like cache or log)
 */
-Scarlets\Config::Path(__DIR__."/config");

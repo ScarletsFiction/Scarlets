@@ -1,6 +1,6 @@
 <?php
 
-namespace Scarlets\Config\Session;
+return [
 
 /*
 |--------------------------------------------------------------------------
@@ -14,7 +14,7 @@ namespace Scarlets\Config\Session;
 | Supported: "default", "cache", "database"
 |
 */
-const driver = 'default';
+'driver' => 'default',
 
 /*
 |--------------------------------------------------------------------------
@@ -26,8 +26,8 @@ const driver = 'default';
 | immediately expire when user closed their browser.
 |
 */
-const lifetime = 120;
-const expire_on_close = false;
+'lifetime' => 120,
+'expire_on_close' => false,
 
 /*
 |--------------------------------------------------------------------------
@@ -38,8 +38,8 @@ const expire_on_close = false;
 | connection id that should be used to save these sessions.
 |
 */
-const connection = 'database1';
-const table = 'SF_Sessions';
+'connection' => 'database1',
+'table' => 'SF_Sessions',
 
 /*
 |--------------------------------------------------------------------------
@@ -50,7 +50,7 @@ const table = 'SF_Sessions';
 | The cookie will store SessionID that will be used for the session driver.
 |
 */
-const cookie = 'SFSessions';
+'cookie' => 'SFSessions',
 
 /*
 |--------------------------------------------------------------------------
@@ -61,7 +61,7 @@ const cookie = 'SFSessions';
 | within your domain.
 |
 */
-const path = '/';
+'path' => '/',
 
 /*
 |--------------------------------------------------------------------------
@@ -74,7 +74,7 @@ const path = '/';
 | asterisk symbol (*.website.com).
 |
 */
-const domain = 'localhost';
+'domain' => 'localhost',
 
 /*
 |--------------------------------------------------------------------------
@@ -85,7 +85,7 @@ const domain = 'localhost';
 | when it's accessing through HTTPS Protocol only.
 |
 */
-const secure = false;
+'secure' => false,
 
 /*
 |--------------------------------------------------------------------------
@@ -96,4 +96,6 @@ const secure = false;
 | cookie value and cookie will only be accessible through the server.
 |
 */
-const http_only = true;
+'http_only' => true,
+
+];

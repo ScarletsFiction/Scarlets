@@ -1,6 +1,6 @@
 <?php
 
-namespace Scarlets\Config\Mail;
+return [
 
 /*
 |--------------------------------------------------------------------------
@@ -13,9 +13,9 @@ namespace Scarlets\Config\Mail;
 | Driver supported: "smtp", "phpmail", "url"
 |
 */
-const driver = 'smtp';
-const port = 587;
-const encryption = 'tls';
+'driver' => 'smtp',
+'port' => 587,
+'encryption' => 'tls',
 
 /*
 |--------------------------------------------------------------------------
@@ -42,7 +42,7 @@ const encryption = 'tls';
 | }
 |
 */
-const host = 'smtp.yahoo.com';
+'host' => 'smtp.yahoo.com',
 
 /*
 |--------------------------------------------------------------------------
@@ -55,10 +55,10 @@ const host = 'smtp.yahoo.com';
 | mail sysyem.
 |
 */
-const from = [
+'from' => [
     'address' => 'hello@example.com',
     'name' => 'Example',
-];
+],
 
 /*
 |--------------------------------------------------------------------------
@@ -69,5 +69,7 @@ const from = [
 | password on the SMTP server.
 |
 */
-const username = 'admin';
-const password = 'pass123';
+'username' => 'admin',
+'password' => 'pass123',
+
+];

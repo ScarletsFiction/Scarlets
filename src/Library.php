@@ -30,7 +30,7 @@ function Database($databaseID){
 |
 | Here you can compare each PHP function: http://phpbench.com/
 |
-| Have too many function call or too many classes could be slow.
+| Having too many function call or too many classes could be slow.
 | Array type on PHP is more faster rather than Object
 | You can evaluate it from 'Test_PHPInterpreter.php'
 | But on Javascript, Object is the clear winner.

@@ -1,6 +1,6 @@
 <?php
 
-namespace Scarlets\Config\FileSystem;
+return [
 
 /*
 |--------------------------------------------------------------------------
@@ -11,7 +11,7 @@ namespace Scarlets\Config\FileSystem;
 | by the framework.
 |
 */
-const select = 'storage1';
+'select' => 'storage1',
 
 /*
 |--------------------------------------------------------------------------
@@ -23,9 +23,11 @@ const select = 'storage1';
 | Supported Drivers: "localfile"
 |
 */
-const storage = [
+'storage' => [
     'storage1' => [
         'driver' => 'localfile',
         'root' => 'storage/app',
     ],
+],
+
 ];

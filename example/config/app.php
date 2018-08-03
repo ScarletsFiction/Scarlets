@@ -1,6 +1,6 @@
 <?php
 
-namespace Scarlets\Config\App;
+return [
 
 /*
 |--------------------------------------------------------------------------
@@ -11,7 +11,7 @@ namespace Scarlets\Config\App;
 | This will be used by scarlets to identify which app is running.
 |
 */
-const appid = 'hello123';
+'appid' => 'hello123',
 
 /*
 |--------------------------------------------------------------------------
@@ -22,7 +22,7 @@ const appid = 'hello123';
 | being accessed from the console.
 |
 */
-const hostname = 'localhost';
+'hostname' => 'localhost',
 
 /*
 |--------------------------------------------------------------------------
@@ -32,7 +32,7 @@ const hostname = 'localhost';
 | This will be used for the PHP date and time functions.
 |
 */
-const timezone = 'UTC';
+'timezone' => 'UTC',
 
 /*
 |--------------------------------------------------------------------------
@@ -41,11 +41,11 @@ const timezone = 'UTC';
 |
 | By default scarlets will select the available language on the
 | 'resources/lang' folder depends on client browser's language.
-| But if the language file was not found; then it would default
+| But if the language file was not found, then it would default
 | to this setting.
 |
 */
-const default_lang = 'en';
+'default_lang' => 'en',
 
 /*
 |--------------------------------------------------------------------------
@@ -56,21 +56,21 @@ const default_lang = 'en';
 | randomly. Otherwise these encrypted strings will not be safe.
 |
 */
-const key = 'MyPassword123';
-const cipher = 'AES-128-CBC';
+'key' => 'MyPassword123',
+'cipher' => 'AES-128-CBC',
 
 /*
 |--------------------------------------------------------------------------
 | Debug Mode
 |--------------------------------------------------------------------------
 |
-| When your application is in debug mode; some messages with
+| When your application is in debug mode, some messages with
 | stack traces will be shown on every error that occurs within your
-| application. If disabled; the general error page will be shown.
+| application. If disabled, the general error page will be shown.
 |
 */
-const debug = false;
-const warning_as_error = false;
+'debug' => true,
+'warning_as_error' => false,
 
 /*
 |--------------------------------------------------------------------------
@@ -80,12 +80,14 @@ const warning_as_error = false;
 | Here you can configure the log settings for your application.
 | 
 | The available options:
+| (nothing)  Output to browser only
 | (single)   Output to single file
 | (daily)    Output on separated days
 | (syslog)   Output to default system log
 | (errorlog) Output to 'error.log'
 |
 */
-const log = 'single';
-const log_level = 'debug';
+'log' => 'nothing',
+'log_level' => 'debug',
 
+];
