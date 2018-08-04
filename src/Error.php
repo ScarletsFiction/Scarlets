@@ -23,6 +23,7 @@ class Error{
 	    if(!(error_reporting() & $severity))
 	        return; // This error code is not included in error_reporting
 	    
+	    if(isset(\Scarlets::$registry['error']) && \Scarlets::$registry['error']) return;
 	    \Scarlets::$registry['error'] = true;
 	    
 	    $trace = explode("\nStack trace:", $message);
@@ -38,13 +39,13 @@ $message = "Exception type: ".self::ErrorType($severity)."; <br>
 Message: {$message}; <br>
 File: {$file}; <br>
 Line: {$line}; <br>
-URL: ".\Scarlets::$registry['domain'].$_SERVER['REQUEST_URI']." <br>
+URL: http".(isset($_SERVER['HTTPS'])?'s':'').'://'.$_SERVER['SERVER_NAME'].$_SERVER['REQUEST_URI']." <br>
 Trace: {$trace}; <br><br>\n\n";
 
-		$appConfig = \Scarlets::$registry['config']['app'];
+		$appConfig = &\Scarlets::$registry['config'];
 
 		$exitting = true;
-		$warningAsError = $appConfig['warning_as_error'];
+		$warningAsError = $appConfig['app.warning_as_error'];
 		if($warningAsError && ($severity === E_WARNING
 			|| $severity === E_CORE_WARNING
 			|| $severity === E_COMPILE_WARNING
@@ -59,11 +60,11 @@ Trace: {$trace}; <br><br>\n\n";
 			$exitting = false;
 
 
-		$method = $appConfig['log'];
+		$method = $appConfig['app.log'];
 		if($method === 'single')
 			0; // ToDo: Save to file log
 
-		if($exitting && !$appConfig['debug']){
+		if($exitting && !$appConfig['app.debug']){
 			echo('Under Maintenance<br><br>Please refresh your browser to take changes<br>Or contact StefansArya if you still receive this message (≧▽≦)／');
 			die(0); // ToDo: Send 500 status and static error page
 		} else print($message);

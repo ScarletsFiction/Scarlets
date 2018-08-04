@@ -9,15 +9,24 @@
 |
 */
 use \Scarlets\Route;
+use \Scarlets\Route\Serve;
+use \Scarlets\Route\Query;
+use \Scarlets\Library\Language;
 
 Route::get('/', function(){
-	$route = Route::current();
-	$name = Route::currentRouteName();
-	$action = Route::currentRouteAction();
-    return Route::view('welcome');
+	Serve::view('static.header', [
+		'title'=>'Home'
+	]);
+	Serve::view('home', [
+		'time' => Language\get('time.current_time', [date('d M Y')])
+	]);
+	Serve::view('static.footer');
 });
 
 Route::get('/text/{:[A-Za-z]+}', function($text = 'world'){
+	$route = Route::current();
+	$name = Route::currentRouteName();
+	$action = Route::currentRouteAction();
     return "Hello, $text";
 }, 'name:text');
 

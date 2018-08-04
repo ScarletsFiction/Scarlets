@@ -1,7 +1,7 @@
 <?php 
 
 namespace Scarlets\Library;
-const path = __DIR__."/library";
+use \Scarlets;
 
 /*
 ---------------------------------------------------------------------------
@@ -15,9 +15,26 @@ const path = __DIR__."/library";
 //use Scarlets\Library;
 
 function Database($databaseID){
-	include_once $library."Database.php";
+	if(!class_exists("Scarlets\\Library\\Database", false))
+		include_once Scarlets::$registry['path.framework.library']."/Database/Database.php";
 	return Database\init($databaseID);
 }
+
+function FileSystem($databaseID){
+	if(!class_exists("Scarlets\\Library\\FileSystem", false))
+		include_once Scarlets::$registry['path.framework.library']."/FileSystem/FileSystem.php";
+	return false;
+}
+
+function CSRF(){
+	if(!class_exists("Scarlets\\Library\\CSRF", false))
+		include_once Scarlets::$registry['path.framework.library']."/CSRF/CSRF.php";
+	return false;
+}
+
+// Language
+if(!class_exists("Scarlets\\Library\\Language", false))
+	include_once Scarlets::$registry['path.framework.library']."/Language/Language.php";
 
 /*
 ---------------------------------------------------------------------------

@@ -27,8 +27,13 @@ class Config{
 		
 		if(file_exists($where)){
 			$list = ['app.php', 'auth.php', 'cache.php', 'database.php', 'filesystem.php', 'mail.php', 'session.php'];
+			$reg = &\Scarlets::$registry['config'];
 			foreach($list as $value){
-				\Scarlets::$registry['config'][str_replace('.php', '', $value)] = include $where.'/'.$value;
+				$name = str_replace('.php', '', $value).'.';
+				$config = include $where.'/'.$value;
+				foreach($config as $key => $value){
+					$reg[$name.$key] = $value;
+				}
 			}
 			return true;
 		}

@@ -21,7 +21,14 @@ class Scarlets{
 	*/
 	public static function Website(){
 		include_once __DIR__."/src/Route.php";
-		include_once self::$registry['app_path']."/routes/web.php";
+		Scarlets\Route\Handler::Initialize();
+		include_once self::$registry['path.app']."/routes/web.php";
+
+
+
+		$jsonRequest = file_get_contents('php://input');
+		if($jsonRequest)
+			$_POST = json_decode($jsonRequest, true);
 	}
 
 	/*
@@ -31,7 +38,8 @@ class Scarlets{
 	*/
 	public static function Console(){
 		include_once __DIR__."/src/Console.php";
-		include_once self::$registry['app_path']."/routes/console.php";
+		include_once self::$registry['path.app']."/routes/console.php";
+		self::$registry['standalone'] = true;
 	}
 
 
@@ -65,7 +73,11 @@ class Scarlets{
 		to be used globally for scarlet library. This registry
 		is volatile (deleted when process exit)
 	*/
-	public static $registry = ['framework_path'=>__DIR__, 'full_url'=>''];
+	public static $registry = [
+		'path.framework'=>__DIR__,
+		'standalone'=>false,
+		'Route'=>[]
+	];
 
 	/*
 		> Registry Execute
@@ -111,17 +123,25 @@ Scarlets::$registry['Initialize'] = function(){
 			break;
 		}
 	}
-	Scarlets::$registry['app_path'] = $path;
 
-	if(isset($_SERVER['HTTP_HOST']))
-		Scarlets::$registry['domain'] = 'http'.(isset($_SERVER['HTTPS'])?'s':'').'://'.$_SERVER['HTTP_HOST'];
+	$reg = &Scarlets::$registry;
+	$reg['path.app'] = $path.'/';
+	$reg['path.views'] = $path.'/resources/views/';
+	$reg['path.lang'] = $path.'/resources/lang/';
+	$reg['path.plate'] = $path.'/resources/plate/';
+	$reg['path.app.storage'] = $path.'/storage/app/';
+	$reg['path.cache'] = $path.'/storage/framework/cache';
+	$reg['path.sessions'] = $path.'/storage/framework/sessions/';
+	$reg['path.view_cache'] = $path.'/storage/framework/views/';
+	$reg['path.logs'] = $path.'/storage/logs/';
+
+	$reg['path.framework.library'] = __DIR__.'/src/Library/';
 
 	// Initialize configuration
 	$configPath = $path.'/config';
-	if(!Scarlets\Config::Path($configPath))
-		return;
+	Scarlets\Config::Path($configPath);
 
-	unset(Scarlets::$registry['Initialize']);
+	unset($reg['Initialize']);
 }; Scarlets::registryExec('Initialize');
 
 include_once __DIR__."/src/Loader.php";

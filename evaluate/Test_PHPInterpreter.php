@@ -45,7 +45,7 @@ if(!isset($_SESSION['test5'])) $_SESSION['test5'] = array();
 if(!isset($_SESSION['test6'])) $_SESSION['test6'] = array();
 if(!isset($_SESSION['test7'])) $_SESSION['test7'] = array();
 if(!isset($_SESSION['test8'])) $_SESSION['test8'] = array();
-// if(!isset($_SESSION['test9'])) $_SESSION['test9'] = array();
+if(!isset($_SESSION['test9'])) $_SESSION['test9'] = array();
 if(!isset($_SESSION['test10'])) $_SESSION['test10'] = array();
 if(!isset($_SESSION['test11'])) $_SESSION['test11'] = array();
 if(!isset($_SESSION['test12'])) $_SESSION['test12'] = array();
@@ -134,7 +134,7 @@ $test8 = new stdClass(); // class@anonymouse and object cast from array have sam
 $test8->data = 'Hello world!';
 
 // Object static attribute
-ObjectStatic::$o_data['data'] = 'Hello world!';
+\dummy\_class::$array['data'] = 'Hello world!';
 
 
 // Get variable overhead
@@ -192,9 +192,9 @@ for($i = 0; $i < 1000000; $i ++) $test = $test8->data;
 $_SESSION['test8'][] = microtime(true) * 1000 - $start;
 
 // Test 9
-//$start = microtime(true) * 1000;
-//for($i = 0; $i < 1000000; $i ++) $test = ObjectStatic::$o_data['data'];
-//$_SESSION['test9'][] = microtime(true) * 1000 - $start;
+$start = microtime(true) * 1000;
+for($i = 0; $i < 1000000; $i ++) $test = \dummy\_class::$array['data'];
+$_SESSION['test9'][] = microtime(true) * 1000 - $start;
 
 
 
@@ -233,7 +233,7 @@ $avg_test5 = array_average($_SESSION['test5']) - $var_overhead;
 $avg_test6 = array_average($_SESSION['test6']) - $var_overhead;
 $avg_test7 = array_average($_SESSION['test7']) - $var_overhead;
 $avg_test8 = array_average($_SESSION['test8']) - $var_overhead;
-// $avg_test9 = array_average($_SESSION['test9']) - $var_overhead;
+$avg_test9 = array_average($_SESSION['test9']) - $var_overhead;
 $avg_test10 = array_average($_SESSION['test10']) - $var_overhead;
 $avg_test11 = array_average($_SESSION['test11']) - $var_overhead;
 $avg_test12 = array_average($_SESSION['test12']) - $var_overhead;
@@ -293,10 +293,10 @@ echo '<tr><td>Object (stdClass)</td><td>'.
   ($avg_test8+$var_overhead).' ms</td><td>'.
   ($avg_test8+$func_overhead).' ms</td></tr>';
 
-// echo '<tr><td>Static Class</td><td>'.
-//   $avg_test9.' ms</td><td>'.
-//   ($avg_test9+$var_overhead).' ms</td><td>'.
-//   ($avg_test9+$func_overhead).' ms</td></tr>';
+echo '<tr><td>Array in namespaced Static Class</td><td>'.
+  $avg_test9.' ms</td><td>'.
+  ($avg_test9+$var_overhead).' ms</td><td>'.
+  ($avg_test9+$func_overhead).' ms</td></tr>';
 
 echo '<tr><td>Array indexing</td><td>'.
   $avg_test10.' ms</td><td>'.

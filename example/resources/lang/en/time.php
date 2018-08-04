@@ -1,5 +1,5 @@
 <?php
 
 return [
-    'current_time' => 'The time is :1',
+    'current_time' => 'The time is (:0)',
 ];
