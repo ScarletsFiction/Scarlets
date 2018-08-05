@@ -90,4 +90,17 @@ return [
 'log' => 'nothing',
 'log_level' => 'debug',
 
+/*
+|--------------------------------------------------------------------------
+| Instant Output Mode
+|--------------------------------------------------------------------------
+|
+| This method can help reduce memory load by serve the instant output
+| without buffering to the memory. But if there are any error after
+| any ouput, the client can't be redirected to another page
+| because the first header already sended with 200 HTTP code. 
+|
+*/
+'instant' => true,
+
 ];

@@ -39,7 +39,9 @@ class Scarlets{
 	public static function Console(){
 		include_once __DIR__."/src/Console.php";
 		include_once self::$registry['path.app']."/routes/console.php";
-		self::$registry['standalone'] = true;
+		if(!Scarlets\Console::isConsole())
+			die("Scarlets Console can only being called on console window");
+		self::$registry['console'] = true;
 	}
 
 
@@ -75,7 +77,7 @@ class Scarlets{
 	*/
 	public static $registry = [
 		'path.framework'=>__DIR__,
-		'standalone'=>false,
+		'console'=>false,
 		'Route'=>[]
 	];
 

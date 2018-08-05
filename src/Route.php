@@ -16,7 +16,7 @@ class Route{
 		if(is_callable($func) &&  $_SERVER['REQUEST_METHOD'] !== 'GET')
 			return;
 
-		if(\Scarlets::$registry['standalone'])
+		if(\Scarlets::$registry['console'])
 			Handler::register('GET', $url, $value);
 		else {
 			if($url === $_SERVER['REQUEST_URI'])

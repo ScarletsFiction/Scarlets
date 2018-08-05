@@ -24,7 +24,8 @@ class Error{
 	        return; // This error code is not included in error_reporting
 	    
 	    if(isset(\Scarlets::$registry['error']) && \Scarlets::$registry['error']) return;
-	    \Scarlets::$registry['error'] = true;
+	    $reg = &\Scarlets::$registry;
+	    $reg['error'] = true;
 	    
 	    $trace = explode("\nStack trace:", $message);
 	    if(count($trace) === 1){
@@ -35,14 +36,19 @@ class Error{
 	    	$trace = $trace[1];
 	    }
 
-$message = "Exception type: ".self::ErrorType($severity)."; <br>
-Message: {$message}; <br>
-File: {$file}; <br>
-Line: {$line}; <br>
-URL: http".(isset($_SERVER['HTTPS'])?'s':'').'://'.$_SERVER['SERVER_NAME'].$_SERVER['REQUEST_URI']." <br>
-Trace: {$trace}; <br><br>\n\n";
+	    $breakline = $reg['console'] ? '':' <br>';
+	    $url = 'console';
+	    if(!$reg['console'])
+	    	$url = "http".(isset($_SERVER['HTTPS'])?'s':'').'://'.$_SERVER['SERVER_NAME'].$_SERVER['REQUEST_URI'];
 
-		$appConfig = &\Scarlets::$registry['config'];
+$message = "Exception type: ".self::ErrorType($severity).";$breakline
+Message: $message;$breakline
+File: $file;$breakline
+Line: $line;$breakline
+URL: $url$breakline
+Trace: $trace; <br><br>\n\n";
+
+		$appConfig = &$reg['config'];
 
 		$exitting = true;
 		$warningAsError = $appConfig['app.warning_as_error'];
@@ -68,6 +74,10 @@ Trace: {$trace}; <br><br>\n\n";
 			echo('Under Maintenance<br><br>Please refresh your browser to take changes<br>Or contact StefansArya if you still receive this message (≧▽≦)／');
 			die(0); // ToDo: Send 500 status and static error page
 		} else print($message);
+	}
+
+	public static function logMessage(){
+
 	}
 
 	public static function simpleHTML(){

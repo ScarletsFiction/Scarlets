@@ -1,5 +1,6 @@
 <?php
 
+use \Scarlets\Console;
 /*
 |--------------------------------------------------------------------------
 | Console Routes
@@ -15,5 +16,5 @@ Console::command('display {0} {1}', function($message, $optional = null){
 	if($optional !== null)
 		$temp .= ' - '.$optional;
 
-    return $temp;
+	echo $temp;
 }, '1 argument are required');
