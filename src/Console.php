@@ -30,6 +30,18 @@ class Console{
 		$argv = $_SERVER['argv'];
 		unset($argv[0]);
 
+		// Register internal function
+
+		self::command('exit', function(){
+			return true;
+		});
+		self::command('cls', function(){
+			self::clear();
+		});
+		self::command('serve {*}', function(){
+			print_r(self::collection());
+		});
+
 		if(count($argv) === 0)
 			self::interactiveShell();
 		else
@@ -76,13 +88,10 @@ class Console{
 		$commands = false;
 		if(isset(self::$commands[$key])){
 			$commands = &self::$commands[$key];
+
 			// Check if zero argument
 			if($argsLen === 0){
-				$return = false;
-				// Call each registered function
-				for ($i=0; $i < count($commands); $i++) {
-					$return = call_user_func($commands[$i]) || $return;
-				}
+				$return = call_user_func($commands);
 				echo("\n");
 				return $return;
 			}
@@ -94,14 +103,7 @@ class Console{
 			}
 		}
 
-		if(!$commands){
-			if(isset(self::$commands[$firstword.'.h'])){
-				$return = call_user_func(self::$commands[$firstword.'.h']);
-				echo("\n");
-				return $return;
-			}
-		} else {
-
+		if($commands){
 			// $command = [[types], [args], callback];
 			// if not have argument $command = callback;
 			foreach($commands as &$command){
@@ -130,15 +132,15 @@ class Console{
 					}
 				}
 
+				if(count($args) > $argsLen) // Don't match empty space
+					continue;
+
 				if($matched){
 					// Process the unique arguments
 					$arguments = [];
 					for ($i=0; $i < count($uniques); $i++) {
 						$number = str_replace(['{', '}'], '', $args[$uniques[$i]]);
 						if($number === '*'){
-							if(count(self::$args) === $i) // Don't match empty space
-								continue 2;
-
 							self::$args = [];
 
 							// Merge left arguments
@@ -159,6 +161,12 @@ class Console{
 					return $return;
 				}
 			}
+		}
+
+		if(isset(self::$commands[$firstword.'.h'])){
+			$return = call_user_func(self::$commands[$firstword.'.h']);
+			echo("\n");
+			return $return;
 		}
 
 		echo("$firstword command with ".$argsLen." argument was not registered\n");
@@ -206,7 +214,7 @@ class Console{
 
 	/*
 		> Command Register
-		Description here
+		Command with no argument or help can only being registered once
 	
 		(pattern) ..
 		(callback) ..
@@ -241,7 +249,7 @@ class Console{
 
 		if($patternLen)
 			self::$commands[$key][] = [&$uniqueIndex, &$pattern, &$callback];
-		else self::$commands[$key][] = &$callback;
+		else self::$commands[$key] = &$callback;
 	}
 
 	public static function clear(){
@@ -297,5 +305,25 @@ class Console{
 			}
 		}
 		return $list;
+	}
+
+	public static function chalk($text, $color){
+		$color_ = "37m";
+		if($color === "black")
+			$color_ = "30m";
+		else if($color === "red")
+			$color_ = "31m";
+		else if($color === "green")
+			$color_ = "32m";
+		else if($color === "yellow")
+			$color_ = "33m";
+		else if($color === "blue")
+			$color_ = "34m";
+		else if($color === "magenta")
+			$color_ = "35m";
+		else if($color === "cyan")
+			$color_ = "36m";
+
+		return sprintf("\x1b[%s%s\x1b[0m", $color_, $text);
 	}
 }

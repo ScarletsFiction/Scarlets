@@ -16,12 +16,15 @@ Console::command('countdown {0} {1}', function($start, $end = 0){
 		$start--;
 		sleep(1);
 	}
-	echo("\rFinish!");
+	echo("\rCount down finished!");
 });
 
 // {*} will match every words after that
 Console::command('echo alex {*}', function($message){
-	echo "Alex.A> $message";
+
+	// If you're using windows, please use 'cmder'
+	// instead of windows's 'cmd' to see the chalk color
+	echo Console::chalk("Alex.A> $message", 'yellow');
 });
 
 // You can also use Console::args for processing arguments
@@ -40,14 +43,6 @@ Console::command('echo {*}', function($all){
 Console::help('echo', function(){
 	echo("Looks like you're missing something.
 You need to type 'echo (anything here)' to get echo back.");
-});
-
-Console::command('exit', function(){
-	return true;
-});
-
-Console::command('cls', function(){
-	Console::clear();
 });
 
 Console::command('list', function(){
