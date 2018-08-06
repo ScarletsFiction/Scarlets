@@ -23,6 +23,8 @@ class Console{
 		];
 	*/
 	public static $commands = [];
+	public static $success = false;
+	public static $args = false;
 
 	public static function Initialization(){
 		$argv = $_SERVER['argv'];
@@ -109,6 +111,10 @@ class Console{
 			$matched = false;
 			$uniqueCheck = 0;
 
+			// Find best match
+
+			//var_dump($command);exit;
+
 			// Check arguments
 			$uniques = &$command[0];
 			$args = &$command[1];
@@ -133,24 +139,54 @@ class Console{
 			if($matched){
 				// Process the unique arguments
 				$arguments = [];
-				$specialFound = false;
 				for ($i=0; $i < count($uniques); $i++) {
 					$number = str_replace(['{', '}'], '', $args[$uniques[$i]]);
 					if($number === '*'){
+						self::$args = [];
+
 						// Merge left arguments
 						$number = count($arguments);
 						$arguments[$number] = '';
-						for ($a = $i; $a < count($pattern); $a++) { 
-							$arguments[$number] .= $pattern[$a];
-						}
+						self::$args = array_slice($pattern, $i + 1);
+						$arguments[$number] = implode(' ', self::$args);
 						break;
 					}
 					$arguments[$number] = $pattern[$number];
 				}
 				$return = call_user_func_array($command[2], $arguments);
 				echo("\n");
+
+				// Reset
+				self::$args = false;
+				self::$success = false;
 				return $return;
 			}
+		}
+	}
+
+	public static function args($pattern, $callback){
+		if(self::$success) return; // Another args already finished
+		$pattern = explode(' ', $pattern);
+		// self::$args
+
+		$uniqueIndex = [];
+		for ($i=0; $i < $patternLen; $i++) {
+			if(strpos($pattern[$i], '{') === 0){
+				$number = explode('{', $pattern[$i]);
+				if($number[0] !== '') continue;
+
+				$number = $number[1];
+				$number = explode('}', $number);
+				if($number[1] !== '') continue;
+
+				if(!is_numeric($number[0]) && !$number[0] === '*') continue;
+				$uniqueIndex[] = intval($number[0]);
+			}
+		}
+
+		if(true){
+			$return = call_user_func_array($command[2], $arguments);
+			self::$success = true;
 		}
 	}
 
@@ -185,7 +221,7 @@ class Console{
 				if($number[1] !== '') continue;
 
 				if(!is_numeric($number[0]) && !$number[0] === '*') continue;
-				$uniqueIndex[] = intval($number[0]);
+				$uniqueIndex[] = $i;
 			}
 		}
 

@@ -20,15 +20,21 @@ Console::command('countdown {0} {1}', function($start, $end = 0){
 });
 
 // {*} will match every words after that
-Console::command('echo {*}', function($message){
-	$temp = "Computer> ".$message;
-	echo $temp;
+Console::command('echo alex {*}', function($message){
+	echo "Alex.A> $message";
 });
 
-// You can also use ('echo {1} {0} {*}', function($0, $1, $message))
-Console::command('echo alex {*}', function($message){
-	$temp = "Alex> ".$message;
-	echo $temp;
+// You can also use Console::args for processing arguments
+Console::command('echo {*}', function($all){
+
+	// Split the arguments again
+	Console::args("{0} {*}", function($name, $all){
+		echo "$name> $all";
+	});
+
+	// Check if args above was not being called
+	if(!Console::$found)
+		echo "Computer> $all";
 });
 
 Console::help('echo', function(){

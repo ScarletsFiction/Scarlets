@@ -71,6 +71,7 @@ return [
 */
 'debug' => true,
 'warning_as_error' => false,
+'simplify_trace' => true,
 
 /*
 |--------------------------------------------------------------------------

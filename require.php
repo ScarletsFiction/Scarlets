@@ -128,7 +128,7 @@ Scarlets::$registry['Initialize'] = function(){
 	}
 
 	$reg = &Scarlets::$registry;
-	$reg['path.app'] = $path.'/';
+	$reg['path.app'] = $path;
 	$reg['path.views'] = $path.'/resources/views/';
 	$reg['path.lang'] = $path.'/resources/lang/';
 	$reg['path.plate'] = $path.'/resources/plate/';

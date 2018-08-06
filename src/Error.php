@@ -52,6 +52,18 @@ class Error{
 	    	$trace = $trace[1];
 	    }
 
+		$appConfig = &$reg['config'];
+
+	    if($appConfig['app.simplify_trace']){
+	    	$trace = str_replace($reg['path.app'], '{AppRoot}', $trace);
+	    	$file = str_replace($reg['path.app'], '{AppRoot}', $file);
+	    	$trace = str_replace($reg['path.framework'], '{Framework}', $trace);
+	    	$file = str_replace($reg['path.framework'], '{Framework}', $file);
+	    }
+
+	    $trace = explode('Scarlets\Error::ErrorHandler', $trace)[1];
+	    $trace = explode("\n", $trace, 2)[1];
+
 	    $breakline = $reg['console'] ? '':' <br>';
 	    $url = 'Scarlets Console';
 	    if(!isset($_SERVER['SERVER_NAME']) && !$reg['console']){
@@ -66,9 +78,7 @@ Message: $message;$breakline
 File: $file;$breakline
 Line: $line;$breakline
 URL: $url$breakline
-Trace: $trace;$breakline$breakline\n\n";
-
-		$appConfig = &$reg['config'];
+Trace: \n$trace;$breakline$breakline\n\n";
 
 		$exitting = true;
 		$warningAsError = $appConfig['app.warning_as_error'];
