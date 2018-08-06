@@ -24,6 +24,10 @@ class Scarlets{
 		Scarlets\Route\Handler::Initialize();
 		include_once self::$registry['path.app']."/routes/web.php";
 
+		// Only register website router if from console
+		if(Scarlets\Console::isConsole())
+			return;
+
 		$jsonRequest = file_get_contents('php://input');
 		if($jsonRequest)
 			$_POST = json_decode($jsonRequest, true);

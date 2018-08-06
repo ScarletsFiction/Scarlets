@@ -13,13 +13,18 @@ namespace Scarlets;
 
 class Error{
 	// Only save 2 error file path and line
-	// This can avoid multiple process of single error
+	// This can avoid multiple error of single error
 	public static $lastError = [];
 
 	public static function warning($message){
 		if(!\Scarlets::$registry['config']['app.debug']){
 
 		}
+	}
+
+	// Available when using single log
+	public static function lastError($time){
+
 	}
 
 	// Error handler, passes flow over the exception logger with new ErrorException.

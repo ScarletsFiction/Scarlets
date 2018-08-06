@@ -23,7 +23,7 @@ class Console{
 		];
 	*/
 	public static $commands = [];
-	public static $success = false;
+	public static $found = false;
 	public static $args = false;
 
 	public static function Initialization(){
@@ -111,28 +111,25 @@ class Console{
 			$matched = false;
 			$uniqueCheck = 0;
 
-			// Find best match
-
-			//var_dump($command);exit;
-
 			// Check arguments
 			$uniques = &$command[0];
 			$args = &$command[1];
-			for ($i=0; $i < $argsLen; $i++) {
+			for ($i=0; $i < count($args); $i++) {
 
 				// It's unique
-				if($uniques[$uniqueCheck] === $i){
+				if(isset($uniques[$uniqueCheck]) && $uniques[$uniqueCheck] === $i){
 					$matched = true;
 					$uniqueCheck++;
-					continue;
-				}
+				} else {
 
-				// Check for static argument patterns
-				if($args[$i] === $pattern[$i])
-					$matched = true;
-				else{
-					$matched = false;
-					break;
+					// Check for static argument patterns
+					if(isset($args[$i]) && isset($pattern[$i]) && $args[$i] === $pattern[$i])
+						$matched = true;
+
+					else{
+						$matched = false;
+						continue 2;
+					}
 				}
 			}
 
@@ -158,15 +155,16 @@ class Console{
 
 				// Reset
 				self::$args = false;
-				self::$success = false;
+				self::$found = false;
 				return $return;
 			}
 		}
 	}
 
 	public static function args($pattern, $callback){
-		if(self::$success) return; // Another args already finished
+		if(self::$found) return; // Another callback already invoked
 		$pattern = explode(' ', $pattern);
+		$patternLen = count($pattern);
 		// self::$args
 
 		$uniqueIndex = [];
@@ -185,8 +183,8 @@ class Console{
 		}
 
 		if(true){
-			$return = call_user_func_array($command[2], $arguments);
-			self::$success = true;
+			$return = call_user_func_array($callback, $arguments);
+			self::$found = true;
 		}
 	}
 
