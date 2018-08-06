@@ -31,19 +31,25 @@ class Console{
 		unset($argv[0]);
 
 		// Register internal function
-
-		self::command('exit', function(){
-			return true;
-		});
-		self::command('cls', function(){
-			self::clear();
-		});
-		self::command('serve {*}', function(){
-			print_r(self::collection());
+		self::command(['serve {0} {1}', 'serve {0}', 'serve'], function($port=8000, $address=0){
+			include_once \Scarlets::$registry['path.framework.library']."/Server/Server.php";
+			Library\Server\start($port, $address);
 		});
 
-		if(count($argv) === 0)
+		if(count($argv) === 0){
+			// Register internal function
+			self::command('exit', function(){
+				return true;
+			});
+			self::command('cls', function(){
+				self::clear();
+			});
+
+			// Start the console
 			self::interactiveShell();
+		}
+
+		// Start executing command
 		else
 			self::interpreter(implode(' ', $argv));
 	}
@@ -175,6 +181,12 @@ class Console{
 
 	public static function args($pattern, $callback){
 		if(self::$found) return; // Another callback already invoked
+		if(is_array($pattern)){
+			foreach ($pattern as &$value) {
+				self::args($value, $callback);
+			}
+			return;
+		}
 		$pattern = explode(' ', $pattern);
 		$patternLen = count($pattern);
 
@@ -220,6 +232,13 @@ class Console{
 		(callback) ..
 	*/
 	public static function command($pattern, $callback){
+		if(is_array($pattern)){
+			foreach ($pattern as &$value) {
+				self::command($value, $callback);
+			}
+			return;
+		}
+
 		$special = strpos($pattern, '{*}') !== false;
 		$pattern = explode(' ', $pattern);
 		$key = $pattern[0];

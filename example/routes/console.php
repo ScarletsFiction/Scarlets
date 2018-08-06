@@ -10,7 +10,7 @@ use \Scarlets\Console;
 |
 */
 
-Console::command('countdown {0} {1}', function($start, $end = 0){
+Console::command('countdown {0} {1}', function($start, $end){
 	while ($start >= $end) {
 		echo("\rCounting down $start");
 		$start--;

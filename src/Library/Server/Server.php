@@ -2,11 +2,13 @@
 
 namespace Scarlets\Library\Server;
 
-function start($address=0, $port=80){
-	Scarlets\Library\Socket\create(function($socket, $data){
+if(!class_exists('\\Scarlets\\Library\\Socket'))
+	include_once \Scarlets::$registry['path.framework.library']."/Socket/Socket.php";
+function start($port=80, $address=0){
+	\Scarlets\Library\Socket\create(function($socket, $data){
 	    $body = '';
 	    // Process header
-	        $headers = explode("\r\n", $input);
+	        $headers = explode("\r\n", $data);
 	        $headers[0] = explode(" ", $headers[0]);
 	        $headers['METHOD'] = $headers[0][0];
 	        $headers['URL'] = $headers[0][1];
@@ -27,7 +29,7 @@ function start($address=0, $port=80){
 	            unset($headers[$i]);
 	        }
 
-	    $func($socket, $headers, $body);
+	    print_r($headers, $body);
 
 //	    $output = "HTTP/1.1 200 OK
 //Content-Type: text/html\r\n\r\n [OUTPUT HERE]";
