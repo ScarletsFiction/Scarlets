@@ -24,8 +24,6 @@ class Scarlets{
 		Scarlets\Route\Handler::Initialize();
 		include_once self::$registry['path.app']."/routes/web.php";
 
-
-
 		$jsonRequest = file_get_contents('php://input');
 		if($jsonRequest)
 			$_POST = json_decode($jsonRequest, true);
@@ -39,9 +37,12 @@ class Scarlets{
 	public static function Console(){
 		include_once __DIR__."/src/Console.php";
 		include_once self::$registry['path.app']."/routes/console.php";
+
 		if(!Scarlets\Console::isConsole())
 			die("Scarlets Console can only being called on console window");
 		self::$registry['console'] = true;
+
+		Scarlets\Console::Initialization();
 	}
 
 

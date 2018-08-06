@@ -3,5 +3,5 @@
 	<p>
 		Welcome to your very first page
 	</p>
-	<p class="time"><?= $_['time'] ?></p>
+	<p class="time"><?= $time ?></p>
 </div>

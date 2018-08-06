@@ -23,11 +23,13 @@ class Handler{
 }
 
 class Serve{
-	public static function view($path, $_ = []){
+	public static function view($path, $values = []){
 		$path = Scarlets::$registry['path.views'].str_replace('.', '/', $path).'.php';
 		$g = &$_GET;
-		$p = &$_POST; // Use this for more performance
+		$p = &$_POST;
 		$q = 'Scarlets\Route\Query';
+		foreach ($values as $key => $value)
+			${$key} = $value;
 		include $path;
 	}
 
@@ -40,14 +42,14 @@ class Query{
 	public static function &get($key){
 		if(isset($_GET[$key]))
 			return $_GET[$key];
-		$temp = null;
+		$temp = '';
 		return $temp;
 	}
 
 	public static function &post($key){
 		if(isset($_POST[$key]))
 			return $_POST[$key];
-		$temp = null;
+		$temp = '';
 		return $temp;
 	}
 }

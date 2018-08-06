@@ -1,5 +1,5 @@
 <?php
 
 return [
-    'current_time' => 'The time is (:0)',
+    'current_date' => 'Current date is (:0) (UTC)',
 ];

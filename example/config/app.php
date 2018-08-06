@@ -103,4 +103,16 @@ return [
 */
 'instant' => true,
 
+/*
+|--------------------------------------------------------------------------
+| Console username
+|--------------------------------------------------------------------------
+|
+| Here you can specify your favourite name when you're using
+| Scarlets Console in interactive mode. You can also change it when running
+| with runtime configuration.
+|
+*/
+'console_user' => 'You',
+
 ];

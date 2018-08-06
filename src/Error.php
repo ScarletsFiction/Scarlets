@@ -12,8 +12,12 @@ namespace Scarlets;
 */
 
 class Error{
+	// Only save 2 error file path and line
+	// This can avoid multiple process of single error
+	public static $lastError = [];
+
 	public static function warning($message){
-		if(!\Scarlets::$registry['config']['app']['debug']){
+		if(!\Scarlets::$registry['config']['app.debug']){
 
 		}
 	}
@@ -22,10 +26,22 @@ class Error{
 	public static function ErrorHandler($severity, $message, $file, $line){
 	    if(!(error_reporting() & $severity))
 	        return; // This error code is not included in error_reporting
+
+	    // Check if Error already processed
+	    if(in_array($file.$line, self::$lastError))
+	    	return;
+
+	    // Check if error over limit
+	    if(count(self::$lastError)==2)
+	    	array_shift(self::$lastError);
+
+	    // Save to last error
+	    self::$lastError[] = $file.$line;
 	    
 	    if(isset(\Scarlets::$registry['error']) && \Scarlets::$registry['error']) return;
 	    $reg = &\Scarlets::$registry;
-	    $reg['error'] = true;
+	    
+	    if(!$reg['console']) $reg['error'] = true;
 	    
 	    $trace = explode("\nStack trace:", $message);
 	    if(count($trace) === 1){
@@ -37,8 +53,12 @@ class Error{
 	    }
 
 	    $breakline = $reg['console'] ? '':' <br>';
-	    $url = 'console';
-	    if(!$reg['console'])
+	    $url = 'Scarlets Console';
+	    if(!isset($_SERVER['SERVER_NAME']) && !$reg['console']){
+	    	$breakline = '';
+	    	$url = "Startup Handler";
+	    }
+	    else if(!$reg['console'])
 	    	$url = "http".(isset($_SERVER['HTTPS'])?'s':'').'://'.$_SERVER['SERVER_NAME'].$_SERVER['REQUEST_URI'];
 
 $message = "Exception type: ".self::ErrorType($severity).";$breakline
@@ -46,7 +66,7 @@ Message: $message;$breakline
 File: $file;$breakline
 Line: $line;$breakline
 URL: $url$breakline
-Trace: $trace; <br><br>\n\n";
+Trace: $trace;$breakline$breakline\n\n";
 
 		$appConfig = &$reg['config'];
 
