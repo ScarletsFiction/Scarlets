@@ -30,21 +30,9 @@ class Console{
 		$argv = $_SERVER['argv'];
 		unset($argv[0]);
 
-		// Register internal function
-		self::command(['serve {0} {1}', 'serve {0}', 'serve'], function($port=8000, $address=0){
-			include_once \Scarlets::$registry['path.framework.library']."/Server/Server.php";
-			Library\Server\start($port, $address);
-		});
+		include_once "Internal/Console.php";
 
 		if(count($argv) === 0){
-			// Register internal function
-			self::command('exit', function(){
-				return true;
-			});
-			self::command('cls', function(){
-				self::clear();
-			});
-
 			// Start the console
 			self::interactiveShell();
 		}

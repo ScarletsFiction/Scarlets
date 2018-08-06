@@ -25,7 +25,7 @@ class Scarlets{
 		include_once self::$registry['path.app']."/routes/web.php";
 
 		// Only register website router if from console
-		if(Scarlets\Console::isConsole()){
+		if(class_exists('\\Scarlets\\Console')){
 			self::$isConsole = true;
 			return;
 		}
@@ -136,16 +136,17 @@ Scarlets::$registry['Initialize'] = function(){
 
 	$reg = &Scarlets::$registry;
 	$reg['path.app'] = $path;
-	$reg['path.views'] = $path.'/resources/views/';
-	$reg['path.lang'] = $path.'/resources/lang/';
-	$reg['path.plate'] = $path.'/resources/plate/';
-	$reg['path.app.storage'] = $path.'/storage/app/';
+	$reg['path.public'] = $path.'/public';
+	$reg['path.views'] = $path.'/resources/views';
+	$reg['path.lang'] = $path.'/resources/lang';
+	$reg['path.plate'] = $path.'/resources/plate';
+	$reg['path.app.storage'] = $path.'/storage/app';
 	$reg['path.cache'] = $path.'/storage/framework/cache';
-	$reg['path.sessions'] = $path.'/storage/framework/sessions/';
-	$reg['path.view_cache'] = $path.'/storage/framework/views/';
-	$reg['path.logs'] = $path.'/storage/logs/';
+	$reg['path.sessions'] = $path.'/storage/framework/sessions';
+	$reg['path.view_cache'] = $path.'/storage/framework/views';
+	$reg['path.logs'] = $path.'/storage/logs';
 
-	$reg['path.framework.library'] = __DIR__.'/src/Library/';
+	$reg['path.framework.library'] = __DIR__.'/src/Library';
 
 	// Initialize configuration
 	$configPath = $path.'/config';

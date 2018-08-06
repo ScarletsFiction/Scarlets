@@ -15,6 +15,7 @@ class Error{
 	// Only save 2 error file path and line
 	// This can avoid multiple error of single error
 	public static $lastError = [];
+	public static $hasError = false;
 
 	public static function warning($message){
 		if(!\Scarlets::$registry['config']['app.debug']){
@@ -31,6 +32,8 @@ class Error{
 	public static function ErrorHandler($severity, $message, $file, $line){
 	    if(!(error_reporting() & $severity))
 	        return; // This error code is not included in error_reporting
+
+	    self::$hasError = true;
 
 	    // Check if Error already processed
 	    if(in_array($file.$line, self::$lastError))

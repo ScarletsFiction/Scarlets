@@ -11,14 +11,14 @@
 use \Scarlets\Route;
 use \Scarlets\Route\Serve;
 use \Scarlets\Route\Query;
-use \Scarlets\Library\Language\get as Language;
+use \Scarlets\Library\Language;
 
 Route::get('/', function(){
 	Serve::view('static.header', [
 		'title'=>'Home'
 	]);
 	Serve::view('home', [
-		'time' => Language('time.current_date', [date('d M Y')])
+		'time' => Language\get('time.current_date', [date('d M Y')])
 	]);
 	Serve::view('static.footer');
 });

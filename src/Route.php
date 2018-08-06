@@ -1,6 +1,7 @@
 <?php 
 
 namespace Scarlets;
+use Scarlets;
 include_once __DIR__."/Internal/Route.php";
 
 /*
@@ -12,19 +13,24 @@ include_once __DIR__."/Internal/Route.php";
 |
 */
 class Route{
+	public static $instantOutput = false;
 	public static function get($url, $func){
 		if(!is_callable($func))
 			return; // ToDo: Handle router redirect
 
-		if(\Scarlets::$isConsole)
-			Handler::register('GET', $url, $value);
+		if(Scarlets::$isConsole)
+			Route\Handler::register('GET', $url, $func);
 
-		// Instant execute
-		elseif($_SERVER['REQUEST_METHOD'] === 'GET') {
-			if($url === $_SERVER['REQUEST_URI'])
+		elseif($_SERVER['REQUEST_METHOD'] === 'GET' && $url === $_SERVER['REQUEST_URI']){ // ToDo: implement regex
+			if(self::$instantOutput === false){
+				ob_start();
 				$func();
+				if(Scarlets\Error::$hasError !== true) echo(ob_get_contents());
+				else Scarlets\Error::$hasError = false;
+				ob_end_clean();
+			}
+			else $func();
 		}
-		//isset($_SERVER['HTTPS'])
 	}
 	
 	public static function post($url, $func){

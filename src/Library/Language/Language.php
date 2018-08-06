@@ -9,7 +9,7 @@
 	*/
 	function load($languageID){
 		$reg = &Scarlets::$registry;
-		$path = $reg['path.lang'].$languageID.'/';
+		$path = $reg['path.lang'].'/'.$languageID.'/';
 		if(file_exists($path)){
 			$reg['Language.'.$languageID] = [];
 			$ref = &$reg['Language.'.$languageID];
@@ -25,7 +25,7 @@
 			}
 			return;
 		}
-		throw new Exception("LanguageID not exist".$languageID, 1);
+		throw new \Exception("LanguageID not exist: ".$languageID, 1);
 	}
 
 	function get($key, $values = [], $languageID=0){

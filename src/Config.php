@@ -39,4 +39,12 @@ class Config{
 		}
 		return false;
 	}
+
+	public static function set($file, $key, $value){
+		\Scarlets::$registry['config'][$file.$key] = $value;
+	}
+
+	public static function &get($file, $key){
+		return \Scarlets::$registry['config'][$file.$key];
+	}
 }
