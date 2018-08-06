@@ -51,5 +51,5 @@ Console::command('cls', function(){
 });
 
 Console::command('list', function(){
-	var_dump(Console::$commands);
+	print_r(Console::collection());
 });

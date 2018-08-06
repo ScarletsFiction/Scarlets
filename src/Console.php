@@ -100,74 +100,77 @@ class Console{
 				echo("\n");
 				return $return;
 			}
+		} else {
 
-			echo("$firstword command with ".$argsLen." argument was not registered\n");
-			return;
-		}
+			// $command = [[types], [args], callback];
+			// if not have argument $command = callback;
+			foreach($commands as &$command){
+				$matched = false;
+				$uniqueCheck = 0;
 
-		// $command = [[types], [args], callback];
-		// if not have argument $command = callback;
-		foreach($commands as &$command){
-			$matched = false;
-			$uniqueCheck = 0;
+				// Check arguments
+				$uniques = &$command[0];
+				$args = &$command[1];
+				for ($i=0; $i < count($args); $i++) {
 
-			// Check arguments
-			$uniques = &$command[0];
-			$args = &$command[1];
-			for ($i=0; $i < count($args); $i++) {
-
-				// It's unique
-				if(isset($uniques[$uniqueCheck]) && $uniques[$uniqueCheck] === $i){
-					$matched = true;
-					$uniqueCheck++;
-				} else {
-
-					// Check for static argument patterns
-					if(isset($args[$i]) && isset($pattern[$i]) && $args[$i] === $pattern[$i])
+					// It's unique
+					if(isset($uniques[$uniqueCheck]) && $uniques[$uniqueCheck] === $i){
 						$matched = true;
+						$uniqueCheck++;
+					} else {
 
-					else{
-						$matched = false;
-						continue 2;
+						// Check for static argument patterns
+						if(isset($args[$i]) && isset($pattern[$i]) && $args[$i] === $pattern[$i])
+							$matched = true;
+
+						else{
+							$matched = false;
+							continue 2;
+						}
 					}
 				}
-			}
 
-			if($matched){
-				// Process the unique arguments
-				$arguments = [];
-				for ($i=0; $i < count($uniques); $i++) {
-					$number = str_replace(['{', '}'], '', $args[$uniques[$i]]);
-					if($number === '*'){
-						self::$args = [];
+				if($matched){
+					// Process the unique arguments
+					$arguments = [];
+					for ($i=0; $i < count($uniques); $i++) {
+						$number = str_replace(['{', '}'], '', $args[$uniques[$i]]);
+						if($number === '*'){
+							if(count(self::$args) === $i) // Don't match empty space
+								continue 2;
 
-						// Merge left arguments
-						$number = count($arguments);
-						$arguments[$number] = '';
-						self::$args = array_slice($pattern, $i + 1);
-						$arguments[$number] = implode(' ', self::$args);
-						break;
+							self::$args = [];
+
+							// Merge left arguments
+							$number = count($arguments);
+							$arguments[$number] = '';
+							self::$args = array_slice($pattern, $i);
+							$arguments[$number] = implode(' ', self::$args);
+							break;
+						}
+						$arguments[$number] = $pattern[$number];
 					}
-					$arguments[$number] = $pattern[$number];
-				}
-				$return = call_user_func_array($command[2], $arguments);
-				echo("\n");
+					$return = call_user_func_array($command[2], $arguments);
+					echo("\n");
 
-				// Reset
-				self::$args = false;
-				self::$found = false;
-				return $return;
+					// Reset
+					self::$args = false;
+					self::$found = false;
+					return $return;
+				}
 			}
 		}
+
+		echo("$firstword command with ".$argsLen." argument was not registered\n");
+		return;
 	}
 
 	public static function args($pattern, $callback){
 		if(self::$found) return; // Another callback already invoked
 		$pattern = explode(' ', $pattern);
 		$patternLen = count($pattern);
-		// self::$args
 
-		$uniqueIndex = [];
+		$arguments = [];
 		for ($i=0; $i < $patternLen; $i++) {
 			if(strpos($pattern[$i], '{') === 0){
 				$number = explode('{', $pattern[$i]);
@@ -177,15 +180,28 @@ class Console{
 				$number = explode('}', $number);
 				if($number[1] !== '') continue;
 
-				if(!is_numeric($number[0]) && !$number[0] === '*') continue;
-				$uniqueIndex[] = intval($number[0]);
+				if($number[0] === '*'){
+					if(count(self::$args) === $i) // Don't match empty space
+						return;
+
+					self::$args = array_slice(self::$args, $i);
+					$number = count($arguments);
+					$arguments[$number] = implode(' ', self::$args);
+					break;
+				}
+				elseif(!is_numeric($number[0]))
+					continue;
+
+				$arguments[$number[0]] = &self::$args[$i];
+			}
+			else {
+				if($pattern[$i] !== self::$args[$i])
+					return;
 			}
 		}
 
-		if(true){
-			$return = call_user_func_array($callback, $arguments);
-			self::$found = true;
-		}
+		$return = call_user_func_array($callback, $arguments);
+		self::$found = true;
 	}
 
 	/*
@@ -258,5 +274,28 @@ class Console{
 	        return true;
 
 	    return false;
+	}
+
+	public static function collection(){
+		$commands = Console::$commands;
+		$list = [];
+		foreach ($commands as $key => $value) {
+			$key = explode('.', $key);
+			$type = array_pop($key);
+			if($type === 'h')
+				$list[implode('.', $key).'.h'] = '{Help}';
+
+			elseif($type === '0')
+				$list[implode('.', $key)] = '{Function}';
+
+			else{
+				$args = [];
+				foreach ($value as $arg) {
+					$args[] = implode(' ', $arg[1]);
+				}
+				$list[implode('.', $key)] = $args;
+			}
+		}
+		return $list;
 	}
 }
