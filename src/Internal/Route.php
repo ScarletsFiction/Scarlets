@@ -11,9 +11,13 @@ class Group{
 
 class Handler{
 	public static function Initialize(){
-		$requests = ['GET', 'POST', 'PUT', 'DELETE'];
-		foreach($requests as &$method){
-			Scarlets::$registry['Route'][$method] = [];
+
+		// If this running on console
+		if(\Scarlets::$isConsole){
+			$requests = ['GET', 'POST', 'PUT', 'DELETE'];
+			foreach($requests as &$method){
+				Scarlets::$registry['Route'][$method] = [];
+			}
 		}
 	}
 

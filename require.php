@@ -25,8 +25,10 @@ class Scarlets{
 		include_once self::$registry['path.app']."/routes/web.php";
 
 		// Only register website router if from console
-		if(Scarlets\Console::isConsole())
+		if(Scarlets\Console::isConsole()){
+			self::$isConsole = true;
 			return;
+		}
 
 		$jsonRequest = file_get_contents('php://input');
 		if($jsonRequest)
@@ -42,9 +44,10 @@ class Scarlets{
 		include_once __DIR__."/src/Console.php";
 		include_once self::$registry['path.app']."/routes/console.php";
 
-		if(!Scarlets\Console::isConsole())
+		if(!Scarlets\Console::isConsole()){
 			die("Scarlets Console can only being called on console window");
-		self::$registry['console'] = true;
+		}
+		self::$isConsole = true;
 
 		Scarlets\Console::Initialization();
 	}
@@ -82,9 +85,9 @@ class Scarlets{
 	*/
 	public static $registry = [
 		'path.framework'=>__DIR__,
-		'console'=>false,
 		'Route'=>[]
 	];
+	public static $isConsole = false;
 
 	/*
 		> Registry Execute

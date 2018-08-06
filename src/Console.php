@@ -68,14 +68,36 @@ class Console{
 
  			// Too fast or caused by CTRL+Z then enter
  			$time = microtime();
-		    if($lastInput === $time)
+		    if($lastInput === $time){
+		    	echo("Shutting down Scarlets Console...");
 		    	break;
+		    }
 
 		    $lastInput = $time;
 		}
 
 		fclose($fp);
 		exit;
+	}
+
+	public static function &waitInput(){
+		$fp = fopen("php://stdin","r");
+		$temp = rtrim(fgets($fp, 1024));
+		fclose($fp);
+		return $temp;
+	}
+
+	public static function &hiddenInput(){
+		$result = '';
+		if(PHP_OS === 'WINNT' || PHP_OS === 'WIN32'){
+			$result = exec(__DIR__ . '/Internal/Console_hiddenInput.bat');
+			if(strtolower($result) === 'echo is off.')
+				$result = '';
+			echo("\n");
+		}
+		else
+			$result = exec('read -s PW; echo $PW');
+		return $result;
 	}
 
 	public static function interpreter($line){

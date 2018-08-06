@@ -46,7 +46,7 @@ class Error{
 	    if(isset(\Scarlets::$registry['error']) && \Scarlets::$registry['error']) return;
 	    $reg = &\Scarlets::$registry;
 	    
-	    if(!$reg['console']) $reg['error'] = true;
+	    if(!\Scarlets::$isConsole) $reg['error'] = true;
 	    
 	    $trace = explode("\nStack trace:", $message);
 	    if(count($trace) === 1){
@@ -69,13 +69,13 @@ class Error{
 	    $trace = explode('Scarlets\Error::ErrorHandler', $trace)[1];
 	    $trace = explode("\n", $trace, 2)[1];
 
-	    $breakline = $reg['console'] ? '':' <br>';
+	    $breakline = \Scarlets::$isConsole ? '':' <br>';
 	    $url = 'Scarlets Console';
-	    if(!isset($_SERVER['SERVER_NAME']) && !$reg['console']){
+	    if(!isset($_SERVER['SERVER_NAME']) && !\Scarlets::$isConsole){
 	    	$breakline = '';
 	    	$url = "Startup Handler";
 	    }
-	    else if(!$reg['console'])
+	    else if(!\Scarlets::$isConsole)
 	    	$url = "http".(isset($_SERVER['HTTPS'])?'s':'').'://'.$_SERVER['SERVER_NAME'].$_SERVER['REQUEST_URI'];
 
 $message = "Exception type: ".self::ErrorType($severity).";$breakline

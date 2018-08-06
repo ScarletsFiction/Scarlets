@@ -48,3 +48,8 @@ You need to type 'echo (anything here)' to get echo back.");
 Console::command('list', function(){
 	print_r(Console::collection());
 });
+
+Console::command('input', function(){
+	echo("Type something invisible: ");
+	print_r("Result: ".Console::hiddenInput());
+});
