@@ -173,6 +173,11 @@ Scarlets::$registry['Initialize'] = function(){
 	$configPath = $path.'/config';
 	Scarlets\Config::Path($configPath);
 
+	if(!isset($_SERVER['REQUEST_URI'])){
+		$_SERVER['REQUEST_METHOD'] = 'GET';
+		$_SERVER['REQUEST_URI'] = '/';
+	}
+
 	if($reg['config']['app.url_path'] !== false)
 		$_SERVER['REQUEST_URI'] = explode($reg['config']['app.url_path'], $_SERVER['REQUEST_URI'])[1];
 
