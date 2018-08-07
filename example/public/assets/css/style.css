@@ -43,7 +43,7 @@ table {
 }
 body{
 	font-size: 17px;
-	background: #2ecc71 url('../img/bg.jpg') no-repeat center center fixed;
+	background: #424242 url('../img/bg.jpg') no-repeat center center fixed;
 	background-size: cover;
 	font-family: 'Lato',"Open Sans", Arial;
 	transition: ease-in-out all 300ms;
