@@ -18,9 +18,11 @@ function start($port=80, $address='localhost'){
 	$_SERVER['SERVER_NAME'] = &$address;
 
 	// Create the socket server
-	Scarlets\Library\Socket\create(function($socket, $data){
+	Scarlets\Library\Socket\create($address, $port, function($socket, $data){
 		global $publicFolder;
 	    $body = '';
+	    socket_getpeername($socket, $address);
+	    $_SERVER['REMOTE_ADDR'] = $address;
 
 	    // Process header
 	    $headers = explode("\r\n", $data);
@@ -44,6 +46,7 @@ function start($port=80, $address='localhost'){
 			socket_write($socket, "\nPragma: public");
 			socket_write($socket, "\nCache-Control: public");
 			socket_write($socket, "\nLast-Modified: $time");
+			socket_write($socket, "\nConnection: close");
 			socket_write($socket, "\nContent-Length: $fileSize\n\n");
 
 			fseek($file, 0);
@@ -83,9 +86,10 @@ function start($port=80, $address='localhost'){
 	    }
 
 	    // Output request to the console
-	    print_r("$headers[METHOD]> $headers[URI]");
-	    return request($socket, $headers, $body);
-	}, $address, $port);
+	    print_r("$_SERVER[REMOTE_ADDR] ($headers[METHOD])> $headers[URI]");
+	    request($socket, $headers, $body);
+	    return true;
+	});
 }
 
 function request(&$socket, &$headers, &$body){
@@ -124,7 +128,7 @@ function request(&$socket, &$headers, &$body){
 		}
 	}
 
-	$output = "\nServer: Scarlets Mini Server\nContent-Type: text/html\r\n\r\n";
+	$output = "\nServer: Scarlets Mini Server\nConnection: close\nContent-Type: text/html\r\n\r\n";
 
 	if(!$found){
 		$router = &Scarlets::$registry['Route']['STATUS'];
@@ -173,6 +177,7 @@ function request(&$socket, &$headers, &$body){
 		if($httpstatuscode === 0){
 			$output = "HTTP/1.1 200 OK".$output;
 			socket_write($socket, $output.ob_get_contents());
+			$httpstatuscode = 200;
 		}
 	} else {
 		$router = &Scarlets::$registry['Route']['STATUS'];
