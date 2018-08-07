@@ -50,16 +50,11 @@ class Serve{
 
 	}
 
-	public static function httpStatus($statusCode, $header=[]){
-		echo "HTTP/1.1 $statusCode OK\n";
-		$headers = [
-			"Content-Type" => "text/html"
-		];
-		$headers = array_merge($headers, $header);
-		foreach($headers as $key => $value){
-			echo $key.': '.$value."\n";
-		}
-		echo "\r\n\r\n";
+	public static function httpCode($statusCode){
+		http_response_code($statusCode);
+		
+		$router = &Scarlets::$registry['Route']['STATUS'];
+		$router[$statusCode]();
 	}
 }
 

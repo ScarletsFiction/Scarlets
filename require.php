@@ -28,14 +28,16 @@ class Scarlets{
 			Scarlets\Route\Query::$home = self::$registry['config']['app.url_path'];
 
 		// Include required router
+		include_once self::$registry['path.app']."/routes/status.php";
 		include_once self::$registry['path.app']."/routes/api.php";
 		include_once self::$registry['path.app']."/routes/web.php";
-		include_once self::$registry['path.app']."/routes/status.php";
 
 		// Only register website router if from console
 		if(class_exists('\\Scarlets\\Console')){
 			self::$isConsole = true;
 			return;
+		} else {
+			header("X-Framework: ScarletsFiction");
 		}
 
 		$jsonRequest = file_get_contents('php://input');
@@ -125,6 +127,15 @@ include_once __DIR__."/src/Error.php";
 
 // Handle uncaught error on shutdown
 Scarlets::onShutdown(function(){
+	$httpCode = http_response_code();
+
+	// Take the higher status code
+	if(Scarlets\Route::$statusCode > $httpCode)
+		$httpCode = Scarlets\Route::$statusCode;
+
+	// Redirect 404 or 500 http status
+	if($httpCode !== 200) Scarlets\Route\Serve::httpCode($httpCode);
+
 	$error = error_get_last();
     if($error && (!isset(Scarlets::$registry['error']) || !Scarlets::$registry['error']))
 		Scarlets\Error::ErrorHandler($error['type'], $error['message'], $error['file'], $error['line']);
