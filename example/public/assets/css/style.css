@@ -43,10 +43,21 @@ table {
 }
 body{
 	font-size: 17px;
-	background: #424242 url('../img/bg.jpg') no-repeat center center fixed;
-	background-size: cover;
+	background: #424242;
 	font-family: 'Lato',"Open Sans", Arial;
-	transition: ease-in-out all 300ms;
+}
+
+#body-background{
+	position: fixed;
+    height: 100vh;
+    background: no-repeat center center fixed;
+    background-size: cover;
+    width: 100vw;
+}
+@media only screen and (max-width: 480px) {
+  #body-background{
+    height: 100%;
+  }
 }
 .middle {
     position:absolute;

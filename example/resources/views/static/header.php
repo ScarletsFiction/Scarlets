@@ -9,3 +9,4 @@
 	<link href='<?= $q::$home ?>/assets/css/lato-font.css' rel='stylesheet' type='text/css'>
 </head>
 <body>
+	<div id="body-background" style="background-image: url('<?= $q::$home ?>/assets/img/bg.jpg');"></div>
