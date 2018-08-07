@@ -1,8 +1,6 @@
-<IfModule mod_rewrite.c>
-    RewriteEngine On
+RewriteEngine On
 
-    # Process URL with PHP if not a folder or file
-    RewriteCond %{REQUEST_FILENAME} !-d
-    RewriteCond %{REQUEST_FILENAME} !-f
-    RewriteRule ^ index.php [L]
-</IfModule>
+# Process all URL with index.php if it's not a folder or file
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteRule ^ index.php [L]
