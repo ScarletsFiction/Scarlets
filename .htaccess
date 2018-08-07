@@ -1,0 +1,4 @@
+RewriteEngine On
+
+# This just for testing on heroku
+RewriteRule (.*) example/public/$1 [L]
