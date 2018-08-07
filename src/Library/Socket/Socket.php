@@ -10,77 +10,76 @@ namespace Scarlets\Library\Socket;
 	(readCallback) ..
 	(connectionCallback) ..
 */
-function create($address=0, $port=80, $readCallback, $connectionCallback=0){
-        set_time_limit(0);
-        ob_implicit_flush();
+function create($address, $port, $readCallback, $connectionCallback=0){
+    set_time_limit(0);
+    ob_implicit_flush();
 
-        $address = $address ?: 'localhost';
+    $address = $address ?: 'localhost';
 
-        $sock = socket_create(AF_INET, SOCK_STREAM, 0);
-        socket_bind($sock, $address, $port) or die('Could not bind to address');
+    $sock = socket_create(AF_INET, SOCK_STREAM, 0);
+    socket_bind($sock, $address, $port) or die('Could not bind to address');
 
-        echo "\nListening on http://$address".($port !== 80 ? ":$port" : '')."\nUse CTRL+C 2 times to exit\n\n";
-        socket_listen($sock);
-        $clients = [$sock];
+    echo "\nListening on http://$address".($port !== 80 ? ":$port" : '')."\nUse CTRL+C 2 times to exit\n\n";
+    socket_listen($sock);
+    $clients = [$sock];
 
-        $write = $except = NULL; // We doesn't use this
-        $second = 1;
-        $garbageWaiting = 0; // Max to 100
+    $write = $except = NULL; // We doesn't use this
+    $second = 1;
+    $garbageWaiting = 0; // Max to 100
 
-        // Avoid too many function call in loop
-        while(1){
-            usleep(10); // Avoid CPU Burn
-            $read = $clients; // $read client that have data
-            
-            // Check if there are some data from client that can be read
-            if(socket_select($read, $write, $except, $second) === 0)
+    // Avoid too many function call in loop
+    while(1){
+        usleep(10); // Avoid CPU Burn
+        $read = $clients; // $read client that have data
+        
+        // Check if there are some data from client that can be read
+        if(socket_select($read, $write, $except, $second) === 0)
+            continue;
+
+        // Check for new client connection
+        if(in_array($sock, $read)){ // in_array is more faster (tested on apache benchmark)
+
+            // Add the new client to the list
+            $clients[] = $newsock = socket_accept($sock);
+            unset($read[array_search($sock, $read)]);
+
+            if($connectionCallback !== 0)
+                $connectionCallback($newsock, 'connected');
+        }
+
+        foreach($read as &$read_sock){
+            $data = @socket_read($read_sock, 2048);
+            $keep = true;
+
+            // when readCallback return true,  disconnect and remove the socket
+            if(trim($data) !== '' && !$readCallback($read_sock, $data))
                 continue;
 
-            // Check for new client connection
-            if(in_array($sock, $read)){ // in_array is more faster
+            // Remove disconnected client from the list
+            unset($clients[array_search($read_sock, $clients)]);
+            $garbageWaiting++;
 
-                // Add the new client to the list
-                $clients[] = $newsock = socket_accept($sock);
-                unset($read[array_search($sock, $read)]);
+            if($garbageWaiting>100)
+                $clients = array_values($clients);
 
-                if($connectionCallback !== 0)
-                    $connectionCallback($newsock, 'connected');
-            }
+            if($connectionCallback !== 0)
+                $connectionCallback($read_sock, 'disconnected');
 
-            foreach($read as &$read_sock){
-                $data = @socket_read($read_sock, 2048);
-                $keep = true;
-
-                // when readCallback return true,  disconnect and remove the socket
-                if(trim($data) !== '' && !$readCallback($read_sock, $data))
-                    continue;
-
-                // Remove disconnected client from the list
-                unset($clients[array_search($read_sock, $clients)]);
-                $garbageWaiting++;
-
-                if($garbageWaiting>100)
-                    $clients = array_values($clients);
-
-                if($connectionCallback !== 0)
-                    $connectionCallback($read_sock, 'disconnected');
-
-                socket_close($read_sock);
-                unset($read_sock);
-            }
+            socket_close($read_sock);
+            unset($read_sock);
         }
-        socket_close($sock);
     }
-
+    socket_close($sock);
+}
 
 /*
-	> Single socket connection
+	> Simple socket handler
 
 	(readCallback) ..
 	(address) ..
 	(port) ..
 */
-function single($readCallback, $address=0, $port=80){
+function simple($address, $port, $readCallback){
 	set_time_limit(0);
 	ob_implicit_flush();
 
@@ -95,7 +94,8 @@ function single($readCallback, $address=0, $port=80){
 	// Avoid too many function call in loop
 	while(1){
 	    $socket = socket_accept($sock);
-	    if(!($data = socket_read($socket, 2048))){
+	    $data = @socket_read($socket, 2048);
+	    if($data === false){
 	    	socket_close($socket);
 	    	continue;
 	    }
