@@ -22,7 +22,11 @@ class Scarlets{
 	public static function Website(){
 		include_once __DIR__."/src/Route.php";
 		Scarlets\Route\Handler::Initialize();
+
+		// Include required router
+		include_once self::$registry['path.app']."/routes/api.php";
 		include_once self::$registry['path.app']."/routes/web.php";
+		include_once self::$registry['path.app']."/routes/status.php";
 
 		// Only register website router if from console
 		if(class_exists('\\Scarlets\\Console')){
@@ -42,6 +46,8 @@ class Scarlets{
 	*/
 	public static function Console(){
 		include_once __DIR__."/src/Console.php";
+
+		// Include required router
 		include_once self::$registry['path.app']."/routes/console.php";
 
 		if(!Scarlets\Console::isConsole()){

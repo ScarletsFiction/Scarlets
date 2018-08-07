@@ -1,6 +1,5 @@
 <?php
 
-use \Scarlets\Console;
 /*
 |--------------------------------------------------------------------------
 | Console Routes
@@ -9,6 +8,7 @@ use \Scarlets\Console;
 | This is where you can register console command.
 |
 */
+use \Scarlets\Console;
 
 Console::command('countdown {0} {1}', function($start, $end){
 	while ($start >= $end) {

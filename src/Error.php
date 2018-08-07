@@ -17,6 +17,8 @@ class Error{
 	public static $lastError = [];
 	public static $hasError = false;
 
+	public static $currentError = [];
+
 	public static function warning($message){
 		if(!\Scarlets::$registry['config']['app.debug']){
 
@@ -88,6 +90,8 @@ Line: $line;$breakline
 URL: $url$breakline
 Trace: \n$trace;$breakline$breakline\n\n";
 
+		self::$currentError .= $message;
+
 		$exitting = true;
 		$warningAsError = $appConfig['app.warning_as_error'];
 		if($warningAsError && ($severity === E_WARNING
@@ -105,8 +109,9 @@ Trace: \n$trace;$breakline$breakline\n\n";
 
 
 		$method = $appConfig['app.log'];
-		if($method === 'single')
+		if($method === 'single'){
 			0; // ToDo: Save to file log
+		}
 
 		if($exitting && !$appConfig['app.debug']){
 			echo('Under Maintenance<br><br>Please refresh your browser to take changes<br>Or contact StefansArya if you still receive this message (≧▽≦)／');
@@ -120,6 +125,13 @@ Trace: \n$trace;$breakline$breakline\n\n";
 
 	public static function simpleHTML(){
 
+	}
+
+	public static function &getUnreadError(){
+		$temp = self::$currentError;
+		self::$currentError = '';
+		self::$hasError = false;
+		return $temp;
 	}
 
 	// http://php.net/manual/en/errorfunc.constants.php

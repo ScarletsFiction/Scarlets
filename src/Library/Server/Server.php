@@ -65,11 +65,11 @@ function start($port=80, $address='localhost'){
 
 	        // Check if it's not zero length
 	        elseif($headers[$i] !== ''){
-	            $headers[$i] = explode(':', $headers[$i], 2);
+	            $headers[$i] = explode(': ', $headers[$i], 2);
 
 		        // Check if there are form boundary
 		        if($headers[$i][0] === 'Content-Type' && strpos($headers[$i][1], 'boundary') !== false){
-		        	$body .= $headers[$i][0].':'.$headers[$i][1];
+		        	$body .= $headers[$i][0].': '.$headers[$i][1];
 		        } elseif($headers[$i][0] === 'Cookie') {
 		        	$_COOKIE = parseCookie($headers[$i][1]);
 		        }
@@ -83,13 +83,14 @@ function start($port=80, $address='localhost'){
 	    }
 
 	    // Output request to the console
-	    print_r("$headers[METHOD]> $headers[URI]\n");
-	    print_r($headers['User-Agent']."\n");
+	    print_r("$headers[METHOD]> $headers[URI]");
 	    return request($socket, $headers, $body);
 	}, $address, $port);
 }
 
 function request(&$socket, &$headers, &$body){
+	$httpstatuscode = 200;
+
 	ob_start(); // Get all process output
 
 	// Put some information to server variable
@@ -98,8 +99,9 @@ function request(&$socket, &$headers, &$body){
 	// Parse GET data
 	if(strpos($headers['URI'], '?') !== false){
 		$headers['URI'] = explode('?', $headers['URI']);
-		$_SERVER['GET'] = mb_parse_str($headers['URI'][1]);
-		$_SERVER['REQUEST_URI'] = $headers['URI'][0];
+		$_SERVER['GET'] = &mb_parse_str($headers['URI'][1]);
+		$_SERVER['REQUEST_URI'] = &$headers['URI'][0];
+		\Scarlets\Route::$uri = $_SERVER['REQUEST_URI'];
 	} else {
 		$_SERVER['GET'] = [];
 		$_SERVER['REQUEST_URI'] = &$headers['URI'];
@@ -122,17 +124,49 @@ function request(&$socket, &$headers, &$body){
 		}
 	}
 
-	$output = "HTTP/1.1 200 OK\nServer: Scarlets Mini Server\nContent-Type: text/html\r\n\r\n";
-	// Check if there are any error
+	$output = "\nServer: Scarlets Mini Server\nContent-Type: text/html\r\n\r\n";
+
+	if(!$found){
+		$router = &Scarlets::$registry['Route']['STATUS'];
+		if(isset($router['404'])){
+			ob_clean();
+			$output = "HTTP/1.1 404 Not Found".$output;
+			$router['404']();
+			$httpstatuscode = 404;
+
+			// Make sure there are no error before output
+			if(!Scarlets\Error::$hasError)
+				socket_write($socket, $output.ob_get_contents());
+		}
+	}
+
+	// Make sure there are no error before output
 	if(!Scarlets\Error::$hasError){
-		socket_write($socket, $output.ob_get_contents());
+		if($httpstatuscode === 200){
+			$output = "HTTP/1.1 200 OK".$output;
+			socket_write($socket, $output.ob_get_contents());
+		}
 	} else {
-		Scarlets\Error::$hasError = false;
-		socket_write($socket, $output.'There are some error');
+		$router = &Scarlets::$registry['Route']['STATUS'];
+		if(isset($router['500'])){
+			ob_clean();
+			$output = "HTTP/1.1 500 Internal Server Error".$output;
+			$router['500']();
+			$httpstatuscode = 500;
+
+			socket_write($socket, $output.ob_get_contents());
+		}
 	}
 
 	// Clear memory
 	ob_end_clean();
+
+	// Output error to console
+	if(Scarlets\Error::$hasError)
+		print_r(Scarlets\Error::getUnreadError());
+
+	print_r(" [$httpstatuscode]\n");
+	print_r($headers['User-Agent']."\n");
 }
 
 function &parsePostData(&$postRaw)

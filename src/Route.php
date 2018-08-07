@@ -14,9 +14,12 @@ include_once __DIR__."/Internal/Route.php";
 */
 class Route{
 	public static $instantOutput = false;
+	public static $statusCode = 0;
+	public static $uri = '';
 	public static function get($url, $func){
-		if(!is_callable($func))
-			return; // ToDo: Handle router redirect
+		if(!is_callable($func)){ // Handle controller
+			return;
+		}
 
 		if(Scarlets::$isConsole)
 			Route\Handler::register('GET', $url, $func);
@@ -34,8 +37,23 @@ class Route{
 	}
 	
 	public static function post($url, $func){
-		if(is_callable($func) && $_SERVER['REQUEST_METHOD'] !== 'POST')
+		if(!is_callable($func)){ // Handle controller
 			return;
+		}
+
+		if(Scarlets::$isConsole)
+			Route\Handler::register('POST', $url, $func);
+
+		elseif($_SERVER['REQUEST_METHOD'] === 'POST' && $url === $_SERVER['REQUEST_URI']){ // ToDo: implement regex
+			if(self::$instantOutput === false){
+				ob_start();
+				$func();
+				if(Scarlets\Error::$hasError !== true) echo(ob_get_contents());
+				else Scarlets\Error::$hasError = false;
+				ob_end_clean();
+			}
+			else $func();
+		}
 	}
 	
 	public static function delete(){
@@ -77,9 +95,28 @@ class Route{
 	public static function redirect($from, $to, $httpStatus){
 		
 	}
+
+	public static function status($code, $func){
+		if(!is_callable($func)){ // Handle controller
+			return;
+		}
+
+		if(Scarlets::$isConsole)
+			Route\Handler::register('STATUS', $code, $func);
+
+		elseif(http_response_code() === $code){
+			if(self::$instantOutput === false){
+				ob_start();
+				$func();
+				if(Scarlets\Error::$hasError !== true) echo(ob_get_contents());
+				else Scarlets\Error::$hasError = false;
+				ob_end_clean();
+			}
+			else $func();
+		}
+	}
 	
-	public static function httpRedirect($URL, $method='get', $data=false)
-	{
+	public static function httpRedirect($URL, $method='get', $data=false){
 		// GET method
 		if(strtolower($method) === 'get'){
 			if($data)
