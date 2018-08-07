@@ -154,6 +154,12 @@ Trace: \n$trace;$breakline$breakline\n\n";
 	    elseif($type === E_USER_DEPRECATED) return 'E_USER_DEPRECATED'; 
 	    return "E_UNDEFINED"; 
 	}
+
+	public static function checkUncaughtError(){
+		$error = error_get_last();
+	    if($error && (!isset(Scarlets::$registry['error']) || !Scarlets::$registry['error']))
+			self::ErrorHandler($error['type'], $error['message'], $error['file'], $error['line']);
+	}
 }
 
 // Always show error on travis

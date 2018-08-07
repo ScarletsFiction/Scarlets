@@ -23,6 +23,10 @@ class Scarlets{
 		include_once __DIR__."/src/Route.php";
 		Scarlets\Route\Handler::Initialize();
 
+		// Check if the public folder is relative
+		if(self::$registry['config']['app.url_path'] !== false)
+			Scarlets\Route\Query::$home = self::$registry['config']['app.url_path'];
+
 		// Include required router
 		include_once self::$registry['path.app']."/routes/api.php";
 		include_once self::$registry['path.app']."/routes/web.php";
@@ -157,6 +161,9 @@ Scarlets::$registry['Initialize'] = function(){
 	// Initialize configuration
 	$configPath = $path.'/config';
 	Scarlets\Config::Path($configPath);
+
+	if($reg['config']['app.url_path'] !== false)
+		$_SERVER['REQUEST_URI'] = explode($reg['config']['app.url_path'], $_SERVER['REQUEST_URI'])[1];
 
 	unset($reg['Initialize']);
 }; Scarlets::registryExec('Initialize');

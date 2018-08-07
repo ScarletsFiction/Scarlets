@@ -37,10 +37,6 @@ Route::get('/hello/{0}', function($message = null){
     return Route::view('hello', ['message' => 'Hello, '.$message]);
 });
 
-Route::get('/test', function(){
-	Route::get('/hello/{0}', 'Redirect');
-});
-
 Route::namespaces('User')->group(function(){
     // Class controller at "App\Http\Controllers\User" Namespace
 });

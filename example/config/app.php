@@ -18,11 +18,24 @@ return [
 | Application Hostname
 |--------------------------------------------------------------------------
 |
-| This URL is used by the by internal service if there are runtime task or
+| This hostname is used by the by internal service if there are runtime task or
 | being accessed from the console.
 |
 */
 'hostname' => 'localhost',
+
+/*
+|--------------------------------------------------------------------------
+| Application Sub URL Path
+|--------------------------------------------------------------------------
+|
+| If you're have a sub-path for your application. you need to fill
+| this with the URL path instead (without hostname and started with '/')
+| If you're already handle the public folder with proxy handler,
+| then leave this with false
+|
+*/
+'url_path' => getRootURL(), // 'url_path' => false,
 
 /*
 |--------------------------------------------------------------------------
@@ -88,7 +101,7 @@ return [
 | (errorlog) Output to 'error.log'
 |
 */
-'log' => 'nothing',
+'log' => 'single',
 'log_level' => 'debug',
 
 /*
@@ -117,3 +130,36 @@ return [
 'console_user' => 'You',
 
 ];
+
+// You should remove this if you're not using the 'hello world' example
+// This function obtaining the root URL when not using proxy handler
+function getRootURL(){
+	if(!isset($_SERVER['REQUEST_URI'])) return false;
+
+	// Check if the app have 'public' path
+	if(strpos($_SERVER['REQUEST_URI'], '/public/') !== false){
+		$temp = \Scarlets::$registry['path.app'];
+		
+		// Replace windows directory separator
+		if(DIRECTORY_SEPARATOR !== '/') $temp = str_replace('\\', '/', $temp);
+
+		// Add 'public' path to app path
+		$temp .= '/public/';
+
+		// Get the public directory path
+		$temp2 = explode('/public/', $_SERVER['REQUEST_URI']);
+		if(count($temp2) !== 1 && $temp2[0] !== ''){
+			$temp2 = $temp2[0].'/public';
+
+			// Check if the public directory path was matched with app path
+			// temp = D:/some/path/to/scarlets/example/public/
+			// temp2 = /scarlets/example/public
+			if(strpos($temp, $temp2) !== false){
+				return $temp2;
+			}
+		}
+	}
+
+	// Otherwise it may not the app's public directory path
+	return false;
+}

@@ -77,4 +77,7 @@ class Query{
 		$temp = '';
 		return $temp;
 	}
+
+	// Public directory path based on app.url_path config
+	public static $home = '';
 }

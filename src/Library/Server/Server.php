@@ -89,7 +89,7 @@ function start($port=80, $address='localhost'){
 }
 
 function request(&$socket, &$headers, &$body){
-	$httpstatuscode = 200;
+	$httpstatuscode = 0;
 
 	ob_start(); // Get all process output
 
@@ -128,21 +128,49 @@ function request(&$socket, &$headers, &$body){
 
 	if(!$found){
 		$router = &Scarlets::$registry['Route']['STATUS'];
-		if(isset($router['404'])){
+
+		// Check for local file
+		$path = Scarlets::$registry['path.public'].$headers['URI'];
+		if(is_dir($path)){
+			if(substr($headers['URI'], -1) === '/') {
+				if(is_file($path.'index.php')){
+					ob_clean();
+					$output = "HTTP/1.1 200 OK".$output;
+					try{
+						include $path.'index.php';
+						socket_write($socket, $output.ob_get_contents());
+						$httpstatuscode = 200;
+					}catch(\Exception $e){
+						Scarlets\Error::checkUncaughtError();
+					}
+				}
+				else if(is_file($path.'index.html'))
+					include $path.'index.html';
+			} else {
+				socket_write($socket, "HTTP/1.1 302 Moved Temporary");
+				socket_write($socket, "\nLocation: $headers[URI]/".$output);
+				$httpstatuscode = 302;
+			}
+		}
+
+		// Check if there are 404 http handler
+		elseif(isset($router['404'])){
 			ob_clean();
 			$output = "HTTP/1.1 404 Not Found".$output;
-			$router['404']();
-			$httpstatuscode = 404;
-
-			// Make sure there are no error before output
-			if(!Scarlets\Error::$hasError)
+			try{
+				$router['404']();
 				socket_write($socket, $output.ob_get_contents());
+				$httpstatuscode = 404;
+			}catch(\Exception $e){
+				Scarlets\Error::checkUncaughtError();
+			}
+
 		}
 	}
 
 	// Make sure there are no error before output
 	if(!Scarlets\Error::$hasError){
-		if($httpstatuscode === 200){
+		if($httpstatuscode === 0){
 			$output = "HTTP/1.1 200 OK".$output;
 			socket_write($socket, $output.ob_get_contents());
 		}
@@ -151,10 +179,13 @@ function request(&$socket, &$headers, &$body){
 		if(isset($router['500'])){
 			ob_clean();
 			$output = "HTTP/1.1 500 Internal Server Error".$output;
-			$router['500']();
 			$httpstatuscode = 500;
-
-			socket_write($socket, $output.ob_get_contents());
+			try{
+				$router['500']();
+				socket_write($socket, $output.ob_get_contents());
+			}catch(\Exception $e){
+				Scarlets\Error::checkUncaughtError();
+			}
 		}
 	}
 
