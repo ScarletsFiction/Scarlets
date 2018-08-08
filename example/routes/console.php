@@ -5,7 +5,8 @@
 | Console Routes
 |--------------------------------------------------------------------------
 |
-| This is where you can register console command.
+| This is where you can register console command. You can also use 
+| 'help' command to view all command list
 |
 */
 use \Scarlets\Console;
@@ -31,8 +32,8 @@ Console::command('echo alex {*}', function($message){
 Console::command('echo {*}', function($all){
 
 	// Split the arguments again
-	Console::args("{0} {*}", function($name, $all){
-		echo "$name> $all";
+	Console::args("{0} {1}", function($name, $text){
+		echo "$name> $text";
 	});
 
 	// Check if args above was not being called
@@ -40,16 +41,12 @@ Console::command('echo {*}', function($all){
 		echo "Computer> $all";
 });
 
-Console::help('echo', function(){
-	echo("Looks like you're missing something.
-You need to type 'echo (anything here)' to get echo back.");
-});
-
-Console::command('list', function(){
-	print_r(Console::collection());
-});
+Console::help('echo', 
+	"Looks like you're missing something.
+	\rYou need to type 'echo (anything here)' to get echo back."
+);
 
 Console::command('input', function(){
 	echo("Type something invisible: ");
 	print_r("Result: ".Console::hiddenInput());
-});
+}, 'Type something');

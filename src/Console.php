@@ -23,23 +23,26 @@ class Console{
 		];
 	*/
 	public static $commands = [];
+	public static $commandsDescription = [];
 	public static $found = false;
 	public static $args = false;
 
 	public static function Initialization(){
-		$argv = $_SERVER['argv'];
+		$argv = &$_SERVER['argv'];
 		unset($argv[0]);
 
 		include_once "Internal/Console.php";
 
-		if(count($argv) === 0){
-			// Start the console
+		// Start the console
+		if(count($argv) === 0)
 			self::interactiveShell();
-		}
 
 		// Start executing command
-		else
+		else{
+			if(in_array($argv[1], ['/h', '/?', '-h', '--help']))
+				$argv = ['help'];
 			self::interpreter(implode(' ', $argv));
+		}
 	}
 
 	public static function interactiveShell(){
@@ -100,6 +103,17 @@ class Console{
 		$pattern = array_values(array_filter($pattern));
 		$argsLen = count($pattern);
 
+		if($argsLen === 1 && in_array($pattern[0], ['/h', '/?', '-h', '--help'])){
+			if(isset(self::$commands[$firstword.'.h'])){
+				echo("\n");
+				$commands = &self::$commands[$firstword.'.h'];
+				if(is_callable($commands)) $commands();
+				else print_r($commands);
+				echo("\n");
+				return;
+			}
+		}
+
 		$key = $firstword.'.'.$argsLen;
 		$commands = false;
 		if(isset(self::$commands[$key])){
@@ -107,7 +121,7 @@ class Console{
 
 			// Check if zero argument
 			if($argsLen === 0){
-				$return = call_user_func($commands);
+				$return = $commands();
 				echo("\n");
 				return $return;
 			}
@@ -180,9 +194,11 @@ class Console{
 		}
 
 		if(isset(self::$commands[$firstword.'.h'])){
-			$return = call_user_func(self::$commands[$firstword.'.h']);
+			$commands = &self::$commands[$firstword.'.h'];
+			if(is_callable($commands)) $commands();
+			else print_r($commands);
 			echo("\n");
-			return $return;
+			return;
 		}
 
 		echo("$firstword command with ".$argsLen." argument was not registered\n");
@@ -197,8 +213,12 @@ class Console{
 			}
 			return;
 		}
+
 		$pattern = explode(' ', $pattern);
 		$patternLen = count($pattern);
+
+		if(in_array('{*}', $pattern) === false && count(self::$args) !== $patternLen)
+			return;
 
 		$arguments = [];
 		for ($i=0; $i < $patternLen; $i++) {
@@ -241,11 +261,14 @@ class Console{
 		(pattern) ..
 		(callback) ..
 	*/
-	public static function command($pattern, $callback){
+	public static function command($pattern, $callback, $description=''){
 		if(is_array($pattern)){
 			foreach ($pattern as &$value) {
 				self::command($value, $callback);
 			}
+
+			if($description)
+				self::$commandsDescription[explode(' ', $pattern[0])[0]] = $description;
 			return;
 		}
 
@@ -255,6 +278,9 @@ class Console{
 		unset($pattern[0]);
 		$pattern = array_values(array_filter($pattern));
 		$patternLen = count($pattern);
+
+		if($description)
+			self::$commandsDescription[$key] = $description;
 
 		if($special)
 			$key = $key.'.s';
@@ -289,7 +315,7 @@ class Console{
 
 	public static function help($pattern, $callback){
 		if(strpos($pattern, ' ') !== false)
-			throw new \Exception("You can't use space on console help's pattern ($pattern)");
+			throw new \Exception("Console help's pattern can't have a space ($pattern)");
 
 		self::$commands[$pattern.'.h'] = &$callback;
 	}
@@ -319,19 +345,24 @@ class Console{
 		foreach ($commands as $key => $value) {
 			$key = explode('.', $key);
 			$type = array_pop($key);
+			$key = implode('.', $key);
+
+			if(isset(self::$commandsDescription[$key])){
+				$list[$key] = self::$commandsDescription[$key] . ($type === 'h'?' {help}':'');
+				continue;
+			}
+			
+			if(isset($list[$key]))
+				continue;
+
 			if($type === 'h')
-				$list[implode('.', $key).'.h'] = '{Help}';
+				$list[$key] = 'Have a help section';
 
 			elseif($type === '0')
-				$list[implode('.', $key)] = '{Function}';
+				$list[$key] = 'Function';
 
-			else{
-				$args = [];
-				foreach ($value as $arg) {
-					$args[] = implode(' ', $arg[1]);
-				}
-				$list[implode('.', $key)] = $args;
-			}
+			else
+				$list[$key] = 'No description';
 		}
 		return $list;
 	}
@@ -354,5 +385,31 @@ class Console{
 			$color_ = "36m";
 
 		return sprintf("\x1b[%s%s\x1b[0m", $color_, $text);
+	}
+
+	public static function table($data){
+		$spacing = [0,0,0,0,0,0];
+		$len = count($data[0]) - 1; // We don't need to calculate the last column
+
+		// Find longest text
+		foreach($data as &$value){
+			for($i=0; $i < $len; $i++){
+				if($spacing[$i] < strlen($value[$i]))
+					$spacing[$i] = strlen($value[$i]) + 2;
+			}
+		}
+
+		$len++;
+		// Give spacing and print
+		foreach($data as &$value){
+			for($i=0; $i < $len; $i++){
+				print($value[$i]);
+				if($i != $len-1)
+					for ($a=0; $a < $spacing[$i] - strlen($value[$i]); $a++) { 
+						print ' ';
+					}
+			}
+			print("\n");
+		}
 	}
 }

@@ -18,8 +18,6 @@ function create($address, $port, $readCallback, $connectionCallback=0){
 
     $sock = socket_create(AF_INET, SOCK_STREAM, 0);
     socket_bind($sock, $address, $port) or die('Could not bind to address');
-
-    echo "\nListening on http://$address".($port !== 80 ? ":$port" : '')."\nUse CTRL+C 2 times to exit\n\n";
     socket_listen($sock);
     $clients = [$sock];
 
@@ -87,8 +85,6 @@ function simple($address, $port, $readCallback){
 
 	$sock = socket_create(AF_INET, SOCK_STREAM, 0);
 	socket_bind($sock, $address, $port) or die('Could not bind to address');
-
-	echo "\nListening on http://$address".($port !== 80 ? ":$port" : '')."\nUse CTRL+C 2 times to exit\n\n";
 	socket_listen($sock);
 
 	// Avoid too many function call in loop

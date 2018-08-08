@@ -38,7 +38,7 @@ class Cache{
 ---------------------------------------------------------------------------
 |
 |  - Don't use JSON for serialize cache because it's slow on large data
-|  - Don't use native serialize for user input because it's exploitable
+|  - Don't use native unserialize for user input because it's exploitable
 |  - If you use native serialize, make sure you save it to file and load
 |	 from that file only
 |

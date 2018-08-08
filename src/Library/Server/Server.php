@@ -17,6 +17,8 @@ function start($port=80, $address='localhost'){
 	Scarlets::$isConsole = false;
 	$_SERVER['SERVER_NAME'] = &$address;
 
+    echo Scarlets\Console::chalk("\nScarlets server started on ", 'green')."http://$address".($port !== 80 ? ":$port" : '')."\nUse CTRL+C 2 times to exit\n\n";
+
 	// Create the socket server
 	Scarlets\Library\Socket\create($address, $port, function($socket, $data){
 		global $publicFolder;
@@ -55,7 +57,7 @@ function start($port=80, $address='localhost'){
 				flush();
 			}
 			@fclose($file);
-	    	return;
+	    	return true;
 	    }
 
 	    unset($headers[0]);
@@ -87,12 +89,14 @@ function start($port=80, $address='localhost'){
 
 	    // Output request to the console
 	    print_r("$_SERVER[REMOTE_ADDR] ($headers[METHOD])> $headers[URI]");
-	    request($socket, $headers, $body);
+	    $httpstatuscode = request($socket, $headers, $body);
+		print_r(" [$httpstatuscode]\n");
+		print_r($headers['User-Agent']."\n");
 	    return true;
 	});
 }
 
-function request(&$socket, &$headers, &$body){
+function &request(&$socket, &$headers, &$body){
 	$httpstatuscode = 0;
 
 	ob_start(); // Get all process output
@@ -128,7 +132,7 @@ function request(&$socket, &$headers, &$body){
 		}
 	}
 
-	$output = "\nServer: Scarlets Mini Server\nConnection: close\nContent-Type: text/html\r\n\r\n";
+	$output = "\nServer: Scarlets\nConnection: close\nContent-Type: text/html\r\n\r\n";
 
 	if(!$found){
 		$router = &Scarlets::$registry['Route']['STATUS'];
@@ -200,9 +204,7 @@ function request(&$socket, &$headers, &$body){
 	// Output error to console
 	if(Scarlets\Error::$hasError)
 		print_r(Scarlets\Error::getUnreadError());
-
-	print_r(" [$httpstatuscode]\n");
-	print_r($headers['User-Agent']."\n");
+	return $httpstatuscode;
 }
 
 function &parsePostData(&$postRaw)
