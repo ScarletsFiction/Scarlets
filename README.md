@@ -3,7 +3,7 @@
 [![Written by](https://img.shields.io/badge/Written%20by-ScarletsFiction-%231e87ff.svg)](https://github.com/ScarletsFiction/)
 [![Software License](https://img.shields.io/badge/License-MIT-brightgreen.svg)](LICENSE)
 [![Build Status](https://api.travis-ci.org/ScarletsFiction/Scarlets.svg?branch=master)](https://travis-ci.org/ScarletsFiction/Scarlets)
-[![Tweet](https://img.shields.io/twitter/url/http/shields.io.svg?style=social)](https://twitter.com/intent/tweet?text=Scarlets%20is%20a%20web%20framework%20for%20php%20that%20can%20help%20you%20build%20a%20website%20with%20API%20and%20another%20build-in%20system.%20This%20framework%20does%20a%20lazyload%20of%20it's%20system,%20so%20you%20can%20select%20which%20system%20that%20you%20want%20to%20use%20to%20keep%20your%20website%20in%20a%20high%20performance%20state&url=https://github.com/ScarletsFiction/Scarlets&via=github&hashtags=scarlets,framework,php,)
+[![Tweet](https://img.shields.io/twitter/url/http/shields.io.svg?style=social)](https://twitter.com/intent/tweet?text=Scarlets%20is%20a%20web%20framework%20for%20php%20that%20can%20help%20you%02build%20a%20website%20with%20API%20and%20another%20build-in%20system.%20This%20framework%20does%20a%20lazyload%20of%20it's%20system,%20so%20you%20can%20select%20which%20system%20that%20you%20want%20to%20use%20to%20keep%20your%20website%20in%20a%20high%20performance%20state&url=https://github.com/ScarletsFiction/Scarlets&via=github&hashtags=scarlets,framework,php,)
 
 # Scarlets
 > This framework still under development
@@ -25,19 +25,22 @@ Make sure you have installed PHP on your computer (Windows and OSX can use [XAMP
 If not, then you need to set it up on the [environment variables](https://www.youtube.com/watch?v=51IlfNzZVGo).
 
 When the php command is available, open your command prompt and enter this line
-> $ php https://raw.githubusercontent.com/ScarletsFiction/Scarlets/master/net-install
+> $ php -r "copy('https://raw.githubusercontent.com/ScarletsFiction/Scarlets/master/net-install', 'net-install');"
+> $ php net-install
 
 The framework will automatically installed, and the example files will be prepared on your project folder.
 
 ## Using the Scarlets Console
 
 This framework has a build-in server by calling
-> $ php scarlets serve [port] [address] [options]
-Address: localhost, network, IPAddress
-Options: --log, --verbose
+> $ php scarlets serve (port) (address) (options)
+> Address: localhost, network, IPAddress
+> Options: --log, --verbose
+
 ![alt text](https://raw.githubusercontent.com/ScarletsFiction/Scarlets/master/images/serve_command.webp)
 
 You can also create your own command for your project
+
 ![alt text](https://raw.githubusercontent.com/ScarletsFiction/Scarlets/master/images/interactive_console.webp)
 
 ## Upgrade
