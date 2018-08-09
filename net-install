@@ -6,9 +6,18 @@ if(file_exists('scarlets')){
 	}
 }
 
+$opts = [
+  'http'=>[
+    'method'=>"GET",
+    'header'=>"User-Agent: ScarletsFramework\n"
+  ]
+];
+
+$context = stream_context_create($opts);
+
 $root = __DIR__;
 
-$status = file_get_contents('https://api.travis-ci.org/ScarletsFiction/Scarlets.svg?branch=master');
+$status = file_get_contents('https://api.travis-ci.org/ScarletsFiction/Scarlets.svg?branch=master', 0, $context);
 if(strpos($status, 'fail')!==false){
 	echo("\nCurrently the framework is unstable");
 }
@@ -25,8 +34,12 @@ if(trim($line) != 'y'){
 fclose($handle);
 
 echo(" - Determining archive size\n");
-$headers = get_headers('https://github.com/ScarletsFiction/Scarlets/archive/master.zip', TRUE);
-$filesize = round(intval($headers['Content-Length'])/1024);
+$headers = get_headers('https://github.com/ScarletsFiction/Scarlets/archive/master.zip', true);
+try{
+	$filesize = round(intval($headers['Content-Length'])/1024);
+} catch(\Exception $e) {
+	$filesize = '?';
+}
 
 echo(" - Downloading repository ($filesize KB)\n");
 file_put_contents('master.zip', file_get_contents('https://github.com/ScarletsFiction/Scarlets/archive/master.zip'));
