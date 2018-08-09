@@ -27,9 +27,9 @@ return [
     //     'table' => 'cache',
     // ]
 
-    // 'file' => [
-    //     'path' => $AppPath.'framework/cache',
-    // ]
+    'file' => [
+        'path' => $frame['path.app.storage'].'/cache',
+    ]
 ],
 
 ];

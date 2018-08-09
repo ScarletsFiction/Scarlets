@@ -12,7 +12,7 @@ class Group{
 class Handler{
 	public static function Initialize(){
 		// Create some reference to registry
-		Scarlets\Route::$instantOutput = &Scarlets::$registry['config']['app.instant'];
+		Scarlets\Route::$instantOutput = &Scarlets\Config::$data['app.instant'];
 
 		// If this running on console
 		if(Scarlets::$isConsole){

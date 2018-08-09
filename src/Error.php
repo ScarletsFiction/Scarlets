@@ -1,6 +1,7 @@
 <?php 
 
 namespace Scarlets;
+use \Scarlets;
 
 /*
 ---------------------------------------------------------------------------
@@ -20,7 +21,7 @@ class Error{
 	public static $currentError = [];
 
 	public static function warning($message){
-		if(!\Scarlets::$registry['config']['app.debug']){
+		if(!Scarlets\Config::$data['app.debug']){
 
 		}
 	}
@@ -48,10 +49,10 @@ class Error{
 	    // Save to last error
 	    self::$lastError[] = $file.$line;
 	    
-	    if(isset(\Scarlets::$registry['error']) && \Scarlets::$registry['error']) return;
-	    $reg = &\Scarlets::$registry;
+	    if(isset(Scarlets::$registry['error']) && Scarlets::$registry['error']) return;
+	    $reg = &Scarlets::$registry;
 	    
-	    if(!\Scarlets::$isConsole) $reg['error'] = true;
+	    if(!Scarlets::$isConsole) $reg['error'] = true;
 	    
 	    $trace = explode("\nStack trace:", $message);
 	    if(count($trace) === 1){
@@ -74,13 +75,13 @@ class Error{
 	    $trace = explode('Scarlets\Error::ErrorHandler', $trace)[1];
 	    $trace = explode("\n", $trace, 2)[1];
 
-	    $breakline = \Scarlets::$isConsole ? '':' <br>';
+	    $breakline = Scarlets::$isConsole ? '':' <br>';
 	    $url = 'Scarlets Console';
-	    if(!isset($_SERVER['SERVER_NAME']) && !\Scarlets::$isConsole){
+	    if(!isset($_SERVER['SERVER_NAME']) && !Scarlets::$isConsole){
 	    	$breakline = '';
 	    	$url = "Startup Handler";
 	    }
-	    else if(!\Scarlets::$isConsole)
+	    else if(!Scarlets::$isConsole)
 	    	$url = "http".(isset($_SERVER['HTTPS'])?'s':'').'://'.$_SERVER['SERVER_NAME'].$_SERVER['REQUEST_URI'];
 
 $message = "Exception type: ".self::ErrorType($severity).";$breakline

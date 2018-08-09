@@ -50,18 +50,11 @@ class LocalFile{
 	}
 
 	public static function search($path, $name, $recursive=false){
-		$path_ = dirname($path);
-		if($handle = opendir($$path_)){
-		    while (false !== ($entry = readdir($handle))) {
-		        if($entry === $name){
-		            return $path_.$entry;
-		        } elseif($recursive && is_dir($$path_.$entry)) {
-		        	return self::search($path, $name, $recursive);
-		        }
-		    }
-		    closedir($handle);
-		}
-		return false;
+	    $dirIte = new RecursiveDirectoryIterator($path);
+	    if($recursive)
+	    	$dirIte = new RecursiveIteratorIterator($dirIte);
+	    $found = new RegexIterator($recIte, $pattern, RegexIterator::GET_MATCH);
+	    return array_keys(iterator_to_array($found));
 	}
 
 	public static function time($path){
@@ -91,7 +84,7 @@ class LocalFile{
 			$rangeStart = $ranges[0][0];
 			$rangeEnd = $ranges[0][1];
 
-			// Because it's using looping so it's separated
+			// Because it's using looping, so it's separated
 			// Fold this block if you see this
 				if($readChar){
 					while(($get = fgetc($handle)) !== false){
@@ -164,6 +157,7 @@ class LocalFile{
 			// Decrease our line counter
 			$lines -= substr_count($chunk, "\n");
 		}
+
 		// While we have too many lines
 		// (Because of buffer size we might have read too many)
 		while ($lines++ < 0) {

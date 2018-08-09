@@ -51,7 +51,7 @@ class Console{
 		$fp = fopen("php://stdin","r");
 		$lastInput = microtime();
 
-		$config = &\Scarlets::$registry['config'];
+		$config = &\Scarlets\Config::$data;
 		while(1){
 			echo($config['app.console_user']."> ");
 			if(self::interpreter(rtrim(fgets($fp, 1024))))

@@ -1,5 +1,6 @@
 <?php
 namespace Scarlets;
+use \Scarlets;
 
 /*
 ---------------------------------------------------------------------------
@@ -28,12 +29,17 @@ Console::command('help', function(){
 	Console::table($table);
 }, 'Show registered command list');
 
-Console::command(['serve {0} {1} {2}', 'serve {0} {1}', 'serve {0}', 'serve'], function($port=8000, $address=0, $options=0){
-	include_once \Scarlets::$registry['path.framework.library']."/Server/Server.php";
-
+Console::command(['serve {0} {1} {*}', 'serve {0} {1}', 'serve {0}', 'serve'], function($port=8000, $address='localhost', $options=0){
 	if($address === 'network')
 		$address = gethostbyname(gethostname());
-	Library\Server\start(is_numeric($port) ? $port : 8000, $address, $options);
+
+	if($options !== 0){
+		$temp = explode(' ', $options);
+		$options = 0;
+		if(in_array('--verbose', $temp)) $options |= 1;
+		if(in_array('--log', $temp)) $options |= 2;
+	}
+	Scarlets\Library\Server::start(is_numeric($port) ? $port : 8000, $address, $options);
 }, 'Serve your app from your computer');
 
 Console::help('serve', 

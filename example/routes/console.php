@@ -10,6 +10,8 @@
 |
 */
 use \Scarlets\Console;
+use \App\BCD;
+
 
 Console::command('countdown {0} {1}', function($start, $end){
 	while ($start >= $end) {

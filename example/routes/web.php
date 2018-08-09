@@ -18,7 +18,7 @@ Route::get('/', function(){
 		'title'=>'Home'
 	]);
 	Serve::view('home', [
-		'time' => Language\get('time.current_date', [date('d M Y')])
+		'time' => Language::get('time.current_date', [date('d M Y')])
 	]);
 	Serve::view('static.footer');
 });

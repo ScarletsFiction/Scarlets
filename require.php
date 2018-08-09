@@ -13,6 +13,9 @@
 | include this file.
 |
 */
+use Scarlets\Config;
+use Scarlets\Route;
+
 class Scarlets{
 	/*
 		> Website Initialization
@@ -21,11 +24,11 @@ class Scarlets{
 	*/
 	public static function Website(){
 		include_once __DIR__."/src/Route.php";
-		Scarlets\Route\Handler::Initialize();
+		Route\Handler::Initialize();
 
 		// Check if the public folder is relative
-		if(self::$registry['config']['app.url_path'] !== false)
-			Scarlets\Route\Query::$home = self::$registry['config']['app.url_path'];
+		if(Config::$data['app.url_path'] !== false)
+			Route\Query::$home = Config::$data['app.url_path'];
 
 		// Include required router
 		include_once self::$registry['path.app']."/routes/status.php";
@@ -36,9 +39,8 @@ class Scarlets{
 		if(class_exists('\\Scarlets\\Console')){
 			self::$isConsole = true;
 			return;
-		} else {
+		} else
 			header("X-Framework: ScarletsFiction");
-		}
 
 		$jsonRequest = file_get_contents('php://input');
 		if($jsonRequest)
@@ -63,7 +65,6 @@ class Scarlets{
 
 		Scarlets\Console::Initialization();
 	}
-
 
 	/*
 		> Listen to shutdown event
@@ -120,7 +121,17 @@ class Scarlets{
 			return call_user_func_array($ref, $params);
 		} else return call_user_func_array(self::$registry[$keys], $params);
 	}
+
+	public static function AppClassLoader($class){
+		if(substr($class, 0, 4) === 'App\\')
+	    	include self::$registry['path.app_controller'].'/'.substr($class, 4).'.php';
+
+		elseif(substr($class, 0, 9) === 'Scarlets\\')
+	    	include self::$registry['path.framework.src'].'/'.substr($class, 9).'.php';
+	}
 }
+
+spl_autoload_register('\\Scarlets::AppClassLoader');
 
 include_once __DIR__."/src/Config.php";
 include_once __DIR__."/src/Error.php";
@@ -130,11 +141,11 @@ Scarlets::onShutdown(function(){
 	$httpCode = http_response_code();
 
 	// Take the higher status code
-	if(Scarlets\Route::$statusCode > $httpCode)
-		$httpCode = Scarlets\Route::$statusCode;
+	if(Route::$statusCode > $httpCode)
+		$httpCode = Route::$statusCode;
 
 	// Redirect 404 or 500 http status
-	if($httpCode !== 200) Scarlets\Route\Serve::httpCode($httpCode);
+	if($httpCode !== 200) Route\Serve::httpCode($httpCode);
 
 	$error = error_get_last();
     if($error && (!isset(Scarlets::$registry['error']) || !Scarlets::$registry['error']))
@@ -158,6 +169,7 @@ Scarlets::$registry['Initialize'] = function(){
 	$reg = &Scarlets::$registry;
 	$reg['path.app'] = $path;
 	$reg['path.public'] = $path.'/public';
+	$reg['path.app_controller'] = $path.'/app';
 	$reg['path.views'] = $path.'/resources/views';
 	$reg['path.lang'] = $path.'/resources/lang';
 	$reg['path.plate'] = $path.'/resources/plate';
@@ -167,21 +179,33 @@ Scarlets::$registry['Initialize'] = function(){
 	$reg['path.view_cache'] = $path.'/storage/framework/views';
 	$reg['path.logs'] = $path.'/storage/logs';
 
+	$reg['path.framework.src'] = __DIR__.'/src';
 	$reg['path.framework.library'] = __DIR__.'/src/Library';
 
 	// Initialize configuration
-	$configPath = $path.'/config';
-	Scarlets\Config::Path($configPath);
+	Config::load('app');
+	$config = &Config::$data;
 
 	if(!isset($_SERVER['REQUEST_URI'])){
 		$_SERVER['REQUEST_METHOD'] = 'GET';
 		$_SERVER['REQUEST_URI'] = '/';
 	}
 
-	if($reg['config']['app.url_path'] !== false)
-		$_SERVER['REQUEST_URI'] = explode($reg['config']['app.url_path'], $_SERVER['REQUEST_URI'])[1];
+	if($config['app.url_path'] !== false)
+		$_SERVER['REQUEST_URI'] = explode($config['app.url_path'], $_SERVER['REQUEST_URI'])[1];
 
 	unset($reg['Initialize']);
 }; Scarlets::registryExec('Initialize');
 
-include_once __DIR__."/src/Loader.php";
+/*
+---------------------------------------------------------------------------
+| Micro-optimization
+---------------------------------------------------------------------------
+|
+| Write less dynamic class, and use namespace or static class.
+| Scarlets library data can be stored on the registry.
+| \Scarlets::$registry['LibrayName'] = ["data"=>"here"];
+|
+| To maintain code readability, you can separate some files.
+|
+*/
