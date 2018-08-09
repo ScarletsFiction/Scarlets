@@ -25,7 +25,8 @@ Make sure you have installed PHP on your computer (Windows and OSX can use [XAMP
 If not, then you need to set it up on the [environment variables](https://www.youtube.com/watch?v=51IlfNzZVGo).
 
 When the php command is available, open your command prompt and enter this line
-> $ php -r "copy('https://raw.githubusercontent.com/ScarletsFiction/Scarlets/master/net-install', 'net-install');"
+
+> $ php -r "copy('https://raw.githubusercontent.com/ScarletsFiction/Scarlets/master/net-install', 'net-install');"<br>
 > $ php net-install
 
 The framework will automatically installed, and the example files will be prepared on your project folder.
@@ -33,9 +34,9 @@ The framework will automatically installed, and the example files will be prepar
 ## Using the Scarlets Console
 
 This framework has a build-in server by calling
-> $ php scarlets serve (port) (address) (options)
-> Address: localhost, network, IPAddress
-> Options: --log, --verbose
+> $ php scarlets serve (port) (address) (options)<br><br>
+> Address: localhost, network, IPAddress<br>
+> Options: --log, --verbose<br>
 
 ![alt text](https://raw.githubusercontent.com/ScarletsFiction/Scarlets/master/images/serve_command.webp)
 
@@ -47,7 +48,9 @@ You can also create your own command for your project
 Scarlets have internal upgrade feature
 > $ php scarlets upgrade
 
-But if there any error and the framework was unable to be loaded, please clone this repository and extract it to `vendor/scarletsfiction/scarlets`
+But if there are any error and the framework was unable to be loaded
+
+Please clone this repository and extract it to `vendor/scarletsfiction/scarlets`
 
 ## Contribution
 
@@ -57,13 +60,11 @@ Keep the code simple and clear.
 
 ## Support
 
-If you have any question please ask on stackoverflow with tags 'scarlets-php'.
+If you have any question please ask on stackoverflow with tags 'scarlets-php'.<br>
 But if you found bug or feature request, you post an issue on this repository.
 
-For any private support, you can contact the author of this framework:
-
-StefansArya (Indonesia, English)
-
+For any private support, you can contact the author of this framework:<br>
+StefansArya (Indonesia, English)<br>
 stefansarya1 at gmail
 
 ## License
