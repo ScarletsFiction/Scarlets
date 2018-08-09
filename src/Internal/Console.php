@@ -19,6 +19,10 @@ Console::command('cls', function(){
 	Console::clear();
 }, 'Clear console');
 
+Console::command(['upgrade {0}', 'upgrade'], function($options=0){
+	include "Upgrade.php";
+}, 'Clear console');
+
 Console::command('help', function(){
 	echo("\nType [command /?] to see help section if provided\n\n");
 	$list = Console::collection();

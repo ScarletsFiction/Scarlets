@@ -1,0 +1,91 @@
+<?php
+if(file_exists('scarlets')){
+	if(is_dir('vendor/scarletsfiction/scarlets/')){
+		echo("Looks like Scarlets Framework already installed\n");
+		die("Use `php scarlets upgrade` if you want to update\n");
+	}
+}
+
+$root = __DIR__;
+
+$status = file_get_contents('https://api.travis-ci.org/ScarletsFiction/Scarlets.svg?branch=master');
+if(strpos($status, 'fail')!==false){
+	echo("\nCurrently the framework is unstable");
+}
+
+echo "\nDo you want to use this directory for your project? (y/n) ";
+$handle = fopen ("php://stdin","r");
+$line = fgets($handle);
+if(trim($line) != 'y'){
+    echo "Please type your directory:\n";
+	$root = trim(fgets($handle));
+	if(!is_dir($root))
+		mkdir($root, 0777, true);
+}
+fclose($handle);
+
+echo(" - Determining archive size\n");
+$headers = get_headers('https://github.com/ScarletsFiction/Scarlets/archive/master.zip', TRUE);
+$filesize = round(intval($headers['Content-Length'])/1024);
+
+echo(" - Downloading repository ($filesize KB)\n");
+file_put_contents('master.zip', file_get_contents('https://github.com/ScarletsFiction/Scarlets/archive/master.zip'));
+
+echo(" - Extracting files\n");
+$zip = new ZipArchive;
+$res = $zip->open('master.zip');
+
+mkdir($root.'/vendor/scarletsfiction/', 0777, true);
+$zip->extractTo($root.'/vendor/scarletsfiction/');
+$zip->close();
+rename($root.'/vendor/scarletsfiction/Scarlets-master', $root.'/vendor/scarletsfiction/scarlets');
+
+echo(" - Moving files\n");
+$list = new RecursiveDirectoryIterator($root.'/vendor/scarletsfiction/scarlets/example/');
+$list = new RecursiveIteratorIterator($list);
+$list = new RegexIterator($list, '/example.(.*[^\.])$/', RegexIterator::GET_MATCH);
+foreach($list as $path){
+	$dir = $root.'/'.dirname($path[1]);
+	if(!is_dir($dir))
+		mkdir($dir, 0777, true);
+	rename($root.'/vendor/scarletsfiction/scarlets/'.$path[0], $root.'/'.$path[1]);
+}
+
+echo(" - Changing root folder (root.php)\n");
+file_put_contents($root.'/root.php', str_replace('/../require.php', '/vendor/scarletsfiction/scarlets/require.php', file_get_contents($root.'/root.php')));
+
+echo(" - Delete temporary file\n");
+try{
+	deleteContent($root.'/vendor/scarletsfiction/scarlets/example/');
+	rmdir($root.'/vendor/scarletsfiction/scarlets/example/');
+
+	deleteContent($root.'/vendor/scarletsfiction/scarlets/evaluate/');
+	rmdir($root.'/vendor/scarletsfiction/scarlets/evaluate/');
+
+	deleteContent($root.'/vendor/scarletsfiction/scarlets/images/');
+	rmdir($root.'/vendor/scarletsfiction/scarlets/images/');
+
+	deleteContent($root.'/vendor/scarletsfiction/scarlets/tests/');
+	rmdir($root.'/vendor/scarletsfiction/scarlets/tests/');
+	unlink('master.zip');
+} catch(\Exception $e) {
+	echo(" - Some temporary files was not found");
+}
+
+$list = ['.gitignore', '.htaccess', '.travis.yml', 'phpunit.xml'];
+foreach ($list as &$value) {
+	unlink($root.'/vendor/scarletsfiction/scarlets/'.$value);
+}
+echo("\n - Task finished\n");
+
+function deleteContent($path){
+	$iterator = new DirectoryIterator($path);
+	foreach($iterator as $fileinfo){
+		if($fileinfo->isDot()) continue;
+		if($fileinfo->isDir() && deleteContent($fileinfo->getPathname()))
+			@rmdir($fileinfo->getPathname());
+		if($fileinfo->isFile())
+			@unlink($fileinfo->getPathname());
+	}
+	return true;
+}

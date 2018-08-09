@@ -70,8 +70,24 @@ class LocalFile{
 		rename($path, $to);
 	}
 
-	public static function remove($path){
-		if(is_dir($path)) rmdir($path);
+	public static function remove($path, $recursive = false, $pathRemove = true){
+		if(is_dir($path)){
+			if(!$recursive)
+				rmdir($path);
+			else {
+				$iterator = new DirectoryIterator($path);
+				foreach($iterator as $fileinfo){
+					if($fileinfo->isDot()) continue;
+					if($fileinfo->isDir()){
+						self::remove($fileinfo->getPathname(), true, false);
+						@rmdir($fileinfo->getPathname());
+					}
+					if($fileinfo->isFile())
+						@unlink($fileinfo->getPathname());
+				}
+				if($pathRemove) rmdir($path);
+			}
+		}
 		else unlink($path);
 	}
 

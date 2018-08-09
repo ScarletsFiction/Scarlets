@@ -124,10 +124,10 @@ class Scarlets{
 
 	public static function AppClassLoader($class){
 		if(substr($class, 0, 4) === 'App\\')
-	    	include self::$registry['path.app_controller'].'/'.substr($class, 4).'.php';
+	    	include self::$registry['path.app_controller'].'/'.str_replace('\\', '/', substr($class, 4)).'.php';
 
 		elseif(substr($class, 0, 9) === 'Scarlets\\')
-	    	include self::$registry['path.framework.src'].'/'.substr($class, 9).'.php';
+	    	include self::$registry['path.framework.src'].'/'.str_replace('\\', '/', substr($class, 9)).'.php';
 	}
 }
 
