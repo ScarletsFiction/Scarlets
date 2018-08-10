@@ -1,5 +1,5 @@
 <?php
-namespace Scarlets\Library;
+namespace Scarlets\User;
 use \Scarlets;
 
 class Auth{

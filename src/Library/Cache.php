@@ -1,6 +1,6 @@
 <?php 
-
-namespace Scarlets;
+namespace Scarlets\Library;
+use \Scarlets;
 
 /*
 ---------------------------------------------------------------------------

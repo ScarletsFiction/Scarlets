@@ -1,5 +1,5 @@
 <?php
-namespace Scarlets\Library\Mailer;
+namespace Scarlets\Library;
 use \Scarlets;
 
 class Mailer{

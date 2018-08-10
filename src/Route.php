@@ -1,5 +1,4 @@
 <?php 
-
 namespace Scarlets;
 use Scarlets;
 include_once __DIR__."/Internal/Route.php";

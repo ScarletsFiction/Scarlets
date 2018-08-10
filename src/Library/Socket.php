@@ -1,6 +1,7 @@
 <?php
-
 namespace Scarlets\Library;
+use \Scarlets;
+
 class Socket{
     /*
         > Create socket server
@@ -99,5 +100,23 @@ class Socket{
             $readCallback($socket, $data);
             socket_close($socket);
         }
+    }
+
+    public static function ping($domain, $port=80)
+    {
+        $starttime = microtime(true);
+        $file = @fsockopen($domain, $port, $errno, $errstr, 10);
+        if(!is_resource($file))
+            return 0;
+        $stoptime = microtime(true);
+        $status = 0;
+        
+        if(!$file) $status = -1;  // Site is down
+        else{
+            fclose($file);
+            $status = ($stoptime - $starttime) * 1000;
+            $status = floor($status);
+        }
+        return $status;
     }
 }
