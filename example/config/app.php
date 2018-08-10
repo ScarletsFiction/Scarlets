@@ -72,6 +72,17 @@ return [
 'key' => 'MyPassword123',
 'cipher' => 'AES-128-CBC',
 
+// Random/Unique crypto mask
+// Make sure it's different each other
+// If you don't want to use this, let it empty
+'crypto_mask' => [
+	'=='=>['fC3pGz', 'nC9f41', '9C7hfD', '2bChXz'],
+	'='=>['SFh812', 'X8zbD2'],
+	'+'=>['Y83bDx', '3WfFNc'],
+	'/'=>['K2F8hC', '5NFuwB'],
+	':'=>['jC8bFn', 'V4nDin']
+],
+
 /*
 |--------------------------------------------------------------------------
 | Debug Mode
