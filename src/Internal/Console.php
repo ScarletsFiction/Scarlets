@@ -21,7 +21,7 @@ Console::command('cls', function(){
 
 Console::command(['upgrade {0}', 'upgrade'], function($options=0){
 	include "Upgrade.php";
-}, 'Clear console');
+}, 'ScarletsFramework upgrade');
 
 Console::command('help', function(){
 	echo("\nType [command /?] to see help section if provided\n\n");
