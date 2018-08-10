@@ -11,7 +11,8 @@ return [
 | by the framework.
 |
 */
-'select' => 'storage1',
+'app' => 'app',
+'framework' => 'framework',
 
 /*
 |--------------------------------------------------------------------------
@@ -24,9 +25,13 @@ return [
 |
 */
 'storage' => [
-    'storage1' => [
+    'app' => [
         'driver' => 'localfile',
         'root' => 'storage/app',
+    ],
+    'framework' => [
+        'driver' => 'localfile',
+        'root' => 'storage/framework',
     ],
 ],
 

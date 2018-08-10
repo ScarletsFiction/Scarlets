@@ -35,11 +35,10 @@ fclose($handle);
 
 echo(" - Determining archive size\n");
 $headers = get_headers('https://github.com/ScarletsFiction/Scarlets/archive/master.zip', true);
-try{
+if(isset($headers['Content-Length']))
 	$filesize = round(intval($headers['Content-Length'])/1024);
-} catch(\Exception $e) {
+else 
 	$filesize = '?';
-}
 
 echo(" - Downloading repository ($filesize KB)\n");
 file_put_contents('master.zip', file_get_contents('https://github.com/ScarletsFiction/Scarlets/archive/master.zip'));
