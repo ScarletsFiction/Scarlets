@@ -1,6 +1,7 @@
 <?php
-	namespace Scarlets\Library\Database;
+namespace Scarlets\Library;
 
+class Database{
 	/*
 		> Initialize
 		This function will return the connected database handler.
@@ -19,3 +20,4 @@
 				include_once __DIR__."SQL.php";
 		}
 	}
+}
