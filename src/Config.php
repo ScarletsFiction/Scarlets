@@ -14,7 +14,7 @@ use \Scarlets;
 class Config{
 	public static $data = [];
 
-	public static function load($filename){
+	public static function &load($filename){
 		$frame = &Scarlets::$registry;
 		$path = $frame['path.app']."/config/$filename.php";
 		if(file_exists($path)){
@@ -24,9 +24,8 @@ class Config{
 			foreach($data as $key => $value){
 				$config[$filename.'.'.$key] = $value;
 			}
-			return true;
 		}
-		return false;
+		return $config;
 	}
 
 	public static function set($file, $key, $value){

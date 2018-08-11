@@ -1,24 +1,38 @@
 <?php
 namespace Scarlets\Library;
 use \Scarlets;
+use \Scarlets\Config;
+use \Scarlets\Library\Database\SQL;
 
 class Database{
+	public static $connectedDB = [];
+	public static $default = false;
+	public static $credentials = false;
+
 	/*
-		> Initialize
+		> Connect
 		This function will return the connected database handler.
 		If the database haven't connected, it will automatically
-		reconnect.
+		connect.
 	
-		(id) Connection ID that configured on the application
+		(credential) CredentialID that configured on the configuration
 	*/
-	function init($id){
+	public static function &connect($credential=false){
+		if($credential === false)
+			$credential = self::$default;
+
 		// Check if connected
-		if(isset($connectedDB[$id]))
-			return $connectedDB[$id];
+		if(isset(self::$connectedDB[$credential]))
+			return self::$connectedDB[$credential];
 		else {
-			// Reconnect DB
-			if(!class_exists("Scarlets\Library\Database\SQL", false))
-				include_once __DIR__."SQL.php";
+			self::$connectedDB[$credential] = new SQL();
 		}
 	}
+
+	public static function init(){
+		$config = Config::load('database');
+		self::$default = &$config['database.default'];
+		self::$credentials = &$config['database.credentials'];
+	}
 }
+Database::init();

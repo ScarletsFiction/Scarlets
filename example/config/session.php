@@ -11,10 +11,10 @@ return [
 | every requests. By default, it will use the default PHP session driver but
 | you can also save the session to another places.
 |
-| Supported: "default", "cache", "database"
+| Supported: "cache", "database"
 |
 */
-'driver' => 'default',
+'driver' => 'database',
 
 /*
 |--------------------------------------------------------------------------
@@ -35,22 +35,10 @@ return [
 |--------------------------------------------------------------------------
 |
 | When using the "database" session drivers, you may specify a
-| connection id that should be used to save these sessions.
+| credential id that should be used to save these sessions.
 |
 */
-'connection' => 'database1',
-'table' => 'SF_Sessions',
-
-/*
-|--------------------------------------------------------------------------
-| Cookie Name
-|--------------------------------------------------------------------------
-|
-| Here you can change the name of the cookie saved on the browser.
-| The cookie will store SessionID that will be used for the session driver.
-|
-*/
-'cookie' => 'SFSessions',
+'credential' => 'scarletsfiction',
 
 /*
 |--------------------------------------------------------------------------
@@ -96,6 +84,6 @@ return [
 | cookie value and cookie will only be accessible through the server.
 |
 */
-'http_only' => true,
+'http_only' => false,
 
 ];

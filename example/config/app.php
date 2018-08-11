@@ -62,29 +62,6 @@ return [
 
 /*
 |--------------------------------------------------------------------------
-| Encryption Key
-|--------------------------------------------------------------------------
-|
-| This key is used by the internal encrypter service and should be set
-| randomly. Otherwise these encrypted strings will not be safe.
-|
-*/
-'key' => 'MyPassword123',
-'cipher' => 'AES-128-CBC',
-
-// Random/Unique crypto mask
-// Make sure it's different each other
-// If you don't want to use this, let it empty
-'crypto_mask' => [
-	'=='=>['fC3pGz', 'nC9f41', '9C7hfD', '2bChXz'],
-	'='=>['SFh812', 'X8zbD2'],
-	'+'=>['Y83bDx', '3WfFNc'],
-	'/'=>['K2F8hC', '5NFuwB'],
-	':'=>['jC8bFn', 'V4nDin']
-],
-
-/*
-|--------------------------------------------------------------------------
 | Debug Mode
 |--------------------------------------------------------------------------
 |
@@ -112,21 +89,20 @@ return [
 | (errorlog) Output to 'error.log'
 |
 */
-'log' => 'single',
-'log_level' => 'debug',
+'log' => 'errorlog',
 
 /*
 |--------------------------------------------------------------------------
-| Instant Output Mode
+| Output Buffering Mode
 |--------------------------------------------------------------------------
 |
 | This method can help reduce memory load by serve the instant output
 | without buffering to the memory. But if there are any error after
-| any ouput, the client can't be redirected to another page
+| any output, the client can't be redirected to another page
 | because the first header already sended with 200 HTTP code. 
 |
 */
-'instant' => true,
+'buffer' => false,
 
 /*
 |--------------------------------------------------------------------------

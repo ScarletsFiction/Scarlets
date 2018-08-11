@@ -17,6 +17,9 @@ use Scarlets\Config;
 use Scarlets\Route;
 
 class Scarlets{
+	public static $isConsole = false;
+	public static $isWebsite = false;
+	
 	/*
 		> Website Initialization
 		Call this method at very first to use this framework
@@ -25,6 +28,7 @@ class Scarlets{
 	public static function Website(){
 		include_once __DIR__."/src/Route.php";
 		Route\Handler::Initialize();
+		self::$isWebsite = true;
 
 		// Check if the public folder is relative
 		if(Config::$data['app.url_path'] !== false)
@@ -100,7 +104,6 @@ class Scarlets{
 		'path.framework'=>__DIR__,
 		'Route'=>[]
 	];
-	public static $isConsole = false;
 
 	/*
 		> Registry Execute

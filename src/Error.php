@@ -1,6 +1,8 @@
 <?php 
 namespace Scarlets;
 use \Scarlets;
+use \Scarlets\Log;
+use \Scarlets\Route\Serve;
 
 /*
 ---------------------------------------------------------------------------
@@ -88,9 +90,11 @@ Message: $message;$breakline
 File: $file;$breakline
 Line: $line;$breakline
 URL: $url$breakline
-Trace: \n$trace;$breakline$breakline\n\n";
+Trace: \n$trace;$breakline$breakline";
 
 		self::$currentError .= $message;
+
+		// die($message);
 
 		$exitting = true;
 		$warningAsError = $appConfig['app.warning_as_error'];
@@ -107,16 +111,11 @@ Trace: \n$trace;$breakline$breakline\n\n";
 			|| $severity === E_USER_DEPRECATED)
 			$exitting = false;
 
+		Log::message($message);
 
-		$method = $appConfig['app.log'];
-		if($method === 'single'){
-			0; // ToDo: Save to file log
-		}
-
-		if($exitting && !$appConfig['app.debug']){
-			echo('Under Maintenance<br><br>Please refresh your browser to take changes<br>Or contact StefansArya if you still receive this message (≧▽≦)／');
-			die(0); // ToDo: Send 500 status and static error page
-		} else print($message);
+		if($exitting && !$appConfig['app.debug'] && Scarlets::$isWebsite){
+			Serve::httpCode(500);
+		} else print($message."\n\n");
 	}
 
 	public static function logMessage(){

@@ -8,11 +8,11 @@ return [
 |--------------------------------------------------------------------------
 |
 | Here you may specify which database credential you wish to use as
-| your default connection for all database work. You can also
-| have many database connection by using database library.
+| your default connection for your project. You can also connect to 
+| another database by using database library and select the credential.
 |
 */
-'select' => 'database1',
+'default' => 'yourdatabasename',
 
 /*
 |--------------------------------------------------------------------------
@@ -25,17 +25,26 @@ return [
 */
 
 'credentials' => [
-    // 'sqlite'=>[
-    //     'driver' => 'sqlite'
-    //     'database' => './../sqlite.db',
-    // ],
+    // 'scarletsfiction' is required for session manager and other
+    // framework controller
+    'scarletsfiction' => [
+        'driver' => 'mysql',
+        'host' => '127.0.0.1',
+        'port' => '3306',
+        'table_prefix' => '',
+        'database' => 'scarletsfiction',
+        'username' => 'root',
+        'password' => '',
+        'charset' => 'utf8',
+        'collation' => 'utf8_unicode_ci',
+    ],
 
-    'database1' => [
+    'yourdatabasename' => [
         'driver' => 'mysql',
         'host' => '127.0.0.1',
         'port' => '3306', // MySQL (3306), Postgre (5432), SQLServer (1433)
-        'prefix' => '',
-        'database' => 'name',
+        'table_prefix' => '',
+        'database' => 'mydatabase',
         'username' => 'root',
         'password' => '',
         'charset' => 'utf8',
