@@ -17,7 +17,7 @@ class Log{
 	public static function init(){
 		self::$type = &Config::$data['app.log'];
 		if(self::$type === 'errorlog'){
-			self::$path = &Scarlets::$registry['path.app'].'/error.log';
+			self::$path = Scarlets::$registry['path.app'].'/error.log';
 		}
 	}
 

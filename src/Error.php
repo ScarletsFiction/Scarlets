@@ -85,12 +85,12 @@ class Error{
 	    else if(!Scarlets::$isConsole)
 	    	$url = "http".(isset($_SERVER['HTTPS'])?'s':'').'://'.$_SERVER['SERVER_NAME'].$_SERVER['REQUEST_URI'];
 
-$message = "Exception type: ".self::ErrorType($severity).";$breakline
-Message: $message;$breakline
-File: $file;$breakline
-Line: $line;$breakline
-URL: $url$breakline
-Trace: \n$trace;$breakline$breakline";
+$message = "Exception type: ".self::ErrorType($severity).";
+Message: $message;
+File: $file;
+Line: $line;
+URL: $url
+Trace: \n$trace;";
 
 		self::$currentError .= $message;
 
@@ -113,17 +113,14 @@ Trace: \n$trace;$breakline$breakline";
 
 		Log::message($message);
 
-		if($exitting && !$appConfig['app.debug'] && Scarlets::$isWebsite){
+		if($exitting && !$appConfig['app.debug'] && Scarlets::$isWebsite)
 			Serve::httpCode(500);
-		} else print($message."\n\n");
-	}
-
-	public static function logMessage(){
-
-	}
-
-	public static function simpleHTML(){
-
+		else{
+			if(Scarlets::$isConsole)
+				print($message."\n\n");
+			else
+				print(str_replace("\n", "<br>\n", $message)."<br><br>\n\n");
+		}
 	}
 
 	public static function &getUnreadError(){

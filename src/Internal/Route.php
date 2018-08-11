@@ -51,7 +51,9 @@ class Serve{
 	}
 
 	public static function httpCode($statusCode){
+		if(self::$headerSent) return;
 		http_response_code($statusCode);
+		self::$headerSent = true;
 		
 		$router = &Scarlets::$registry['Route']['STATUS'];
 		$router[$statusCode]();
