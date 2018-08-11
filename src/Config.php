@@ -13,23 +13,30 @@ use \Scarlets;
 
 class Config{
 	public static $data = [];
+	private static $loaded = [];
 
 	public static function &load($filename){
+		if(in_array($filename, self::$loaded))
+			return self::$data;
+
 		$frame = &Scarlets::$registry;
 		$path = $frame['path.app']."/config/$filename.php";
+
 		if(file_exists($path)){
 			$config = &self::$data;
 
 			$data = include $path;
 			foreach($data as $key => $value){
-				$config[$filename.'.'.$key] = $value;
+				$config[$filename.'.'.$key] = &$value;
 			}
 		}
+
+		$loaded[] = &$filename;
 		return $config;
 	}
 
 	public static function set($file, $key, $value){
-		self::$data[$file.$key] = $value;
+		self::$data[$file.$key] = &$value;
 	}
 
 	public static function &get($file, $key){

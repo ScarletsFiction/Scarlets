@@ -22,13 +22,38 @@ class LocalFile{
 	}
 
 	public static function size($path){
+		if(is_dir($path)){
+			$bytes = 0;
+			$data = new RecursiveIteratorIterator(new RecursiveDirectoryIterator(realpath($directory)));
+			foreach ($data as $file)
+			{
+				$bytes += $file->getSize();
+			}
+			return $bytes;
+		}
 		if(!file_exists($path)) return 0;
 		if(is_file($path))
 			return filesize($path);
 	}
 
-	public static function append($path, $value, $firstLine = false){
+	public static function append($path, $value){
 		file_put_contents($path, $value, FILE_APPEND);
+	}
+
+	public static function prepend($path, $value){
+		file_put_contents($path.'._temp', '');
+		$fhandle = fopen($path.'._temp', 'w');
+		fwrite($fhandle, $value);
+
+		$oldFhandle = fopen($path, 'r');
+		while (($buffer = fread($oldFhandle, 10000)) !== false) {
+		    fwrite($fhandle, $buffer);
+		}
+
+		fclose($fhandle);
+		fclose($oldFhandle);
+
+		rename($path.'._temp', $path);
 	}
 
 	public static function createDir($path){
@@ -40,13 +65,6 @@ class LocalFile{
 	    if(!is_dir(dirname($path)))
 	        mkdir(dirname($path).'/', 0777, TRUE);
 		file_put_contents($path, $value);
-		/*
-	        $f = @fopen($path, 'w');
-	        if(!$f) return false;
-	        $bytes = fwrite($f, $data);
-	        fclose($f);
-	        return $bytes;
-		*/
 	}
 
 	public static function search($path, $regex, $recursive=false){
@@ -57,7 +75,7 @@ class LocalFile{
 	    return array_keys(iterator_to_array($found));
 	}
 
-	public static function time($path){
+	public static function lastModified($path){
 		return filemtime($path);
 	}
 
@@ -69,8 +87,11 @@ class LocalFile{
 	public static function rename($path, $to){
 		rename($path, $to);
 	}
+	public static function move($path, $to){
+		rename($path, $to);
+	}
 
-	public static function remove($path, $recursive = false, $pathRemove = true){
+	public static function delete($path, $recursive = false, $pathRemove = true){
 		if(is_dir($path)){
 			if(!$recursive)
 				rmdir($path);
@@ -79,7 +100,7 @@ class LocalFile{
 				foreach($iterator as $fileinfo){
 					if($fileinfo->isDot()) continue;
 					if($fileinfo->isDir()){
-						self::remove($fileinfo->getPathname(), true, false);
+						self::delete($fileinfo->getPathname(), true, false);
 						@rmdir($fileinfo->getPathname());
 					}
 					if($fileinfo->isFile())
@@ -185,17 +206,6 @@ class LocalFile{
 		return trim($output);
 	}
 
-	public static function &folderSize($directory)
-	{
-		$bytes = 0;
-		$data = new RecursiveIteratorIterator(new RecursiveDirectoryIterator(realpath($directory)));
-		foreach ($data as $file)
-		{
-			$bytes += $file->getSize();
-		}
-		return $bytes;
-	}
-	
 	public static function zipDirectory($sourcePath, $outZipPath, $password='', $regex='')
 	{
 		$zip = new ZipArchive();

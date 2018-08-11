@@ -25,9 +25,6 @@ class WebRequest{
 			if(isset($data['header']))
 				$headers = array_merge($headers,$data['header']);
 
-			if(isset($data['referer']))
-				$headers[] = 'Referer: '.$data['referer'];
-
 			if(isset($data['post'])) //['post' => 'datahere']  -- not html encoded
 			{
 				curl_setopt($ch, CURLOPT_POST, 1);
@@ -72,6 +69,7 @@ class WebRequest{
 		curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
 		curl_setopt($ch, CURLOPT_USERAGENT, $userAgent);
 		curl_setopt($ch, CURLINFO_HEADER_OUT, 1);
+		
 		if(isset($data['returnheader']) || isset($data['cookiefile']))
 			curl_setopt($ch, CURLOPT_HEADER, 1);
 		
@@ -93,9 +91,9 @@ class WebRequest{
 			preg_match_all($pattern, $header_content, $matches); 
 			$cookiesOut = implode("; ", $matches['cookie']);
 			
-			if(isset($data['cookiefile']))
-			{
-				if(strlen($cookiesOut)>=2){file_put_contents($data['cookiefile'], $cookiesOut);}
+			if(isset($data['cookiefile'])){
+				if(strlen($cookiesOut)>=2)
+					file_put_contents($data['cookiefile'], $cookiesOut);
 				return $body_content;
 			}
 			

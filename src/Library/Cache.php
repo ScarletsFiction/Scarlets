@@ -16,22 +16,45 @@ use \Scarlets;
 */
 
 class Cache{
+	public static $path = '';
+	public static function init(){
+		$config = Scarlets\Config::load('filesystem');
+		$settings = &$config['filesystem.storage'][$config['filesystem.cache_storage']];
 
-	// This will be deleted on exit
-	public static $volatile = [];
-
-	// This will be saved on shutdown and loaded when startup
-	public static $keep = [];
+		if($settings['driver'] === 'localfile')
+			self::$path = &$settings['path'];
+	}
 
 	public static function &get($key){
 		# code...
 	}
 
-	public static function set($key, $value){
+	public static function set($key, $value, $minutes=0){
+		# code...
+	}
+
+	public static function has($key){
+		# code...
+	}
+
+	// Get and forget
+	public static function &pull($key, $value){
+		# code...
+	}
+
+	public static function forget($key, $value){
+		# code...
+	}
+	
+	public static function flush($key, $value){
+		# code...
+	}
+	
+	public static function extendTime($key, $minutes){
 		# code...
 	}
 }
-
+Cache::init();
 /*
 ---------------------------------------------------------------------------
 | Micro-optimization

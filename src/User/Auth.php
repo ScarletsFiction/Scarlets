@@ -88,7 +88,7 @@ class Auth{
 
 	// $data = [userID, email, username, name, password]
 	// return [success(bool), message/userID]
-	public static function signUp($data)
+	public static function register($data)
 	{
 		// Validate email
 		if(strlen(filter_var($data['email'], FILTER_SANITIZE_EMAIL)) < strlen($data['email'])-1)

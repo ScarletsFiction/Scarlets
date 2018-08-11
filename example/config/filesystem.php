@@ -16,6 +16,17 @@ return [
 
 /*
 |--------------------------------------------------------------------------
+| Default Cache Store
+|--------------------------------------------------------------------------
+|
+| This option controls the default cache storage while using the caching library.
+| Supported: "database", "file"
+|
+*/
+'cache_storage' => 'cache',
+
+/*
+|--------------------------------------------------------------------------
 | Filesystem Storages
 |--------------------------------------------------------------------------
 |
@@ -27,12 +38,16 @@ return [
 'storage' => [
     'app' => [
         'driver' => 'localfile',
-        'root' => 'storage/app',
+        'root' => $frame['path.app.storage'].'/app',
     ],
     'framework' => [
         'driver' => 'localfile',
-        'root' => 'storage/framework',
+        'root' => $frame['path.app.storage'].'/framework',
     ],
+    'cache' => [
+        'driver' => 'localfile',
+        'path' => $frame['path.app.storage'].'/cache',
+    ]
 ],
 
 ];
