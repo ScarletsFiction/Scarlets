@@ -1,90 +1,132 @@
 <?php
 namespace Scarlets\User;
 use \Scarlets;
+use \Scarlets\Config;
+use \Scarlets\User\Session;
+use \Scarlets\Library\Database;
+use \Scarlets\Extend\Strings;
 
-	$usersDatabase = 'nekonyaan'; //The table will be 'users'
 class Auth{
-	
+	public static $database = false;
+	public static $table = false;
+
+	public static function init(){
+		$config = Config::load('auth');
+		self::$database = Database::connect($config['auth.database']);
+		self::$table = Database::connect($config['auth.table']);
+	}
+
 	//Return true if not logged in
-	function logout(){
-		global $SFSessions, $sifyData;
-		if(!checkLoginStatus()) $forceLogout = true;
-		if(isset($_REQUEST['logout'])||$forceLogout)
+	public static function logout(){
+		$sifyData = &Session::$sifyData;
+		$data = &Session::$data;
+
+		if(isset($sifyData['userID']) && $sifyData['userID'] !== '' && $data['userID'] === $sifyData['userID'])
+			$data['oldAccount'] = $data['userID'];
+		else
+			$data = [];
+
+		$sifyData = [];
+		$_COOKIE = [];
+		Session::saveSifyData();
+	}
+
+	//Return true if success
+	public static function login($username, $password)
+	{
+		$username = strtolower($username);
+		$data = self::$database->get('users', ['user_id', 'name', 'password'], ['username'=>$username]);
+
+		if($data !== false && password_verify($password, $data['password']))
 		{
-			$SFSessions = isset($sifyData['loggedin'])&&$sifyData['loggedin']!=''?['oldaccount'=>isset($SFSessions['loggedin'])?$SFSessions['loggedin']:""]:[];
-			$sifyData = [];
+			$sifyData = &Session::$sifyData;
+			$data = &Session::$data;
+
+			$data['username'] = &$username;
+			$data['userID'] = &$data['user_id'];
+			$data['name'] = &$data['name'];
+
+			$sifyData['username'] = &$username;
+			$sifyData['userID'] = &$data['user_id'];
+			$sifyData['shard'] = &$_COOKIE['shard'];
+			saveSifyData();
+
 			return true;
 		}
 		return false;
 	}
-	//Return true if success
-	function login($userpass)
+	//Return [userID, username] if logged in
+	public static function checkLoginStatus($returnBoolOnly = false)
 	{
-		global $nekonyaanDatabase, $SFSessions, $sifyData;
-		
-		$data = $nekonyaanDatabase->select('users', ['user_id', 'name', 'password'], ['username'=>strtolower($userpass[0])]);
-		if(count($data)==1)
-		{
-			$data = $data[0];
-			if(password_verify($userpass[1], $data['password']))
-			{
-				$SFSessions['loggedin'] = strtolower($userpass[0]);
-				$SFSessions['userID'] = $data['user_id'];
-				$sifyData['loggedin'] = $SFSessions['loggedin'];
-				$sifyData['userID'] = $SFSessions['userID'];
-				saveSifyData();
+		$sifyData = &Session::$sifyData;
+		$data = &Session::$data;
 
-				$SFSessions['name'] = $data['name'];
-				return true;
-			}
-		}
-		return false;
-	}
-	//Return [id, username] if logged in
-	function checkLoginStatus($returnBool=false)
-	{
-		global $SFSessions, $sifyData;
-		if(isset($SFSessions['loggedin']) && isset($sifyData['loggedin']))
+		// Check if cookie and session data have userID
+		if(isset($data['userID']) && isset($sifyData['userID']))
 		{
-			if($SFSessions['loggedin'] && $sifyData['loggedin'] && $SFSessions['loggedin']!=$sifyData['loggedin']){
-				destroyCookies();
+			// Check if exist but different userID
+			if($data['userID'] && $sifyData['userID'] && $data['userID'] !== $sifyData['userID']){
+				Session::destroyCookies();
 				return false;
 			}
-			else if(!$SFSessions['loggedin'] || $SFSessions['loggedin']!=$sifyData['loggedin'])
+
+			// Check if zero or empty
+			else if(!$data['userID'] || !$sifyData['userID'])
 				return false;
 			
+			// All ok
 			else{
 				if($returnBool) return true;
-				else return [$SFSessions['userID'], $SFSessions['loggedin']];
+				else return [
+					'userID'=>$data['userID'],
+					'username'=>$data['username']
+				];
 			}
 		}
 		else return false;
 	}
-	//[email, username, name, password , |facebook, twitter, google| ]
-	function signUp($data)
+
+	// $data = [userID, email, username, name, password]
+	// return [success(bool), message/userID]
+	public static function signUp($data)
 	{
-		global $nekonyaanDatabase;
+		// Validate email
+		if(strlen(filter_var($data['email'], FILTER_SANITIZE_EMAIL)) < strlen($data['email'])-1)
+			return [false, 'Email not valid'];
 
-		//Validate data
-		if(strlen(filter_var($data['email'],FILTER_SANITIZE_EMAIL))<strlen($data['email'])-1)
-			die('Email: Not valid');
-		if(strlen(preg_replace('/[^a-zA-Z0-9]/', '', $data['username']))<strlen($data['username']))die('Username: Not valid');
+		// Validate username
+		if(strlen(preg_replace('/[^a-zA-Z0-9]/', '', $data['username'])) < strlen($data['username']))
+			return [false, 'Username not valid'];
 
-		$nekonyaanDatabase->insert('users', $data);
+		// Check for existance
+		$temp = self::$database->get('users', ['user_id'], [
+			'OR'=>[
+				'username'=>$data['username'],
+				'email[~]'=>'|'.$data['email']
+			]
+		]);
+		if($temp !== false){
+			if($temp['username'] === $data['username'])
+				return [false, 'Username already used'];
+			return [false, 'Email already used'];
+		}
+
+		$userID = self::$database->insert('users', $data, 'userID');
+		return [true, $userID];
 	}
-	function checkUsernameExist($username)
+
+	public static function isUsernameExist($username)
 	{
-		global $nekonyaanDatabase;
-		if(count($nekonyaanDatabase->select('users', ['user_id'], ['username'=>$username]))>=1)
+		if(self::$database->get('users', ['user_id'], ['username'=>$username]) !== false)
 			return true;
 		return false;
 	}
 
-	function checkEmailExist($email)
+	public static function isEmailExist($email)
 	{
-		global $nekonyaanDatabase;
-		if(count($nekonyaanDatabase->select('users', ['user_id'], ['email[~]'=>$email]))>=1)
+		if(self::$database->get('users', ['user_id'], ['email[~]'=>$email]) !== false)
 			return true;
 		return false;
 	}
 }
+Auth::init();

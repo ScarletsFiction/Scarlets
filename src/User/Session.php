@@ -16,7 +16,7 @@ use \Scarlets\Library\Database;
 | will have some chance to be hacked by MIM Attack.
 |
 | SFSession.id === sifyData.id
-| SFSession.ip === sifyData.ip
+| sifyData.shard === Cookie.shard
 | sifyData.integrity === SFIntegrity (Not imlemented yet)
 |
 */
@@ -77,18 +77,21 @@ class Session{
 
 	// Load sifyData from cookie
 	public static function loadSifyData(){
+		if(!isset($_COOKIE['shard']))
+			return;
+
 		$ref = &self::$sifyData;
 		$ref = self::extractSifyData();
 		self::$ID = Crypto::dSify($ref[0]);
 		self::$TextID = $ref[0];
 
-		// If sifyData was not found on some sessions, then remake
-		if(!$ref[1]){
+		$ref = $ref[1];
+
+		// If shard was different, then destroy it
+		if($ref['shard'] !== $_COOKIE['shard']){
 			self::destroyCookies();
 			return;
 		}
-
-		$ref = $ref[1];
 
 		// Make a copy
 		self::$sifyData_ = $ref;
@@ -102,6 +105,13 @@ class Session{
 		}
 
 		if(serialize(self::$sifyData_) !== serialize(self::$sifyData) || $force){
+
+			// Implement Shard Protection
+			if(!isset($_COOKIE['shard']) || !isset(self::$sifyData['shard'])){
+				$_COOKIE['shard'] = Strings::random(8, true);
+				self::$sifyData['shard'] = &$_COOKIE['shard'];
+			}
+
 			self::$FullTextID = 
 			$sified = self::compileSifyData(self::$TextID, self::$sifyData);
 
@@ -170,11 +180,13 @@ class Session{
 			self::$ID = $rawID;
 			$newID = Crypto::Sify($rawID);
 			self::$TextID = $newID;
-			self::$sifyData = ['userid'=>''];
+			self::$sifyData = [];
 
 			// Write session to browser
 			$sified = self::compileSifyData($newID, self::$sifyData);
 			$_COOKIE['SFSessions'] = $sified;
+
+			// Save sifyData
 			self::saveSifyData(true);
 		}
 	}

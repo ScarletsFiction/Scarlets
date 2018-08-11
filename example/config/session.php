@@ -59,10 +59,10 @@ return [
 | Here you can change the cookie domain for your cookie
 | (But only if you send the cookie response from that domain).
 | Usually you want the cookie accessible on sub-domain, so you can use
-| asterisk symbol (*.website.com).
+| asterisk symbol (*.website.com). Or use the current host with (@host)
 |
 */
-'domain' => 'localhost',
+'domain' => '@host',
 
 /*
 |--------------------------------------------------------------------------
