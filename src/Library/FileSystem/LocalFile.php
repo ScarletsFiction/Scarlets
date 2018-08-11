@@ -1,6 +1,6 @@
 <?php
-
 namespace Scarlets\Library\FileSystem;
+use \Scarlets\Extend\Strings;
 
 /*
 ---------------------------------------------------------------------------
@@ -49,11 +49,11 @@ class LocalFile{
 		*/
 	}
 
-	public static function search($path, $name, $recursive=false){
-	    $dirIte = new RecursiveDirectoryIterator($path);
+	public static function search($path, $regex, $recursive=false){
+	    $dirIte = new RecursiveDirectoryIterator($path, RecursiveDirectoryIterator::SKIP_DOTS);
 	    if($recursive)
-	    	$dirIte = new RecursiveIteratorIterator($dirIte);
-	    $found = new RegexIterator($recIte, $pattern, RegexIterator::GET_MATCH);
+	    	$dirIte = new RecursiveIteratorIterator($dirIte, RecursiveIteratorIterator::SELF_FIRST);
+	    $found = new RegexIterator($recIte, $regex, RegexIterator::GET_MATCH);
 	    return array_keys(iterator_to_array($found));
 	}
 
@@ -183,6 +183,79 @@ class LocalFile{
 		
 		fclose($f);
 		return trim($output);
+	}
+
+	public static function &folderSize($directory)
+	{
+		$bytes = 0;
+		$data = new RecursiveIteratorIterator(new RecursiveDirectoryIterator(realpath($directory)));
+		foreach ($data as $file)
+		{
+			$bytes += $file->getSize();
+		}
+		return $bytes;
+	}
+	
+	public static function zipDirectory($sourcePath, $outZipPath, $password='', $regex='')
+	{
+		$zip = new ZipArchive();
+		if($zip->open($outZipPath, ZIPARCHIVE::CREATE | ZIPARCHIVE::OVERWRITE))
+			return false;
+		
+		$pathInfo = pathInfo(realpath($sourcePath));
+		$dirName = $pathInfo['basename'];
+		$zip->addEmptyDir($dirName);
+
+		$fileList = self::search($sourcePath, $regex, true);
+		$currentDir = $dirName;
+		foreach ($fileList as &$value) {
+			if(is_dir($value)){
+				$currentDir = str_replace($dirName, '', $value);
+				$zipFile->addEmptyDir($currentDir);
+			}
+			else $zipFile->addFile($value, $currentDir);
+		}
+		$zip->close();
+		return true;
+	}
+	
+	public static function extractZip($path, $to, $password='')
+	{
+		$zip = new ZipArchive();
+		$zipStatus = $zip->open($path);
+		
+		if ($zipStatus === true){
+			if($password !== ''){
+				$zip->setPassword($password);
+
+				if(!$zip->extractTo($to))
+					return false;
+			}
+
+			elseif(!$zip->extractTo($to))
+				return false;
+			
+			$zip->close();
+		}
+		else return false;
+		return true;
+	}
+	
+	public static function zipStatus($path)
+	{
+		$zip = new ZipArchive();
+		$res = $zip->open(realpath($path), ZipArchive::CHECKCONS);
+		if ($res !== true) {
+			if($res === ZipArchive::ER_NOZIP)
+				return [false, "Not a zip file"];
+			if($res === ZipArchive::ER_INCONS )
+				return [false, "Consistency check failed"];
+			if($res === ZipArchive::ER_CRC )
+				return [false, "Checksum failed"];
+			else
+				return [false, $res];
+		}
+		else return [true];
 	}
 }
 

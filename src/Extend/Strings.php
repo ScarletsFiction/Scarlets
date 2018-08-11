@@ -57,4 +57,41 @@ class Strings{
 	public static function randomNumber(){
 		return time().rand(100,999);
 	}
+
+	public static function mimeType($extension){
+        $fileTypes = [
+        	'swf' => 'application/x-shockwave-flash',
+        	'pdf' => 'application/pdf',
+        	'exe' => 'application/octet-stream',
+        	'zip' => 'application/zip',
+        	'doc' => 'application/msword',
+        	'xls' => 'application/vnd.ms-excel',
+        	'ppt' => 'application/vnd.ms-powerpoint',
+        	'gif' => 'image/gif',
+        	'png' => 'image/png',
+        	'jpeg' => 'image/jpg',
+        	'jpg' => 'image/jpg',
+        	'rar' => 'application/rar',
+        	'ra' => 'audio/x-pn-realaudio',
+        	'ram' => 'audio/x-pn-realaudio',
+        	'ogg' => 'audio/x-pn-realaudio',
+        	'wav' => 'video/x-msvideo',
+        	'wmv' => 'video/x-msvideo',
+        	'avi' => 'video/x-msvideo',
+        	'asf' => 'video/x-msvideo',
+        	'divx' => 'video/x-msvideo',
+        	'mp3' => 'audio/mpeg',
+        	'mp4' => 'audio/mpeg',
+        	'mpeg' => 'video/mpeg',
+        	'mpg' => 'video/mpeg',
+        	'mpe' => 'video/mpeg',
+        	'mov' => 'video/quicktime',
+        	'swf' => 'video/quicktime',
+        	'3gp' => 'video/quicktime',
+        	'm4a' => 'video/quicktime',
+        	'aac' => 'video/quicktime',
+        	'm3u' => 'video/quicktime'
+    	];
+        return isset($fileTypes[$extension]) ? $fileTypes[$extension] : $fileTypes['exe'];
+    }
 }
