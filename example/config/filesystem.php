@@ -4,23 +4,10 @@ return [
 
 /*
 |--------------------------------------------------------------------------
-| Default Filesystem Storage
-|--------------------------------------------------------------------------
-|
-| Here you may specify the default filesystem storage id that should be used
-| by the framework.
-|
-*/
-'app' => 'app',
-'framework' => 'framework',
-
-/*
-|--------------------------------------------------------------------------
 | Default Cache Store
 |--------------------------------------------------------------------------
 |
 | This option controls the default cache storage while using the caching library.
-| Supported: "database", "file"
 |
 */
 'cache_storage' => 'cache',
@@ -36,17 +23,14 @@ return [
 |
 */
 'storage' => [
-    'app' => [
-        'driver' => 'localfile',
-        'root' => $frame['path.app.storage'].'/app',
-    ],
-    'framework' => [
-        'driver' => 'localfile',
-        'root' => $frame['path.app.storage'].'/framework',
-    ],
-    'cache' => [
-        'driver' => 'localfile',
-        'path' => $frame['path.app.storage'].'/cache',
+    'localfile'=>[
+        'app' => $frame['path.app.storage'].'/app',
+
+        // Required for app cache
+        'cache' => $frame['path.app.storage'].'/cache',
+
+        // Required for framework
+        'framework' => $frame['path.app.storage'].'/framework'
     ]
 ],
 

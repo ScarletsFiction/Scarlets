@@ -12,7 +12,21 @@ use \Scarlets\Extend\Strings;
 |
 */
 class LocalFile{
+	public static $storage = [];
+
+	public static function init(){
+		$config = Config::load('filesystem');
+		self::$storage = &$config['filesystem.storage']['localfile'];
+	}
+
+	private static function realpath(&$path){
+		$path = explode('}', $path);
+		$path = self::$storage[substr($path[0], 1)].$path[1];
+	}
+
 	public static function load($path){
+		if($path[0]==='{') self::realpath($path);
+
 		return file_get_contents($path);
 		/*
 	    	$fhandle = fopen($path, "r");
@@ -22,6 +36,8 @@ class LocalFile{
 	}
 
 	public static function size($path){
+		if($path[0]==='{') self::realpath($path);
+
 		if(is_dir($path)){
 			$bytes = 0;
 			$data = new RecursiveIteratorIterator(new RecursiveDirectoryIterator(realpath($directory)));
@@ -37,10 +53,14 @@ class LocalFile{
 	}
 
 	public static function append($path, $value){
+		if($path[0]==='{') self::realpath($path);
+		
 		file_put_contents($path, $value, FILE_APPEND);
 	}
 
 	public static function prepend($path, $value){
+		if($path[0]==='{') self::realpath($path);
+		
 		file_put_contents($path.'._temp', '');
 		$fhandle = fopen($path.'._temp', 'w');
 		fwrite($fhandle, $value);
@@ -57,17 +77,23 @@ class LocalFile{
 	}
 
 	public static function createDir($path){
+		if($path[0]==='{') self::realpath($path);
+		
 	    if(!is_dir(dirname($path)))
 	        mkdir(dirname($path).'/', 0777, TRUE);
 	}
 
 	public static function put($path, $value){
+		if($path[0]==='{') self::realpath($path);
+		
 	    if(!is_dir(dirname($path)))
 	        mkdir(dirname($path).'/', 0777, TRUE);
 		file_put_contents($path, $value);
 	}
 
 	public static function search($path, $regex, $recursive=false){
+		if($path[0]==='{') self::realpath($path);
+		
 	    $dirIte = new RecursiveDirectoryIterator($path, RecursiveDirectoryIterator::SKIP_DOTS);
 	    if($recursive)
 	    	$dirIte = new RecursiveIteratorIterator($dirIte, RecursiveIteratorIterator::SELF_FIRST);
@@ -76,22 +102,35 @@ class LocalFile{
 	}
 
 	public static function lastModified($path){
+		if($path[0]==='{') self::realpath($path);
+		
 		return filemtime($path);
 	}
 
 	public static function copy($path, $to){
+		if($path[0]==='{') self::realpath($path);
+		if($to[0]==='{') self::realpath($to);
+		
 		copy($path, $to);
 	}
 
 	// Can be used for moving file/folder
 	public static function rename($path, $to){
+		if($path[0]==='{') self::realpath($path);
+		if($to[0]==='{') self::realpath($to);
+		
 		rename($path, $to);
 	}
 	public static function move($path, $to){
+		if($path[0]==='{') self::realpath($path);
+		if($to[0]==='{') self::realpath($to);
+		
 		rename($path, $to);
 	}
 
 	public static function delete($path, $recursive = false, $pathRemove = true){
+		if($path[0]==='{') self::realpath($path);
+		
 		if(is_dir($path)){
 			if(!$recursive)
 				rmdir($path);
@@ -113,6 +152,8 @@ class LocalFile{
 	}
 
 	public static function &read($path, $ranges, $readChar = false){
+		if($path[0]==='{') self::realpath($path);
+		
 		$handle = fopen('somefile.txt', 'r');
 		$temp = [];
 		if($handle){
@@ -162,8 +203,10 @@ class LocalFile{
 		return $temp;
 	}
 
-	public static function &tail($filepath, $lines = 1) {
-		$f = @fopen($filepath, "rb");
+	public static function &tail($path, $lines = 1) {
+		if($path[0]==='{') self::realpath($path);
+		
+		$f = @fopen($path, "rb");
 		if ($f === false) return false;
 
 		// This gives a performance boost when reading a few lines from the file.
@@ -208,6 +251,9 @@ class LocalFile{
 
 	public static function zipDirectory($sourcePath, $outZipPath, $password='', $regex='')
 	{
+		if($sourcePath[0]==='{') self::realpath($sourcePath);
+		if($outZipPath[0]==='{') self::realpath($outZipPath);
+		
 		$zip = new ZipArchive();
 		if($zip->open($outZipPath, ZIPARCHIVE::CREATE | ZIPARCHIVE::OVERWRITE))
 			return false;
@@ -231,6 +277,9 @@ class LocalFile{
 	
 	public static function extractZip($path, $to, $password='')
 	{
+		if($path[0]==='{') self::realpath($path);
+		if($to[0]==='{') self::realpath($to);
+		
 		$zip = new ZipArchive();
 		$zipStatus = $zip->open($path);
 		
@@ -253,6 +302,8 @@ class LocalFile{
 	
 	public static function zipStatus($path)
 	{
+		if($path[0]==='{') self::realpath($path);
+		
 		$zip = new ZipArchive();
 		$res = $zip->open(realpath($path), ZipArchive::CHECKCONS);
 		if ($res !== true) {
@@ -268,6 +319,7 @@ class LocalFile{
 		else return [true];
 	}
 }
+LocalFile::init();
 
 
 /*
