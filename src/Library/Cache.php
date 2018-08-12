@@ -17,41 +17,123 @@ use \Scarlets;
 
 class Cache{
 	public static $path = '';
+	public static $expiration = [];
+	public static $expirationPath = '';
+	public static $lastCheck = 0;
+
 	public static function init(){
 		$config = Scarlets\Config::load('filesystem');
 		$settings = &$config['filesystem.storage'][$config['filesystem.cache_storage']];
 
-		if($settings['driver'] === 'localfile')
+		if($settings['driver'] === 'localfile'){
 			self::$path = &$settings['path'];
+			self::$expirationPath = $settings['path'].'/__expiration.srz';
+			self::$lastCheck = filemtime(self::$expirationPath);
+			self::$expiration = unserialize(file_get_contents(self::$expirationPath));
+		}
 	}
 
-	public static function &get($key){
-		# code...
+	private static function reloadExpiration(){
+		$temp = filemtime(self::$expirationPath);
+		if(self::$lastCheck < $temp){
+			self::$lastCheck = $temp;
+			self::$expiration = unserialize(file_get_contents(self::$expirationPath));
+		}
 	}
 
-	public static function set($key, $value, $minutes=0){
-		# code...
+	public static function get($key){
+		if(!isset(self::$expiration[$key]))
+			return false;
+
+		if(self::$expiration[$key] !== 0){
+			self::reloadExpiration();
+			if(self::$expiration[$key] > time()){
+				unset(self::$expiration[$key]);
+				unlink($path."/$key.cache");
+				file_put_contents(self::$expirationPath, serialize(self::$expiration[$key]));
+				return false;
+			}
+		}
+
+		return file_get_contents($path."/$key.cache");
+	}
+
+	public static function set($key, $value, $seconds=0){
+		if($seconds !== 0){
+			self::$expiration[$key] = $seconds + time();
+			file_put_contents(self::$expirationPath, serialize(self::$expiration[$key]));
+		}
+
+		if(!isset(self::$expiration[$key])){
+			self::$expiration[$key] = 0;
+			file_put_contents(self::$expirationPath, serialize(self::$expiration[$key]));
+		}
+
+		file_put_contents($path."/$key.cache", $value);
 	}
 
 	public static function has($key){
-		# code...
+		if(!isset(self::$expiration[$key]))
+			return false;
+
+		if(self::$expiration[$key] !== 0){
+			self::reloadExpiration();
+			if(self::$expiration[$key] > time()){
+				unset(self::$expiration[$key]);
+				unlink($path."/$key.cache");
+				file_put_contents(self::$expirationPath, serialize(self::$expiration[$key]));
+				return false;
+			}
+		}
+
+		return true;
 	}
 
 	// Get and forget
 	public static function &pull($key, $value){
-		# code...
+		if(!isset(self::$expiration[$key]))
+			return false;
+
+		$data = file_get_contents($path."/$key.cache");
+		unlink($path."/$key.cache");
+		unset(self::$expiration[$key]);
+		file_put_contents(self::$expirationPath, serialize(self::$expiration[$key]));
+		return $data;
 	}
 
-	public static function forget($key, $value){
-		# code...
+	public static function forget($key){
+		unlink($path."/$key.cache");
+		if(!isset(self::$expiration[$key]))
+			return false;
+
+		unset(self::$expiration[$key]);
+		file_put_contents(self::$expirationPath, serialize(self::$expiration[$key]));
 	}
 	
 	public static function flush($key, $value){
-		# code...
+		self::$expiration = [];
+		$list = glob($path.'/*.*');
+		foreach($list as &$value){
+			unlink($value);
+		}
+		return true;
 	}
 	
-	public static function extendTime($key, $minutes){
-		# code...
+	public static function extendTime($key, $seconds){
+		if(!isset(self::$expiration[$key]))
+			return false;
+
+		self::reloadExpiration();
+		if(self::$expiration[$key] >= time()){
+			unset(self::$expiration[$key]);
+			unlink($path."/$key.cache");
+			file_put_contents(self::$expirationPath, serialize(self::$expiration[$key]));
+			return false;
+		}
+
+		self::$expiration[$key] = $seconds + time();
+		file_put_contents(self::$expirationPath, serialize(self::$expiration[$key]));
+		return true;
 	}
 }
 Cache::init();
