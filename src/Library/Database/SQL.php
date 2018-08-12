@@ -15,6 +15,11 @@ namespace Scarlets\Library\Database;
 class SQL {
 	public $SQLConnection;
 	public $transactionCounter = 0;
+	public $debug = false;
+	public $table_prefix = '';
+
+	// When debugging is enabled, this will have value
+	public $lastQuery = false;
 
 	public function __construct($databaseName, $options){
 		// Default options
@@ -24,9 +29,13 @@ class SQL {
 		if(isset($options['username'])) $options['user'] = $options['username'];
 		if(!isset($options['password'])) $options['password'] = '';
 		if(!isset($options['driver'])) $options['driver'] = 'mysql';
-		if(!isset($options['prefix'])) $options['prefix'] = '';
+		if(!isset($options['table_prefix'])) $options['table_prefix'] = '';
 		if(!isset($options['charset'])) $options['charset'] = 'utf8';
 		if(!isset($options['collation'])) $options['collation'] = 'utf8_unicode_ci';
+		if(!isset($options['debug'])) $options['debug'] = false;
+
+		$this->debug = &$options['debug'];
+		$this->table_prefix = &$options['table_prefix'];
 
 		// Try to connect
 		try{
@@ -38,13 +47,21 @@ class SQL {
 	}
 
 	// SQLQuery
-	public function query($query, $arrayData){print_r($arrayData);echo($query."\n\n");
+	public function query($query, $arrayData, $from){
+		if($this->debug)
+			$this->lastQuery = [$query, $arrayData];
+
 		$statement = $this->SQLConnection->prepare($query);
-		$statement->execute($arrayData);
-		$result = $statement->fetchAll(\PDO::FETCH_ASSOC);
+		$result = $statement->execute($arrayData);
+
 		$error = $statement->errorInfo();
 		if(!empty($error[2]))
 			throw new \Exception($error[2]);
+
+		if($from === 'select')
+			$result = $statement->fetchAll(\PDO::FETCH_ASSOC);
+		if($from === 'insert')
+			$result = $this->SQLConnection->lastInsertId();
 
 		return $result;
 	}
@@ -240,6 +257,8 @@ class SQL {
 
 	public function createTable($tableName, $columns)
 	{
+		if($this->table_prefix !== '') $tableName = $this->table_prefix;
+
 		$columns_ = array_keys($columns);
 		for($i = 0; $i < count($columns_); $i++){
 			if(gettype($columns[$columns_[$i]]) === 'array'){
@@ -250,10 +269,12 @@ class SQL {
 		}
 		$query = 'CREATE TABLE IF NOT EXISTS '.$this->validateText($tableName).' ('.implode(', ', $columns_).')';
 
-		return $this->query($query, []);
+		return $this->query($query, [], 'create');
 	}
 
 	public function select($tableName, $select='*', $where=false){
+		if($this->table_prefix !== '') $tableName = $this->table_prefix;
+
 		$select_ = $select;
 		if($select!=='*')
 			for($i = 0; $i < count($select_); $i++){
@@ -264,22 +285,26 @@ class SQL {
 		$wheres = $this->makeWhere($where);
 		$query = "SELECT " . ($select_?implode(', ', $select_):$select) . " FROM " . $this->validateText($tableName) . $wheres[0];
 		
-		return $this->query($query, $wheres[1]);
+		return $this->query($query, $wheres[1], 'select');
 	}
 
 	public function delete($tableName, $where){
+		if($this->table_prefix !== '') $tableName = $this->table_prefix;
+
 		if($where){
 			$wheres = $this->makeWhere($where);
 			$query = "DELETE FROM " . $this->validateText($tableName) . $wheres[0];
-			return $this->query($query, $wheres[1]);
+			return $this->query($query, $wheres[1], 'delete');
 		}
 		else{
 			$query = "TRUNCATE TABLE " . $this->validateText($tableName);
-			return $this->query($query, []);
+			return $this->query($query, [], 'truncate');
 		}
 	}
 
 	public function insert($tableName, $object){
+		if($this->table_prefix !== '') $tableName = $this->table_prefix;
+
 		$objectName = [];
 		$objectName_ = [];
 		$objectData = [];
@@ -292,10 +317,12 @@ class SQL {
 		}
 		$query = "INSERT INTO " . $this->validateText($tableName) . " (" . implode(', ', $objectName) . ") VALUES (" . implode(', ', $objectName_) . ")";
 		
-		return $this->query($query, $objectData);
+		return $this->query($query, $objectData, 'insert');
 	}
 
 	public function update($tableName, $object, $where=false){
+		if($this->table_prefix !== '') $tableName = $this->table_prefix;
+
 		$wheres = $this->makeWhere($where);
 		$objectName = [];
 		$objectData = [];
@@ -306,10 +333,12 @@ class SQL {
 		}
 		$query = "UPDATE " . $this->validateText($tableName) . " SET " . implode(', ', $objectName) . $wheres[0];
 
-		return $this->query($query, array_merge($objectData, $wheres[1]));
+		return $this->query($query, array_merge($objectData, $wheres[1]), 'update');
 	}
 
 	public function drop($tableName){
-		return $this->query("DROP TABLE " . $this->validateText($tableName), []);
+		if($this->table_prefix !== '') $tableName = $this->table_prefix;
+		
+		return $this->query("DROP TABLE " . $this->validateText($tableName), [], 'drop');
 	}
 }
