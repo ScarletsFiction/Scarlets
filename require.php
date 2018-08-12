@@ -32,7 +32,7 @@ class Scarlets{
 
 		// Check if the public folder is relative
 		if(Config::$data['app.url_path'] !== false)
-			Route\Query::$home = Config::$data['app.url_path'];
+			Route\Query::$home = &Config::$data['app.url_path'];
 
 		// Include required router
 		include_once self::$registry['path.app']."/routes/status.php";

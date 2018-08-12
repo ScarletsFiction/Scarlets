@@ -27,7 +27,7 @@ class Config{
 
 			$data = include $path;
 			foreach($data as $key => $value){
-				$config[$filename.'.'.$key] = &$value;
+				$config[$filename.'.'.$key] = $value;
 			}
 		}
 
