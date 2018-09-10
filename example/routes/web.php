@@ -34,13 +34,13 @@ Route::get('/hello/{0?}', function($message = 'world'){
     Serve::view('hello', ['message' => 'Hello, '.$message]);
 });
 
-Route::namespaces('App\Http\Controllers\User', function(){
+Route::namespaces('App\Http\Controllers', function(){
     // Class controller at "App\Http\Controllers" Namespace
 });
 
-Route::domain('{0}.framework.test', function(){
-    Route::get('home/{0}', function($query){
-        //
+Route::domain('{0}.framework.test', function($domain){
+    Route::get('/home/{0}', function($query){
+        // Will be available on "*.framework.test" domain
     });
 });
 
@@ -50,8 +50,8 @@ Route::prefix('admin', function(){
     });
 });
 
-Route::name('admin.', function(){
+Route::name('list', function(){
     Route::get('users', function(){
-        // Route assigned name "admin.users"...
+        // Route assigned name "list.users"...
     }, 'name:users');
 });

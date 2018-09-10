@@ -38,6 +38,10 @@ class Handler{
 			if(count($opts) === 0)
 				$opts = false;
 		}
+
+		if(substr($path, 0, 1) !== '/')
+			$path = '/'.$path;
+
 		if($method === 'STATUS')
 			Scarlets::$registry['Route'][$method][$path] = $function;
 		else

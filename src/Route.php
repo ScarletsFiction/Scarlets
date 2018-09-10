@@ -25,8 +25,12 @@ class Route{
 		if(self::$namespace && !is_callable($func))
 			$func = implode('\\', self::$namespace).'\\'.$func;
 
-		if(self::$prefix)
-			$url = implode('/', self::$prefix).'/'.$url;
+		if(self::$prefix){
+			if(substr($url, 0, 1) !== '/')
+				$url = '/'.$url;
+
+			$url = '/'.implode('/', self::$prefix).$url;
+		}
 
 		if(self::$name && $opts !== false){
 			if(!is_array($opts)){
@@ -283,6 +287,9 @@ class Route{
 	public static function handleURL($url, $func, $opts, $checkOnly = false){
 		$matched = false;
 		$args = [];
+		
+		if(substr($url, 0, 1) !== '/')
+			$url = '/'.$url;
 
 		$requestURI = $_SERVER['REQUEST_URI'];
 		if($url === $requestURI)
