@@ -31,41 +31,41 @@ class Route{
 	
 	public static function post($url, $func, $opts = false){
 		if(Scarlets::$isConsole)
-			Route\Handler::register('POST', $url, $func);
+			Route\Handler::register('POST', $url, $func, $opts);
 
-		elseif($_SERVER['REQUEST_METHOD'] === 'POST' && self::handleURL($url, $func))
+		elseif($_SERVER['REQUEST_METHOD'] === 'POST' && self::handleURL($url, $func, $opts))
 			return true;
 	}
 	
 	public static function delete($url, $func, $opts = false){
 		if(Scarlets::$isConsole)
-			Route\Handler::register('DELETE', $url, $func);
+			Route\Handler::register('DELETE', $url, $func, $opts);
 
-		elseif($_SERVER['REQUEST_METHOD'] === 'DELETE' && self::handleURL($url, $func))
+		elseif($_SERVER['REQUEST_METHOD'] === 'DELETE' && self::handleURL($url, $func, $opts))
 			return true;
 	}
 	
 	public static function put($url, $func, $opts = false){
 		if(Scarlets::$isConsole)
-			Route\Handler::register('PUT', $url, $func);
+			Route\Handler::register('PUT', $url, $func, $opts);
 
-		elseif($_SERVER['REQUEST_METHOD'] === 'PUT' && self::handleURL($url, $func))
+		elseif($_SERVER['REQUEST_METHOD'] === 'PUT' && self::handleURL($url, $func, $opts))
 			return true;
 	}
 	
 	public static function options($url, $func, $opts = false){
 		if(Scarlets::$isConsole)
-			Route\Handler::register('OPTIONS', $url, $func);
+			Route\Handler::register('OPTIONS', $url, $func, $opts);
 
-		elseif($_SERVER['REQUEST_METHOD'] === 'OPTIONS' && self::handleURL($url, $func))
+		elseif($_SERVER['REQUEST_METHOD'] === 'OPTIONS' && self::handleURL($url, $func, $opts))
 			return true;
 	}
 	
 	public static function any($url, $func, $opts = false){
 		if(Scarlets::$isConsole)
-			Route\Handler::register('ANY', $url, $func);
+			Route\Handler::register('ANY', $url, $func, $opts);
 
-		elseif(self::handleURL($url, $func))
+		elseif(self::handleURL($url, $func, $opts))
 			return true;
 	}
 	
@@ -73,9 +73,9 @@ class Route{
 		foreach ($methods as $method) {
 			$method = strtoupper($method);
 			if(Scarlets::$isConsole)
-				Route\Handler::register($method, $url, $func);
+				Route\Handler::register($method, $url, $func, $opts);
 
-			elseif($_SERVER['REQUEST_METHOD'] === $method && self::handleURL($url, $func))
+			elseif($_SERVER['REQUEST_METHOD'] === $method && self::handleURL($url, $func, $opts))
 				return true;
 		}
 	}
