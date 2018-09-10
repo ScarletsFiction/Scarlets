@@ -21,7 +21,36 @@ class Route{
 	private static $name = false;
 	private static $middleware = false;
 
+	private static function implementCurrentScope(&$url, &$func, &$opts){
+		if(self::$namespace && !is_callable($func))
+			$func = implode('\\', self::$namespace).'\\'.$func;
+
+		if(self::$prefix)
+			$url = implode('/', self::$prefix).'/'.$url;
+
+		if(self::$name && $opts !== false){
+			if(!is_array($opts)){
+				if(strpos($opts, 'name:') !== false)
+					$opts = 'name:'.implode('.', self::$name).'.'.substr($opts, 5);
+			} else {
+				foreach($opts as &$value){
+					if(strpos($value, 'name:') !== false)
+						$value = 'name:'.implode('.', self::$name).'.'.substr($value, 5);
+				}
+			}
+		}
+		if(self::$middleware){
+			if(is_array($opts))
+				$opts = array_merge(self::$middleware, $opts);
+			else
+				$opts = self::$middleware;
+		}
+	}
+
 	public static function get($url, $func, $opts = false){
+		if(self::$namespace || self::$prefix || self::$name || self::$middleware)
+			self::implementCurrentScope($url, $func, $opts);
+
 		if(Scarlets::$isConsole)
 			Route\Handler::register('GET', $url, $func, $opts);
 
@@ -30,6 +59,9 @@ class Route{
 	}
 	
 	public static function post($url, $func, $opts = false){
+		if(self::$namespace || self::$prefix || self::$name || self::$middleware)
+			self::implementCurrentScope($url, $func, $opts);
+
 		if(Scarlets::$isConsole)
 			Route\Handler::register('POST', $url, $func, $opts);
 
@@ -38,6 +70,9 @@ class Route{
 	}
 	
 	public static function delete($url, $func, $opts = false){
+		if(self::$namespace || self::$prefix || self::$name || self::$middleware)
+			self::implementCurrentScope($url, $func, $opts);
+		
 		if(Scarlets::$isConsole)
 			Route\Handler::register('DELETE', $url, $func, $opts);
 
@@ -46,6 +81,9 @@ class Route{
 	}
 	
 	public static function put($url, $func, $opts = false){
+		if(self::$namespace || self::$prefix || self::$name || self::$middleware)
+			self::implementCurrentScope($url, $func, $opts);
+		
 		if(Scarlets::$isConsole)
 			Route\Handler::register('PUT', $url, $func, $opts);
 
@@ -54,6 +92,9 @@ class Route{
 	}
 	
 	public static function options($url, $func, $opts = false){
+		if(self::$namespace || self::$prefix || self::$name || self::$middleware)
+			self::implementCurrentScope($url, $func, $opts);
+		
 		if(Scarlets::$isConsole)
 			Route\Handler::register('OPTIONS', $url, $func, $opts);
 
@@ -62,6 +103,9 @@ class Route{
 	}
 	
 	public static function any($url, $func, $opts = false){
+		if(self::$namespace || self::$prefix || self::$name || self::$middleware)
+			self::implementCurrentScope($url, $func, $opts);
+		
 		if(Scarlets::$isConsole)
 			Route\Handler::register('ANY', $url, $func, $opts);
 
@@ -70,6 +114,9 @@ class Route{
 	}
 	
 	public static function match($methods, $url, $func, $opts = false){
+		if(self::$namespace || self::$prefix || self::$name || self::$middleware)
+			self::implementCurrentScope($url, $func, $opts);
+		
 		foreach ($methods as $method) {
 			$method = strtoupper($method);
 			if(Scarlets::$isConsole)
@@ -331,6 +378,13 @@ class Route{
 		// Handle controller
 		if(!is_callable($func)){
 			return;
+		}
+
+		// Handle middleware
+		if($opts !== false){
+			foreach($opts as $ware){
+				# code...
+			}
 		}
 		
 		// Call callback function

@@ -30,7 +30,7 @@ class Handler{
 		if($opts !== false){
 			foreach($opts as &$value){
 				if(strpos($value, 'name:') !== false){
-					$name[] = $value;
+					$name[] = substr($value, 5);
 					unset($value);
 				}
 			}
@@ -38,7 +38,10 @@ class Handler{
 			if(count($opts) === 0)
 				$opts = false;
 		}
-		Scarlets::$registry['Route'][$method][$path] = [$function, $opts];
+		if($method === 'STATUS')
+			Scarlets::$registry['Route'][$method][$path] = $function;
+		else
+			Scarlets::$registry['Route'][$method][$path] = [$function, $opts];
 
 		foreach ($name as &$value) {
 			Scarlets::$registry['Route']['NAME'][$value] = &Scarlets::$registry['Route'][$method][$path];
