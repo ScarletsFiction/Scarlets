@@ -23,38 +23,35 @@ Route::get('/', function(){
 	Serve::view('static.footer');
 });
 
-Route::get('/text/{:[A-Za-z]+}', function($text = 'world'){
-	$route = Route::current();
-	$name = Route::currentRouteName();
-	$action = Route::currentRouteAction();
-    return "Hello, $text";
+// regex: [A-Za-z]+
+Route::get('/text/{0:[A-Za-z]+}', function($text = ['world']){
+    // Serve::raw("Hello, $text[0]");
+    return "Hello, $text[0]";
 }, 'name:text');
 
-Route::get('/hello/{0}', function($message = null){
-    if($message !== null)
-        $message = 'world';
-
-    return Route::view('hello', ['message' => 'Hello, '.$message]);
+// Optional message
+Route::get('/hello/{0?}', function($message = 'world'){
+    Serve::view('hello', ['message' => 'Hello, '.$message]);
 });
 
-Route::namespaces('User')->group(function(){
-    // Class controller at "App\Http\Controllers\User" Namespace
+Route::namespaces('App\Http\Controllers\User', function(){
+    // Class controller at "App\Http\Controllers" Namespace
 });
 
-Route::domain('{0}.domain.com')->group(function(){
+Route::domain('{0}.framework.test', function(){
     Route::get('home/{0}', function($query){
         //
     });
 });
 
-Route::prefix('admin')->group(function(){
+Route::prefix('admin', function(){
     Route::get('users', function(){
         // Matches The "/admin/users" URL
     });
 });
 
-Route::name('admin.')->group(function(){
+Route::name('admin.', function(){
     Route::get('users', function(){
         // Route assigned name "admin.users"...
-    })->name('users');
+    }, 'name:users');
 });

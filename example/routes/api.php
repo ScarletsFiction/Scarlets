@@ -11,11 +11,11 @@
 use \Scarlets\Route;
 use \Scarlets\Route\Serve;
 
-Route::get('/api/user', function($request){
-    return $request->user();
-}, ['auth:api', 'throttle:60,1']);
+//Route::get('/api/user', function($request){
+//    return $request->user();
+//}, ['auth:api', 'throttle:60,1']);
 
-Route::middleware('auth:api')->group(function(){
+Route::middleware('auth:api', function(){
     Route::get('/user', function(){
         //
     });
