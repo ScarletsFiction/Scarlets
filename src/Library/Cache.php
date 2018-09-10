@@ -1,6 +1,7 @@
 <?php 
 namespace Scarlets\Library;
 use \Scarlets;
+use \Scarlets\Config;
 
 /*
 ---------------------------------------------------------------------------
@@ -22,7 +23,7 @@ class Cache{
 	public static $lastCheck = 0;
 
 	public static function init(){
-		$config = Scarlets\Config::load('filesystem');
+		$config = Config::load('filesystem');
 		$settings = &$config['filesystem.storage'][$config['filesystem.cache_storage']];
 
 		if($settings['driver'] === 'localfile'){

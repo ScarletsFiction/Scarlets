@@ -186,8 +186,7 @@ Scarlets::$registry['Initialize'] = function(){
 	$reg['path.framework.library'] = __DIR__.'/src/Library';
 
 	// Initialize configuration
-	Config::load('app');
-	$config = &Config::$data;
+	$config = Config::load('app');
 
 	if(!isset($_SERVER['REQUEST_URI'])){
 		$_SERVER['REQUEST_METHOD'] = 'GET';

@@ -96,8 +96,7 @@ class Crypto{
 	}
 
 	public static function init(){
-		Config::load('security');
-		$ref = &Config::$data;
+		$ref = Config::load('security');
 		self::$key = &$ref['security.key'];
 		self::$cipher = &$ref['security.cipher'];
 		self::$crypto_mask = &$ref['security.crypto_mask'];

@@ -3,13 +3,8 @@
 namespace Scarlets\Route;
 use \Scarlets;
 
-class Group{
-	public function group(){
-
-	}
-}
-
 class Handler{
+	public static $Extension = false;
 	public static function Initialize(){
 		// Create some reference to registry
 		Scarlets\Route::$instantOutput = &Scarlets\Config::$data['app.instant'];
@@ -23,6 +18,11 @@ class Handler{
 		} else {
 			Scarlets\Route::$uri = $_SERVER['REQUEST_URI'];
 		}
+	}
+
+	public static function initExtension(){
+		self::$Extension = new Extension();
+		return self::$Extension;
 	}
 
 	public static function register($method, &$path, &$function){
@@ -57,6 +57,13 @@ class Serve{
 		
 		$router = &Scarlets::$registry['Route']['STATUS'];
 		$router[$statusCode]();
+	}
+
+	public static function raw($text){
+		$type = gettype($text);
+		if($type === 'string'){
+			print_r($text);
+		}
 	}
 }
 

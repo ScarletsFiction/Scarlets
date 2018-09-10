@@ -55,11 +55,14 @@ class Auth{
 		}
 		return false;
 	}
-	//Return [userID, username] if logged in
-	public static function checkLoginStatus($returnBoolOnly = false)
+
+	//Return {userID, username} if logged in
+	public static function getLoginData($returnBoolOnly = false)
 	{
 		$sifyData = &Session::$sifyData;
 		$data = &Session::$data;
+		self::$userID = false;
+		self::$username = false;
 
 		// Check if cookie and session data have userID
 		if(isset($data['userID']) && isset($sifyData['userID']))
