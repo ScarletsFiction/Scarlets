@@ -25,8 +25,24 @@ class Handler{
 		return self::$Extension;
 	}
 
-	public static function register($method, &$path, &$function){
-		Scarlets::$registry['Route'][$method][$path] = $function;
+	public static function register($method, &$path, &$function, &$opts = false){
+		$name = [];
+		if($opts !== false){
+			foreach($opts as &$value){
+				if(strpos($value, 'name:') !== false){
+					$name[] = $value;
+					unset($value);
+				}
+			}
+
+			if(count($opts) === 0)
+				$opts = false;
+		}
+		Scarlets::$registry['Route'][$method][$path] = [$function, $opts];
+
+		foreach ($name as &$value) {
+			Scarlets::$registry['Route']['NAME'][$value] = &Scarlets::$registry['Route'][$method][$path];
+		}
 	}
 }
 
@@ -61,9 +77,8 @@ class Serve{
 
 	public static function raw($text){
 		$type = gettype($text);
-		if($type === 'string'){
+		if($type === 'string')
 			print_r($text);
-		}
 	}
 }
 

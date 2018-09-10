@@ -130,10 +130,8 @@ class Server{
 		$found = false;
 		$router = &Scarlets::$registry['Route'][$headers['METHOD']];
 		foreach ($router as $key => $func) {
-			if($key === $headers['URI']){ // ToDo: implement regex
-				$func($body);
+			if(Route::handleURL($key, $func[0], $func[1])) //($key === $headers['URI']){ // ToDo: implement regex
 				$found = true;
-			}
 		}
 
 		$output = "\nServer: Scarlets\nConnection: close\nContent-Type: text/html\r\n\r\n";
