@@ -36,6 +36,9 @@ Route::get('/hello/{0?}', function($message = 'world'){
 
 Route::namespaces('App\Http\Controllers', function(){
     // Class controller at "App\Http\Controllers" Namespace
+
+    // Call 'route' function on "User\Home" Class
+    Route::get('/user/{0}', 'User\Home::route');
 });
 
 Route::domain('{0}.framework.test', function($domain){
@@ -47,11 +50,23 @@ Route::domain('{0}.framework.test', function($domain){
 Route::prefix('admin', function(){
     Route::get('users', function(){
         // Matches The "/admin/users" URL
+        Serve::raw("Hi admin!");
+
+        // Or route to User List
+        Route::route('list.users');
     });
 });
 
 Route::name('list', function(){
     Route::get('users', function(){
-        // Route assigned name "list.users"...
+        // Route assigned name "list.users"
+        Serve::raw("User List");
     }, 'name:users');
+});
+
+// Limit to 2 request per 60 seconds
+Route::middleware('throttle:2,60', function(){
+    Route::get('limit', function(){
+        Serve::raw("Limited request");
+    });
 });

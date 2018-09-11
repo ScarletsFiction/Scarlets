@@ -23,7 +23,7 @@ class Error{
 
 	public static function warning($message){
 		if(!Scarlets\Config::$data['app.debug']){
-
+			trigger_error($message, E_USER_WARNING);
 		}
 	}
 

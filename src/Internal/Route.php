@@ -107,3 +107,32 @@ class Query{
 	// Public directory path based on app.url_path config
 	public static $home = '';
 }
+
+class Middleware{
+	// Register user defined middleware
+	// $register['name'] = function(){}
+	public static $register = [];
+
+	public static function callMiddleware($text){
+		$name = explode(':', $text, 2);
+		$data = [];
+
+		if(count($name) !== 1)
+			$data = $name[1];
+		$name = $name[0];
+
+		// Priority the user defined middleware
+		if(isset($register[$name])){
+			call_user_func_array($register[$name], $data);
+		}
+
+		// Then check for build-in middleware
+		elseif(is_callable('self::'.$name)){
+			call_user_func_array('self::'.$name, $data);
+		}
+
+		else {
+			Scarlets\Error::warning('Middleware for "'.$name.'" was not defined');
+		}
+	}
+}

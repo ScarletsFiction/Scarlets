@@ -1,25 +1,14 @@
 <?php
-use Scarlets\User\Auth;
 namespace App\Http\Controllers\User;
+use \Scarlets\Route\Serve;
 
 class Home {
-	public static $user = [];
+	public static $fallback = 'Please input username';
 
-	public static function route($url = ''){
-		self::$user = Auth::getLoginData();
+	public static function route($username){
+		if(!$username)
+			return Serve::raw(self::$fallback);
 
-		// Serve user
-		if(self::$user){
-			// Serve his homepage
-			Serve::view('userhome', [
-				'name' => self::$user['username']
-			]);
-		}
-
-		// Serve guest
-		else {
-			// Redirect to login page or serve something
-			Serve::route('login');
-		}
+		Serve::raw("Your username: $username");
 	}
 }

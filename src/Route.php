@@ -20,6 +20,7 @@ class Route{
 	private static $prefix = false;
 	private static $name = false;
 	private static $middleware = false;
+	private static $waitName = false;
 
 	private static function implementCurrentScope(&$url, &$func, &$opts){
 		if(self::$namespace && !is_callable($func))
@@ -33,16 +34,31 @@ class Route{
 		}
 
 		if(self::$name && $opts !== false){
-			if(!is_array($opts)){
-				if(strpos($opts, 'name:') !== false)
-					$opts = 'name:'.implode('.', self::$name).'.'.substr($opts, 5);
-			} else {
-				foreach($opts as &$value){
-					if(strpos($value, 'name:') !== false)
-						$value = 'name:'.implode('.', self::$name).'.'.substr($value, 5);
+			if(!is_array($opts))
+				$opts = [$opts];
+
+			foreach($opts as &$value){
+				if(strpos($value, 'name:') !== false){
+					$name = implode('.', self::$name).'.'.substr($value, 5);
+
+					if(self::$waitName !== false){
+						foreach (self::$waitName as &$wait) {
+							if($wait[0] !== $name)
+								continue;
+
+							call_user_func_array($func, $wait[1]);
+
+							unset($wait);
+							if(count(self::$waitName) === 0)
+								self::$waitName = false;
+						}
+					}
+
+					$value = 'name:'.$name;
 				}
 			}
 		}
+
 		if(self::$middleware){
 			if(is_array($opts))
 				$opts = array_merge(self::$middleware, $opts);
@@ -51,85 +67,86 @@ class Route{
 		}
 	}
 
-	public static function get($url, $func, $opts = false){
-		if(self::$namespace || self::$prefix || self::$name || self::$middleware)
-			self::implementCurrentScope($url, $func, $opts);
+	// ---- Route by request method ----
+		public static function get($url, $func, $opts = false){
+			if(self::$namespace || self::$prefix || self::$name || self::$middleware)
+				self::implementCurrentScope($url, $func, $opts);
 
-		if(Scarlets::$isConsole)
-			Route\Handler::register('GET', $url, $func, $opts);
-
-		elseif($_SERVER['REQUEST_METHOD'] === 'GET' && self::handleURL($url, $func, $opts))
-			return true;
-	}
-	
-	public static function post($url, $func, $opts = false){
-		if(self::$namespace || self::$prefix || self::$name || self::$middleware)
-			self::implementCurrentScope($url, $func, $opts);
-
-		if(Scarlets::$isConsole)
-			Route\Handler::register('POST', $url, $func, $opts);
-
-		elseif($_SERVER['REQUEST_METHOD'] === 'POST' && self::handleURL($url, $func, $opts))
-			return true;
-	}
-	
-	public static function delete($url, $func, $opts = false){
-		if(self::$namespace || self::$prefix || self::$name || self::$middleware)
-			self::implementCurrentScope($url, $func, $opts);
-		
-		if(Scarlets::$isConsole)
-			Route\Handler::register('DELETE', $url, $func, $opts);
-
-		elseif($_SERVER['REQUEST_METHOD'] === 'DELETE' && self::handleURL($url, $func, $opts))
-			return true;
-	}
-	
-	public static function put($url, $func, $opts = false){
-		if(self::$namespace || self::$prefix || self::$name || self::$middleware)
-			self::implementCurrentScope($url, $func, $opts);
-		
-		if(Scarlets::$isConsole)
-			Route\Handler::register('PUT', $url, $func, $opts);
-
-		elseif($_SERVER['REQUEST_METHOD'] === 'PUT' && self::handleURL($url, $func, $opts))
-			return true;
-	}
-	
-	public static function options($url, $func, $opts = false){
-		if(self::$namespace || self::$prefix || self::$name || self::$middleware)
-			self::implementCurrentScope($url, $func, $opts);
-		
-		if(Scarlets::$isConsole)
-			Route\Handler::register('OPTIONS', $url, $func, $opts);
-
-		elseif($_SERVER['REQUEST_METHOD'] === 'OPTIONS' && self::handleURL($url, $func, $opts))
-			return true;
-	}
-	
-	public static function any($url, $func, $opts = false){
-		if(self::$namespace || self::$prefix || self::$name || self::$middleware)
-			self::implementCurrentScope($url, $func, $opts);
-		
-		if(Scarlets::$isConsole)
-			Route\Handler::register('ANY', $url, $func, $opts);
-
-		elseif(self::handleURL($url, $func, $opts))
-			return true;
-	}
-	
-	public static function match($methods, $url, $func, $opts = false){
-		if(self::$namespace || self::$prefix || self::$name || self::$middleware)
-			self::implementCurrentScope($url, $func, $opts);
-		
-		foreach ($methods as $method) {
-			$method = strtoupper($method);
 			if(Scarlets::$isConsole)
-				Route\Handler::register($method, $url, $func, $opts);
+				Route\Handler::register('GET', $url, $func, $opts);
 
-			elseif($_SERVER['REQUEST_METHOD'] === $method && self::handleURL($url, $func, $opts))
+			elseif($_SERVER['REQUEST_METHOD'] === 'GET' && self::handleURL($url, $func, $opts))
 				return true;
 		}
-	}
+		
+		public static function post($url, $func, $opts = false){
+			if(self::$namespace || self::$prefix || self::$name || self::$middleware)
+				self::implementCurrentScope($url, $func, $opts);
+
+			if(Scarlets::$isConsole)
+				Route\Handler::register('POST', $url, $func, $opts);
+
+			elseif($_SERVER['REQUEST_METHOD'] === 'POST' && self::handleURL($url, $func, $opts))
+				return true;
+		}
+		
+		public static function delete($url, $func, $opts = false){
+			if(self::$namespace || self::$prefix || self::$name || self::$middleware)
+				self::implementCurrentScope($url, $func, $opts);
+			
+			if(Scarlets::$isConsole)
+				Route\Handler::register('DELETE', $url, $func, $opts);
+
+			elseif($_SERVER['REQUEST_METHOD'] === 'DELETE' && self::handleURL($url, $func, $opts))
+				return true;
+		}
+		
+		public static function put($url, $func, $opts = false){
+			if(self::$namespace || self::$prefix || self::$name || self::$middleware)
+				self::implementCurrentScope($url, $func, $opts);
+			
+			if(Scarlets::$isConsole)
+				Route\Handler::register('PUT', $url, $func, $opts);
+
+			elseif($_SERVER['REQUEST_METHOD'] === 'PUT' && self::handleURL($url, $func, $opts))
+				return true;
+		}
+		
+		public static function options($url, $func, $opts = false){
+			if(self::$namespace || self::$prefix || self::$name || self::$middleware)
+				self::implementCurrentScope($url, $func, $opts);
+			
+			if(Scarlets::$isConsole)
+				Route\Handler::register('OPTIONS', $url, $func, $opts);
+
+			elseif($_SERVER['REQUEST_METHOD'] === 'OPTIONS' && self::handleURL($url, $func, $opts))
+				return true;
+		}
+		
+		public static function any($url, $func, $opts = false){
+			if(self::$namespace || self::$prefix || self::$name || self::$middleware)
+				self::implementCurrentScope($url, $func, $opts);
+			
+			if(Scarlets::$isConsole)
+				Route\Handler::register('ANY', $url, $func, $opts);
+
+			elseif(self::handleURL($url, $func, $opts))
+				return true;
+		}
+		
+		public static function match($methods, $url, $func, $opts = false){
+			if(self::$namespace || self::$prefix || self::$name || self::$middleware)
+				self::implementCurrentScope($url, $func, $opts);
+			
+			foreach ($methods as $method) {
+				$method = strtoupper($method);
+				if(Scarlets::$isConsole)
+					Route\Handler::register($method, $url, $func, $opts);
+
+				elseif($_SERVER['REQUEST_METHOD'] === $method && self::handleURL($url, $func, $opts))
+					return true;
+			}
+		}
 	
 	public static function domain($domain, $func){
 		if(strpos($domain, '{') === false){
@@ -189,6 +206,17 @@ class Route{
 			call_user_func_array($func, $args);
 		}
 	}
+
+	public static function route($name, $data = []){
+		if(self::$waitName !== false)
+			self::$waitName = [];
+
+		$ref = &Scarlets::$registry['Route']['NAME'];
+		if(isset($ref[$name]))
+			return call_user_func_array($ref[$name], $data);
+
+		self::$waitName[] = [$name, $data];
+	}
 	
 	// $http = http status like 301 or redirect method
 	public static function redirect($from, $to, $http, $data = false){
@@ -225,53 +253,53 @@ class Route{
 	}
 	
 	// ---- Temporary scope based function ----
-	public static function namespaces($namespace, $func){
-		if(self::$namespace === false)
-			self::$namespace = [];
-		self::$namespace[] = $namespace;
-		
-		$func();
+		public static function namespaces($namespace, $func){
+			if(self::$namespace === false)
+				self::$namespace = [];
+			self::$namespace[] = $namespace;
+			
+			$func();
 
-		array_pop(self::$namespace);
-		if(count(self::$namespace) === 0)
-			self::$namespace = false;
-	}
-	
-	public static function prefix($url, $func){
-		if(self::$prefix === false)
-			self::$prefix = [];
-		self::$prefix[] = $url;
+			array_pop(self::$namespace);
+			if(count(self::$namespace) === 0)
+				self::$namespace = false;
+		}
 		
-		$func();
+		public static function prefix($url, $func){
+			if(self::$prefix === false)
+				self::$prefix = [];
+			self::$prefix[] = $url;
+			
+			$func();
 
-		array_pop(self::$prefix);
-		if(count(self::$prefix) === 0)
-			self::$prefix = false;
-	}
-	
-	public static function name($name, $func){
-		if(self::$name === false)
-			self::$name = [];
-		self::$name[] = $name;
+			array_pop(self::$prefix);
+			if(count(self::$prefix) === 0)
+				self::$prefix = false;
+		}
 		
-		$func();
+		public static function name($name, $func){
+			if(self::$name === false)
+				self::$name = [];
+			self::$name[] = $name;
+			
+			$func();
 
-		array_pop(self::$name);
-		if(count(self::$name) === 0)
-			self::$name = false;
-	}
-	
-	public static function middleware($controller, $func){
-		if(self::$middleware === false)
-			self::$middleware = [];
-		self::$middleware[] = $controller;
+			array_pop(self::$name);
+			if(count(self::$name) === 0)
+				self::$name = false;
+		}
 		
-		$func();
+		public static function middleware($controller, $func){
+			if(self::$middleware === false)
+				self::$middleware = [];
+			self::$middleware[] = $controller;
+			
+			$func();
 
-		array_pop(self::$middleware);
-		if(count(self::$middleware) === 0)
-			self::$middleware = false;
-	}
+			array_pop(self::$middleware);
+			if(count(self::$middleware) === 0)
+				self::$middleware = false;
+		}
 
 	private static function getCallbackType($func){
 		$functionReflection = new ReflectionFunction($func);
@@ -287,7 +315,7 @@ class Route{
 	public static function handleURL($url, $func, $opts, $checkOnly = false){
 		$matched = false;
 		$args = [];
-		
+
 		if(substr($url, 0, 1) !== '/')
 			$url = '/'.$url;
 
