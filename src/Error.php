@@ -113,7 +113,7 @@ class Error{
 		Log::message($message);
 
 		if($exitting && !$appConfig['app.debug'] && Scarlets::$isWebsite)
-			Serve::httpCode(500);
+			Serve::status(500);
 		else{
 			if(Scarlets::$isConsole)
 				print($message."\n\n");

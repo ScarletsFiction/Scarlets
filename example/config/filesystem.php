@@ -10,7 +10,7 @@ return [
 | This option controls the default cache storage while using the caching library.
 |
 */
-'cache_storage' => 'cache',
+'cache_storage' => 'app',
 
 /*
 |--------------------------------------------------------------------------
@@ -23,14 +23,16 @@ return [
 |
 */
 'storage' => [
-    'localfile'=>[
-        'app' => $frame['path.app.storage'].'/app',
+    // Required for app
+    'app' => [
+    	'driver' => 'localfile',
+    	'path' => $frame['path.app'].'/storage/app'
+   	],
 
-        // Required for app cache
-        'cache' => $frame['path.app.storage'].'/cache',
-
-        // Required for framework
-        'framework' => $frame['path.app.storage'].'/framework'
+    // Required for framework
+    'framework' => [
+    	'driver' => 'localfile',
+    	'path' => $frame['path.app'].'/storage/framework'
     ]
 ],
 

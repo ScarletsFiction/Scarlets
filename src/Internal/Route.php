@@ -39,13 +39,14 @@ class Handler{
 				$opts = false;
 		}
 
-		if(substr($path, 0, 1) !== '/')
-			$path = '/'.$path;
 
 		if($method === 'STATUS')
 			Scarlets::$registry['Route'][$method][$path] = $function;
-		else
+		else{
+			if(substr($path, 0, 1) !== '/')
+				$path = '/'.$path;
 			Scarlets::$registry['Route'][$method][$path] = [$function, $opts];
+		}
 
 		foreach ($name as &$value) {
 			Scarlets::$registry['Route']['NAME'][$value] = &Scarlets::$registry['Route'][$method][$path];
@@ -73,15 +74,16 @@ class Serve{
 
 	}
 
-	public static function httpCode($statusCode){
+	public static function status($statusCode){
 		if(self::$headerSent) return;
 		http_response_code($statusCode);
-		self::$headerSent = true;
 		
 		$router = &Scarlets::$registry['Route']['STATUS'];
 
-		if(isset($router[$statusCode]))
+		if(isset($router[$statusCode])){
+			self::$headerSent = true;
 			$router[$statusCode]();
+		}
 	}
 
 	public static function raw($text){
@@ -125,8 +127,8 @@ class Middleware{
 		$name = $name[0];
 
 		// Priority the user defined middleware
-		if(isset($register[$name])){
-			return call_user_func_array($register[$name], $data);
+		if(isset(self::$register[$name])){
+			return call_user_func_array(self::$register[$name], $data);
 		}
 
 		// Then check for build-in middleware

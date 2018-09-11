@@ -26,11 +26,22 @@ class Cache{
 		$config = Config::load('filesystem');
 		$settings = &$config['filesystem.storage'][$config['filesystem.cache_storage']];
 
+		// Currently support localfile cache
 		if($settings['driver'] === 'localfile'){
-			self::$path = &$settings['path'];
-			self::$expirationPath = $settings['path'].'/__expiration.srz';
+			self::$path = $settings['path'].'/cache';
+			self::$expirationPath = self::$path.'/__expiration.srz';
+
+			if(!file_exists(self::$path))
+				mkdir(self::$path, 0777, true);
+
+			if(!file_exists(self::$expirationPath)){
+				file_put_contents(self::$expirationPath, serialize([]));
+				self::$expiration = [];
+			}
+			else
+				self::$expiration = unserialize(file_get_contents(self::$expirationPath));
+
 			self::$lastCheck = filemtime(self::$expirationPath);
-			self::$expiration = unserialize(file_get_contents(self::$expirationPath));
 		}
 	}
 
@@ -42,35 +53,42 @@ class Cache{
 		}
 	}
 
-	public static function get($key){
+	public static function &get($key, $default=null){
 		if(!isset(self::$expiration[$key]))
-			return false;
+			return $default;
 
 		if(self::$expiration[$key] !== 0){
 			self::reloadExpiration();
-			if(self::$expiration[$key] > time()){
+			if(self::$expiration[$key] < time()){
 				unset(self::$expiration[$key]);
-				unlink($path."/$key.cache");
-				file_put_contents(self::$expirationPath, serialize(self::$expiration[$key]));
-				return false;
+				unlink(self::$path."/$key.cache");
+				file_put_contents(self::$expirationPath, serialize(self::$expiration));
+				return $default;
 			}
 		}
 
-		return file_get_contents($path."/$key.cache");
+		$data = file_get_contents(self::$path."/$key.cache");
+		if(substr($data, 1, 1) === ':' || is_numeric(substr($data, 2, 1)))
+			$data = unserialize($data);
+
+		return $data;
 	}
 
 	public static function set($key, $value, $seconds=0){
 		if($seconds !== 0){
 			self::$expiration[$key] = $seconds + time();
-			file_put_contents(self::$expirationPath, serialize(self::$expiration[$key]));
+			file_put_contents(self::$expirationPath, serialize(self::$expiration));
 		}
 
 		if(!isset(self::$expiration[$key])){
 			self::$expiration[$key] = 0;
-			file_put_contents(self::$expirationPath, serialize(self::$expiration[$key]));
+			file_put_contents(self::$expirationPath, serialize(self::$expiration));
 		}
 
-		file_put_contents($path."/$key.cache", $value);
+		if(!is_string($value))
+			$value = serialize($value);
+
+		file_put_contents(self::$path."/$key.cache", $value);
 	}
 
 	public static function has($key){
@@ -79,10 +97,10 @@ class Cache{
 
 		if(self::$expiration[$key] !== 0){
 			self::reloadExpiration();
-			if(self::$expiration[$key] > time()){
+			if(self::$expiration[$key] < time()){
 				unset(self::$expiration[$key]);
-				unlink($path."/$key.cache");
-				file_put_contents(self::$expirationPath, serialize(self::$expiration[$key]));
+				unlink(self::$path."/$key.cache");
+				file_put_contents(self::$expirationPath, serialize(self::$expiration));
 				return false;
 			}
 		}
@@ -91,29 +109,32 @@ class Cache{
 	}
 
 	// Get and forget
-	public static function &pull($key, $value){
+	public static function &pull($key, $default=null){
 		if(!isset(self::$expiration[$key]))
-			return false;
+			return $default;
 
-		$data = file_get_contents($path."/$key.cache");
-		unlink($path."/$key.cache");
+		$data = file_get_contents(self::$path."/$key.cache");
+		if(substr($data, 1, 1) === ':' || is_numeric(substr($data, 2, 1)))
+			$data = unserialize($data);
+
+		unlink(self::$path."/$key.cache");
 		unset(self::$expiration[$key]);
-		file_put_contents(self::$expirationPath, serialize(self::$expiration[$key]));
+		file_put_contents(self::$expirationPath, serialize(self::$expiration));
 		return $data;
 	}
 
 	public static function forget($key){
-		unlink($path."/$key.cache");
+		unlink(self::$path."/$key.cache");
 		if(!isset(self::$expiration[$key]))
 			return false;
 
 		unset(self::$expiration[$key]);
-		file_put_contents(self::$expirationPath, serialize(self::$expiration[$key]));
+		file_put_contents(self::$expirationPath, serialize(self::$expiration));
 	}
 	
-	public static function flush($key, $value){
+	public static function flush($key){
 		self::$expiration = [];
-		$list = glob($path.'/*.*');
+		$list = glob(self::$path.'/*.*');
 		foreach($list as &$value){
 			unlink($value);
 		}
@@ -127,13 +148,13 @@ class Cache{
 		self::reloadExpiration();
 		if(self::$expiration[$key] >= time()){
 			unset(self::$expiration[$key]);
-			unlink($path."/$key.cache");
-			file_put_contents(self::$expirationPath, serialize(self::$expiration[$key]));
+			unlink(self::$path."/$key.cache");
+			file_put_contents(self::$expirationPath, serialize(self::$expiration));
 			return false;
 		}
 
 		self::$expiration[$key] = $seconds + time();
-		file_put_contents(self::$expirationPath, serialize(self::$expiration[$key]));
+		file_put_contents(self::$expirationPath, serialize(self::$expiration));
 		return true;
 	}
 }

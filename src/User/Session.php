@@ -13,7 +13,7 @@ use \Scarlets\Library\Database;
 | This class is required for internal authentication and security library
 | SFSession does implement triple session protection for avoid collision
 | and other security vulnerability. But using this on unsecured protocol
-| will have some chance to be hacked by MIM Attack.
+| will have some chance to be stealed by MIM Attack.
 |
 | SFSession.id === sifyData.id
 | sifyData.shard === Cookie.shard
