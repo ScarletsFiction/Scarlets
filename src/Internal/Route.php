@@ -28,6 +28,9 @@ class Handler{
 	public static function register($method, &$path, &$function, &$opts = false){
 		$name = [];
 		if($opts !== false){
+			if(is_string($opts))
+				$opts = [$opts];
+
 			foreach($opts as &$value){
 				if(strpos($value, 'name:') !== false){
 					$name[] = substr($value, 5);
@@ -38,7 +41,6 @@ class Handler{
 			if(count($opts) === 0)
 				$opts = false;
 		}
-
 
 		if($method === 'STATUS')
 			Scarlets::$registry['Route'][$method][$path] = $function;

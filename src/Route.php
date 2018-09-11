@@ -149,6 +149,9 @@ class Route{
 		}
 	
 	public static function domain($domain, $func){
+		if(Scarlets::$isConsole)
+			return;
+		
 		if(strpos($domain, '{') === false){
 			if($domain === $_SERVER['HTTP_HOST'])
 				$func();
