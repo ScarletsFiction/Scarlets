@@ -22,9 +22,7 @@ class Error{
 	public static $currentError = [];
 
 	public static function warning($message){
-		if(!Scarlets\Config::$data['app.debug']){
-			trigger_error($message, E_USER_WARNING);
-		}
+		trigger_error($message, E_USER_WARNING);
 	}
 
 	// Available when using single log
@@ -74,6 +72,7 @@ class Error{
 	    }
 
 	    $trace = explode('Scarlets\Error::ErrorHandler', $trace)[1];
+	    $trace = explode('Scarlets\Error::warning', $trace)[1];
 	    $trace = explode("\n", $trace, 2)[1];
 
 	    $breakline = Scarlets::$isConsole ? '':' <br>';
@@ -85,12 +84,12 @@ class Error{
 	    else if(!Scarlets::$isConsole)
 	    	$url = "http".(isset($_SERVER['HTTPS'])?'s':'').'://'.$_SERVER['SERVER_NAME'].$_SERVER['REQUEST_URI'];
 
-$message = "Exception type: ".self::ErrorType($severity).";
-Message: $message;
-File: $file;
-Line: $line;
-URL: $url
-Trace: \n$trace;";
+		$message = "Exception type: ".self::ErrorType($severity).";\n".
+		"Message: $message;\n".
+		"File: $file;\n".
+		"Line: $line;\n".
+		"URL: $url\n".
+		"Trace: \n$trace;";
 
 		self::$currentError .= $message;
 

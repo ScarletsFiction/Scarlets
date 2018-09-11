@@ -418,7 +418,8 @@ class Route{
 		// Handle middleware
 		if($opts !== false){
 			foreach($opts as $ware){
-				# code...
+				if(Route\Middleware::callMiddleware($ware))
+					return false;
 			}
 		}
 		

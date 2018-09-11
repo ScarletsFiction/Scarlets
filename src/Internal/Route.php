@@ -79,7 +79,9 @@ class Serve{
 		self::$headerSent = true;
 		
 		$router = &Scarlets::$registry['Route']['STATUS'];
-		$router[$statusCode]();
+
+		if(isset($router[$statusCode]))
+			$router[$statusCode]();
 	}
 
 	public static function raw($text){
@@ -113,26 +115,32 @@ class Middleware{
 	// $register['name'] = function(){}
 	public static $register = [];
 
+	// Returning true value will cancel the current request
 	public static function callMiddleware($text){
 		$name = explode(':', $text, 2);
 		$data = [];
 
 		if(count($name) !== 1)
-			$data = $name[1];
+			$data = explode(',', $name[1]);
 		$name = $name[0];
 
 		// Priority the user defined middleware
 		if(isset($register[$name])){
-			call_user_func_array($register[$name], $data);
+			return call_user_func_array($register[$name], $data);
 		}
 
 		// Then check for build-in middleware
 		elseif(is_callable('self::'.$name)){
-			call_user_func_array('self::'.$name, $data);
+			return call_user_func_array('self::'.$name, $data);
 		}
 
 		else {
 			Scarlets\Error::warning('Middleware for "'.$name.'" was not defined');
+			return true;
 		}
+	}
+
+	private static function throttle($request = 1, $timer = 3){
+		return;
 	}
 }
