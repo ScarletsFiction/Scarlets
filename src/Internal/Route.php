@@ -68,6 +68,7 @@ class Serve{
 		$post = &$_POST;
 
 		// Class reference
+		$serve = 'Scarlets\Route\Serve';
 		$lang = 'Scarlets\Library\Language';
 		$q = 'Scarlets\Route\Query';
 

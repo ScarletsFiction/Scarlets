@@ -1,5 +1,5 @@
 <?php
-	$start = microtime();
+	$start = microtime(true);
 
 	// Control startup with Scarlets Framework
 	include_once __DIR__."/../root.php";
@@ -11,4 +11,4 @@
 	Scarlets::Website();
 
 	// For benchmarking
-	print_r("\n<!-- Dynamic page generated in ".round(microtime() - $start, 5)." seconds. -->");
+	print_r("\n<!-- Dynamic page generated in ".round(microtime(true) - $start, 5)." seconds. -->");

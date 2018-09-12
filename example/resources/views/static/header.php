@@ -5,8 +5,10 @@
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
 	<meta name="theme-color" content="#181818">
 	<title><?= $title ?></title>
-	<link rel="stylesheet" type="text/css" href="<?= $q::$home ?>/assets/css/style.css">
-	<link href='<?= $q::$home ?>/assets/css/lato-font.css' rel='stylesheet' type='text/css'>
+	<link rel="stylesheet" type="text/css" href="/assets/css/style.css">
+	<link href='/assets/css/lato-font.css' rel='stylesheet' type='text/css'>
+	<script type="text/javascript" src="/assets/js/jquery.js"></script>
+	<script type="text/javascript" src="/assets/js/lazyload.js"></script>
 </head>
 <body>
-	<div id="body-background" style="background-image: url('<?= $q::$home ?>/assets/img/bg.jpg');"></div>
+	<img id="body-background" class="b-lazy" data-src="<?= $q::$home ?>/assets/img/bg.jpg"></img>
