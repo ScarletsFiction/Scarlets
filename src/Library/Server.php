@@ -130,7 +130,7 @@ class Server{
 		$found = false;
 		$router = &Scarlets::$registry['Route'][$headers['METHOD']];
 		foreach ($router as $key => $func) {
-			if(\Scarlets\Route::handleURL($key, $func[0], $func[1])) //($key === $headers['URI']){ // ToDo: implement regex
+			if(\Scarlets\Route::handleURL($key, $func[0], $func[1]))
 				$found = true;
 		}
 

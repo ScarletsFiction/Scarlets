@@ -62,13 +62,19 @@ class Serve{
 		if(Scarlets::$isConsole && !self::$headerSent)
 			self::httpStatus(200);
 
+		// Internal variable
 		$path = Scarlets::$registry['path.views'].'/'.str_replace('.', '/', $path).'.php';
-		$g = &$_GET;
-		$p = &$_POST;
+		$get = &$_GET;
+		$post = &$_POST;
+
+		// Class reference
+		$lang = 'Scarlets\Library\Language';
 		$q = 'Scarlets\Route\Query';
 
+		// User defined variable
 		foreach ($values as $key => $value)
 			${$key} = $value;
+
 		include $path;
 	}
 
