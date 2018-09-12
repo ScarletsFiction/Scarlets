@@ -11,4 +11,4 @@
 	<script type="text/javascript" src="/assets/js/lazyload.js"></script>
 </head>
 <body>
-	<img id="body-background" class="b-lazy" data-src="<?= $q::$home ?>/assets/img/bg.jpg"></img>
+	<div id="body-background" class="b-lazy" data-src="/assets/img/bg.jpg"></div>

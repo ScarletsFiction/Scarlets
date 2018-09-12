@@ -153,7 +153,7 @@ input{
            max-width: 100%;
              opacity: 0;
 }
-.b-lazy.loaded {
+.b-lazy.loaded{
   opacity: 1;
 }
 .b-lazy.loading{
