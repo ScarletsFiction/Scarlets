@@ -147,8 +147,8 @@ Scarlets::onShutdown(function(){
 	if(Route::$statusCode > $httpCode)
 		$httpCode = Route::$statusCode;
 
-	// Redirect 404 or 500 http status
-	if($httpCode !== 200) Route\Serve::httpCode($httpCode);
+	// Trigger HTTP status Callback
+	Route\Serve::status($httpCode);
 
 	$error = error_get_last();
     if($error && (!isset(Scarlets::$registry['error']) || !Scarlets::$registry['error']))
