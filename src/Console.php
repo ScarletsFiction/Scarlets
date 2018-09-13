@@ -90,7 +90,7 @@ class Console{
 		return $result;
 	}
 
-	public static function interpreter($line){
+	private static function interpreter($line){
 		if($line === ''){
 			echo("\r");
 			return;

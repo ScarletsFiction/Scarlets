@@ -58,14 +58,17 @@ class Handler{
 
 class Serve{
 	public static $headerSent = false;
-	public static function view($path, $values = []){
+	public static function view($path, $values = [], $static = false){
+		if($static && isset($_REQUEST['_scarlets']) && strpos($_REQUEST['_scarlets'], '.dynamic.') !== false)
+			return;
+
 		if(Scarlets::$isConsole && !self::$headerSent)
-			self::httpStatus(200);
+			self::status(200);
 
 		// Internal variable
 		$path = Scarlets::$registry['path.views'].'/'.str_replace('.', '/', $path).'.php';
-		$get = &$_GET;
-		$post = &$_POST;
+		$g = &$_GET;
+		$p = &$_POST;
 
 		// Class reference
 		$serve = 'Scarlets\Route\Serve';
