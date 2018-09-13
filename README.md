@@ -148,25 +148,16 @@ Route::get('/', function(){
 }, 'name:home');
 ```
 
-You can easily access the `message` parameter like below
-> <p class="msg"> <?= $message ?> </p>
-
-#### Serve views
-The views folder are located on `/resources/views/` folder
-> Serve::view(file, parameter, isStatic=false);
-
+You can easily access the `message` parameter from target views like below
 ```php
-Route::get('/', function(){
-    Serve::view('hello', ['message' => 'World']);
-}, 'name:home');
+<p class="msg"> <?= $message ?> </p>
 ```
 
-You can easily access the `message` parameter from target views like below
-> <p class="msg"> <?= $message ?> </p>
-
 or maybe obtaining `POST, GET` request with
-> <p class="msg"> <?= $p['anything'] ?> </p>
-> <p class="msg"> <?= $q::post('anything') ?> </p>
+```php
+<p class="msg"> <?= $p['anything'] ?> </p>
+<p class="msg"> <?= $q::post('anything') ?> </p>
+```
 
 If you're using frontend MVW framework, you can obtain dynamic view only by set `isStatic` to true for static view.
 
@@ -287,49 +278,25 @@ Below are undocumented library
 #### LocalFile system
 ##### load
 > Scarlets\Library\FileSystem\LocalFile::load(path);
-##### size
-##### append
-##### prepend
-##### createDir
-##### put
-##### search
-##### lastModified
-##### copy
-##### rename
-##### move
-##### delete
-##### read
-##### tail
-##### zipDirectory
-##### extractZip
-##### zipStatus
+
+`size, append, prepend, createDir, put, search, lastModified, copy, rename, move, delete, read, tail, zipDirectory, extractZip, zipStatus`
 
 #### Cache
 ##### get
 > Scarlets\Library\Cache::get(key, default=null);
+
 ##### set
 > Scarlets\Library\Cache::set(key, value, seconds=0);
-##### has
-##### pull
-##### forget
-##### flush
-##### extendTime
+
+`has, pull, forget, flush, extendTime`
 
 #### Crypto
-##### encrypt
+##### encrypt, decrypt
 > Scarlets\Library\Crypto::encrypt(str, pass=false, cipher=false, mask=true)
-##### decrypt
-
-#### CSRF
 
 #### Language
 ##### get
 > Scarlets\Library\Language::get($key, $values = [], $languageID='')
-
-#### Mailer
-
-#### Schedule
-> For Scarlets Console only
 
 #### Socket
 ##### create
