@@ -322,7 +322,7 @@ class Route{
 		if(substr($url, 0, 1) !== '/')
 			$url = '/'.$url;
 
-		$requestURI = $_SERVER['REQUEST_URI'];
+		$requestURI = explode('?', $_SERVER['REQUEST_URI'], 2)[0];
 		if($url === $requestURI)
 			$matched = true;
 
