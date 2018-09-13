@@ -10,8 +10,7 @@
 |
 */
 use \Scarlets\Console;
-use \App\BCD;
-
+use \App\Console\Controllers\YourController;
 
 Console::command('countdown {0} {1}', function($start, $end){
 	while ($start >= $end) {

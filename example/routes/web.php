@@ -13,15 +13,16 @@ use \Scarlets\Route\Serve;
 use \Scarlets\Route\Query;
 use \Scarlets\Library\Cache;
 use \Scarlets\Library\Language;
+use \App\Http\Controllers\YourController;
 
 Route::get('/', function(){
-	Serve::view('static.header', [
-		'title'=>'Home'
-	]);
+    Serve::view('static.header', [
+        'title'=>'Home'
+    ]);
 	Serve::view('home', [
 		'time' => Language::get('time.current_date', [date('d M Y')])
 	]);
-	Serve::view('static.footer');
+    Serve::view('static.footer');
 });
 
 // regex: [A-Za-z]+
