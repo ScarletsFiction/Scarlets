@@ -1,4 +1,6 @@
 RewriteEngine On
 
+RewriteCond %{REQUEST_URI} !evaluate/ [NC]
+
 # This just for testing on heroku
 RewriteRule (.*) example/public/$1 [L]
