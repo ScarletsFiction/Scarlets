@@ -144,6 +144,15 @@ input{
     top: 60%;
     color: #ffffff;
 }
+body > .time{
+	position: fixed;
+    bottom: 10px;
+    width: 100%;
+    color: #ffffff26;
+    margin-left: -20px;
+    text-align: right;
+}
+
 
 .b-lazy {
   -webkit-transition: opacity 500ms ease-in-out;
