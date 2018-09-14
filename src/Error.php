@@ -71,8 +71,12 @@ class Error{
 	    	$file = str_replace($reg['path.framework'], '{Framework}', $file);
 	    }
 
-	    $trace = explode('Scarlets\Error::ErrorHandler', $trace)[1];
-	    $trace = explode('Scarlets\Error::warning', $trace)[1];
+	    $trace = explode('Scarlets\Error::ErrorHandler', $trace);
+	    $trace = count($trace) === 1 ? $trace[0] : $trace[1];
+
+	   	$trace = explode('Scarlets\Error::warning', $trace);
+	    $trace = count($trace) === 1 ? $trace[0] : $trace[1];
+	   	
 	    $trace = explode("\n", $trace, 2)[1];
 
 	    $breakline = Scarlets::$isConsole ? '':' <br>';
@@ -81,17 +85,17 @@ class Error{
 	    	$breakline = '';
 	    	$url = "Startup Handler";
 	    }
-	    else if(!Scarlets::$isConsole)
+	    else if(isset($_SERVER['REQUEST_URI']))
 	    	$url = "http".(isset($_SERVER['HTTPS'])?'s':'').'://'.$_SERVER['SERVER_NAME'].$_SERVER['REQUEST_URI'];
 
 		$message = "Exception type: ".self::ErrorType($severity).";\n".
 		"Message: $message;\n".
 		"File: $file;\n".
 		"Line: $line;\n".
-		"URL: $url\n".
-		"Trace: \n$trace;";
+		"URL: $url".
+		($trace != '' ? "\nTrace: \n$trace;" : ';');
 
-		self::$currentError .= $message;
+		self::$currentError[] = $message;
 
 		// die($message);
 

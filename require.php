@@ -132,6 +132,47 @@ class Scarlets{
 		elseif(substr($class, 0, 9) === 'Scarlets\\')
 	    	include self::$registry['path.framework.src'].'/'.str_replace('\\', '/', substr($class, 9)).'.php';
 	}
+
+	public static function Initialization(){
+		// Get the project root directory
+		$path = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS);
+		foreach($path as &$value){
+			if($value['function'] !== 'include_once')
+				continue;
+			if(strpos($value['file'], 'root.php') !== false){
+				$path = dirname($value['file']);
+				break;
+			}
+		}
+
+		$reg = &self::$registry;
+		$reg['path.app'] = $path;
+		$reg['path.public'] = $path.'/public';
+		$reg['path.app_controller'] = $path.'/app';
+		$reg['path.views'] = $path.'/resources/views';
+		$reg['path.lang'] = $path.'/resources/lang';
+		$reg['path.plate'] = $path.'/resources/plate';
+		$reg['path.app.storage'] = $path.'/storage/app';
+		$reg['path.cache'] = $path.'/storage/framework/cache';
+		$reg['path.sessions'] = $path.'/storage/framework/sessions';
+		$reg['path.view_cache'] = $path.'/storage/framework/views';
+		$reg['path.logs'] = $path.'/storage/logs';
+
+		$reg['path.framework.src'] = __DIR__.'/src';
+		$reg['path.framework.library'] = __DIR__.'/src/Library';
+
+		// Initialize configuration
+		$config = Config::load('app');
+
+		if(!isset($_SERVER['REQUEST_URI'])){
+			$_SERVER['REQUEST_METHOD'] = 'GET';
+			$_SERVER['REQUEST_URI'] = '/';
+		}
+
+		if($config['app.url_path'] !== false)
+			$_SERVER['REQUEST_URI'] = explode($config['app.url_path'], $_SERVER['REQUEST_URI'])[1];
+
+	}
 }
 
 spl_autoload_register('\\Scarlets::AppClassLoader');
@@ -155,49 +196,8 @@ Scarlets::onShutdown(function(){
 		Scarlets\Error::ErrorHandler($error['type'], $error['message'], $error['file'], $error['line']);
 });
 
-// Framework initialization (volatile)
-Scarlets::$registry['Initialize'] = function(){
-
-	// Get the project root directory
-	$path = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS);
-	foreach($path as &$value){
-		if($value['function'] !== 'include_once')
-			continue;
-		if(strpos($value['file'], 'root.php') !== false){
-			$path = dirname($value['file']);
-			break;
-		}
-	}
-
-	$reg = &Scarlets::$registry;
-	$reg['path.app'] = $path;
-	$reg['path.public'] = $path.'/public';
-	$reg['path.app_controller'] = $path.'/app';
-	$reg['path.views'] = $path.'/resources/views';
-	$reg['path.lang'] = $path.'/resources/lang';
-	$reg['path.plate'] = $path.'/resources/plate';
-	$reg['path.app.storage'] = $path.'/storage/app';
-	$reg['path.cache'] = $path.'/storage/framework/cache';
-	$reg['path.sessions'] = $path.'/storage/framework/sessions';
-	$reg['path.view_cache'] = $path.'/storage/framework/views';
-	$reg['path.logs'] = $path.'/storage/logs';
-
-	$reg['path.framework.src'] = __DIR__.'/src';
-	$reg['path.framework.library'] = __DIR__.'/src/Library';
-
-	// Initialize configuration
-	$config = Config::load('app');
-
-	if(!isset($_SERVER['REQUEST_URI'])){
-		$_SERVER['REQUEST_METHOD'] = 'GET';
-		$_SERVER['REQUEST_URI'] = '/';
-	}
-
-	if($config['app.url_path'] !== false)
-		$_SERVER['REQUEST_URI'] = explode($config['app.url_path'], $_SERVER['REQUEST_URI'])[1];
-
-	unset($reg['Initialize']);
-}; Scarlets::registryExec('Initialize');
+// Framework initialization
+Scarlets::Initialization();
 
 /*
 ---------------------------------------------------------------------------
