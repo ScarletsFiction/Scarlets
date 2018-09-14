@@ -12,8 +12,9 @@ class Crypto{
 	public static $mask = [];
 	public static $sify_mask = [];
 	public static $MD5_mask = [];
+	public static $crypto_mask = [];
 
-	public static function &encrypt($str, $pass=false, $cipher=false, $mask=true){
+	public static function &encrypt($str, $pass=false, $cipher=false, $mask=false){
 		if(!$pass) $pass = &self::$key;
 		if(!$cipher) $cipher = &self::$cipher;
 
@@ -32,7 +33,7 @@ class Crypto{
 		return $str;
 	}
 
-	public static function decrypt($str, $pass=false, $cipher=false, $mask=true){
+	public static function decrypt($str, $pass=false, $cipher=false, $mask=false){
 		if(!$pass) $pass = &self::$key;
 		if(!$cipher) $cipher = &self::$cipher;
 

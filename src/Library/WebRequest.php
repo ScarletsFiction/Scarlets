@@ -46,8 +46,8 @@ class WebRequest{
 				curl_setopt($ch, CURLOPT_BUFFERSIZE, 128); // more progress info
 				curl_setopt($ch, CURLOPT_NOPROGRESS, false);
 				curl_setopt($ch, CURLOPT_PROGRESSFUNCTION, function(
-				$DownloadSize, $Downloaded, $UploadSize, $Uploaded
-				){
+					$DownloadSize, $Downloaded, $UploadSize, $Uploaded
+				) use($data) {
 					// If $Downloaded exceeds 1KB, returning non-0 breaks the connection!
 					return ($Downloaded > ($data['limitSize'] * 1024)) ? 1 : 0;
 				});
@@ -324,8 +324,7 @@ class WebRequest{
 			
 			// Validate the filetype
 			$extension = strtolower(pathinfo($file['name'])['extension']);
-			if (in_array($extension, $allowedExt)) 
-			{
+			if(in_array($extension, $allowedExt)){
 				// Save the file
 				move_uploaded_file($file['tmp_name'], $targetFile);
 				return true;
