@@ -122,7 +122,7 @@ The router priority is:
 3. web.php (Web Router)
 
 #### Route by Request Method
-> Console::get(pattern, callback, options='');
+> Route::get(pattern, callback, options='');
 The accepted request method are `get`, `post`, `delete`, `put`, `options`.
 
 The allowed match pattern are started with parameter index<br>
@@ -252,8 +252,6 @@ Route\Middleware::$register['limit'] = function($request = 2, $seconds = 30){
 ```
 
 ### Library
-The library documentation still in progress<br>
-If you're willing to help write this documentation I will gladly accept it
 
 #### Database
 Before using this library, you must modify the database configuration on `/config/database.php`
@@ -262,68 +260,182 @@ Before using this library, you must modify the database configuration on `/confi
 > $myDatabase = Scarlets\Library\Database::connect(databaseName='{default}');
 
 ##### Select table rows
-> $myDatabase->select(tableName, $columns);
+> $myDatabase->select(tableName, $columns, $where=[]);
 
 ```php
 $myDatabase->select('test', ['name', 'data'], {
-    'OR'=>['id'=>321, 'words[~]'=>'hey'],
+    'OR'=>['id'=>123, 'words[~]'=>'hello'],
     'LIMIT'=>1
 });
+// SELECT name, data FROM test WHERE (id = ? OR (words LIKE ?)) LIMIT 1
 ```
 
-The other database library documentation is almost similar with [SFDatabase-js](https://github.com/ScarletsFiction/)
+The other database library documentation is almost similar with [SFDatabase-js](https://github.com/ScarletsFiction/SFDatabase-js)
 
-## Below are undocumented library
+## Below are the undocumented library
+The library documentation still in progress<br>
+If you're willing to help write this documentation I will gladly accept it
 
 #### LocalFile system
-##### load
-> Scarlets\Library\FileSystem\LocalFile::load(path);
+You may need to assign the namespace to the top of your code
+> use \Scarlets\Library\FileSystem\LocalFile;
 
-`size, append, prepend, createDir, put, search, lastModified, copy, rename, move, delete, read, tail, zipDirectory, extractZip, zipStatus`
+The filesystem configuration are stored on `/config/filesystem.php`.<br>
+Then you can pass `{the storage name}/your/path` to the LocalFile function.
+
+##### load
+Load contents from file
+> LocalFile::load(path);
+
+```php
+$data = LocalFile::load('{app}/data/text.inf');
+```
+
+`load, size, append, prepend, createDir, put, search, lastModified, copy, rename, move, delete, read, tail, zipDirectory, extractZip, zipStatus`
 
 #### Cache
+You may need to assign the namespace to the top of your code
+> use \Scarlets\Library\Cache;
+
 ##### get
-> Scarlets\Library\Cache::get(key, default=null);
+> Cache::get(key, default=null);
+
+The example below will return data from `timestamp` key<br>
+but if the key was not found or expired, then it will return<br>
+default value.
+
+```php
+$data = Cache::get('timestamp', 0);
+```
 
 ##### set
-> Scarlets\Library\Cache::set(key, value, seconds=0);
+> Cache::set(key, value, seconds=0);
+
+The example below will set `time()` on timestamp key<br>
+and expired after 20 second.
+
+```php
+$data = Cache::set('timestamp', time(), 20);
+```
 
 `has, pull, forget, flush, extendTime`
 
 #### Crypto
-##### encrypt, decrypt
-> Scarlets\Library\Crypto::encrypt(str, pass=false, cipher=false, mask=true)
+You may need to assign the namespace to the top of your code
+> use \Scarlets\Library\Crypto;
+
+The security configuration are stored on `/config/security.php`.<br>
+The default cipher will be used if the cipher parameter was false.
+
+This library is using `openssl` php extension.<br>
+So make sure you have enabled it before use.<br>
+And the available cipher are listed on [php documentation](http://php.net/manual/en/function.openssl-get-cipher-methods.php).
+
+##### encrypt
+> Crypto::encrypt(text, pass=false, cipher=false, mask=false);
+
+Set the mask parameter to true if you want to encode any symbol<br>
+to text. Make sure you have change default `crypto_mask`<br>
+on the configuration to improve security.
+
+```php
+$data = Cache::encrypt('hello', 'secretcode', false, false);
+// Output:
+// Tst2nVw4sDMB5M5jwwSPiTp+Olh4QTRhek55YnF6VFdPUURYa1ZKbHc9PQ==
+```
+
+##### decrypt
+> Crypto::decrypt(encryptedText, pass=false, cipher=false, mask=false);
+
+```php
+$data = Cache::decrypt('hello', 'secretcode');
+```
 
 #### Language
+You may need to assign the namespace to the top of your code
+> use \Scarlets\Library\Language;
+
+The default language are configured on `/config/app.php`.<br>
+And the languages files are located on `/resources/lang/`.<br>
+
 ##### get
-> Scarlets\Library\Language::get($key, $values = [], $languageID='')
+> Language::get($key, $values = [], $languageID='')
+
+```php
+$text = Language::get('time.current_date', [date('d M Y')], 'en');
+```
 
 #### Socket
+You may need to assign the namespace to the top of your code
+> use \Scarlets\Library\Socket;
+
 ##### create
-> Scarlets\Library\Socket::create(address, port, readCallback, connectionCallback=0)
+This function will open new socket server that able<br>
+to process multiple request at the same time.
+> Socket::create(address, port, readCallback, connectionCallback=0)
+
+```php
+Socket::create('localhost', 8000, function($socketResource, $data){
+    echo("Data received:");
+    print_r($data);
+}, function($socketResource, $status){
+    echo("Someone $status");
+});
+```
 
 ##### simple
-> Scarlets\Library\Socket::simple(address, port, readCallback)
+This function will open new socket server than able<br>
+to process single request at the a time.
+> Socket::simple(address, port, readCallback)
+
+```php
+Socket::simple('localhost', 8000, function($socketResource, $data){
+    echo("Data received:");
+    print_r($data);
+});
+```
 
 ##### ping
-> Scarlets\Library\Socket::ping(domain, port=80)
+> Socket::ping(domain, port=80)
 
 #### WebRequest
+You may need to assign the namespace to the top of your code
+> use \Scarlets\Library\WebRequest;
+
 ##### loadURL
 Web Request with curl extension
-> Scarlets\Library\WebRequest::loadURL(url, data="")
+> WebRequest::loadURL(url, data="")
+
+```php
+$data = WebRequest::loadURL('https://www.google.com', [
+    'ssl'=>false, // Skip ssl verification
+    'header'=>['Some: header'],
+    'post'=>['data' => 'anything'],
+    /*
+    'cookiefile'=>'path',
+    'cookie'=>'urlencoded=data',
+    'limitSize'=>10, // In KB
+    'proxy'=>['ip' => '127.0.0.1', 'port' => 8000],
+    'returnheader' => true // Return header only
+    */
+]);
+```
 
 ##### giveFiles
 From this server to client browser
-> Scarlets\Library\WebRequest::giveFiles(filePath, fileName = null)
+> WebRequest::giveFiles(filePath, fileName = null)
 
 ##### download
 From other server to local file
-> Scarlets\Library\WebRequest::download(from, to, type="curl")
+> WebRequest::download(from, to, type="curl")
 
 ##### receiveFile
 From client browser to this server
-> Scarlets\Library\WebRequest::receiveFile(directory, allowedExt, rename='')
+> WebRequest::receiveFile(directory, allowedExt, rename='')
+
+Make sure you limit the allowed extension to<br>
+avoid security issue
+> allowedExt = ['css', 'js', 'png']
 
 ### Accessing App Configuration
 #### Get all configuration array reference
@@ -343,6 +455,7 @@ The sample below will return loaded configuration from `/config/` folder
 
 #### Register shutdown callback
 > Scarlets::onShutdown(callback);
+
 The callback will be called when the framework is going to shutdown
 
 ## Contribution
