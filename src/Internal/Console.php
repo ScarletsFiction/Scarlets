@@ -43,6 +43,13 @@ Console::command(['serve {0} {1} {*}', 'serve {0} {1}', 'serve {0}', 'serve'], f
 		if(in_array('--verbose', $temp)) $options |= 1;
 		if(in_array('--log', $temp)) $options |= 2;
 	}
+
+	if($port === '--verbose'){
+		$options = 0;
+		$options |= 1;
+		$port = 8000;
+	}
+
 	Scarlets\Library\Server::start(is_numeric($port) ? $port : 8000, $address, $options);
 }, 'Serve your app from your computer');
 

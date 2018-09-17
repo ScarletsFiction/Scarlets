@@ -3,13 +3,10 @@ namespace Scarlets\Library;
 use \Scarlets;
 
 class Server{
-	public static $options = 0;
 	public static function start($port, $address, $options){
 		// Use this console as web server
 		Scarlets::Website();
 		
-		self::$options = $options;
-
 		// Disable instant output mode as the content it will be sended through socket
 		Scarlets\Config::set('app', 'instant', false);
 
@@ -19,8 +16,7 @@ class Server{
 	    echo Scarlets\Console::chalk("\nScarlets server started on ", 'green')."http://$address".($port !== 80 ? ":$port" : '')."\nUse CTRL+C 2 times to exit\n\n";
 
 		// Create the socket server
-		Scarlets\Library\Socket::create($address, $port, function($socket, $data){
-			global $publicFolder;
+		Scarlets\Library\Socket::create($address, $port, function($socket, $data) use($options) {
 		    $body = '';
 		    socket_getpeername($socket, $address);
 		    $_SERVER['REMOTE_ADDR'] = $address;
@@ -86,12 +82,12 @@ class Server{
 		    }
 
 		    // Output request to the console
-		    if(self::$options & 1)
+		    if($options & 1)
 		    	print_r("$_SERVER[REMOTE_ADDR] ($headers[METHOD])> $headers[URI]");
 
 		    $httpstatuscode = self::request($socket, $headers, $body);
 
-		    if(self::$options & 1){
+		    if($options & 1){
 				print_r(" [$httpstatuscode]\n");
 				print_r($headers['User-Agent']."\n");
 		    }
