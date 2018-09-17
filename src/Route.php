@@ -443,7 +443,7 @@ class Route{
 		else {
 			if($args)
 				print(call_user_func_array($func, $args));
-			else print($func());
+			else print(call_user_func($func));
 		}
 		self::$statusCode = 200;
 

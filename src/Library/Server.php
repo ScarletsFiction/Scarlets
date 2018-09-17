@@ -14,7 +14,6 @@ class Server{
 		Scarlets\Config::set('app', 'instant', false);
 
 		// Remove console mode so error handler can show the website address
-		Scarlets::$isConsole = false;
 		$_SERVER['SERVER_NAME'] = &$address;
 
 	    echo Scarlets\Console::chalk("\nScarlets server started on ", 'green')."http://$address".($port !== 80 ? ":$port" : '')."\nUse CTRL+C 2 times to exit\n\n";
@@ -111,18 +110,18 @@ class Server{
 		// Parse GET data
 		if(strpos($headers['URI'], '?') !== false){
 			$headers['URI'] = explode('?', $headers['URI']);
-			$_SERVER['GET'] = &mb_parse_str($headers['URI'][1]);
+			mb_parse_str($headers['URI'][1], $_GET);
 			$_SERVER['REQUEST_URI'] = &$headers['URI'][0];
 			\Scarlets\Route::$uri = $_SERVER['REQUEST_URI'];
 		} else {
-			$_SERVER['GET'] = [];
+			$_GET = [];
 			$_SERVER['REQUEST_URI'] = &$headers['URI'];
 		}
 
 		// Parse POST and FILES data
 		if($headers['METHOD'] === 'POST'){
 			$data = self::parsePostData($body);
-			$_SERVER['POST'] = &$data['post'];
+			$_POST = &$data['post'];
 			$_FILES = &$data['file'];
 		}
 
@@ -134,9 +133,18 @@ class Server{
 				$found = true;
 		}
 
+		if(!$found){
+			$router = &Scarlets::$registry['Route']['ANY'];
+			foreach ($router as $key => $func) {
+				if(\Scarlets\Route::handleURL($key, $func[0], $func[1]))
+					$found = true;
+			}
+		}
+
 		$output = "\nServer: Scarlets\nConnection: close\nContent-Type: text/html\r\n\r\n";
 
 		if(!$found){
+			ob_clean();
 			$router = &Scarlets::$registry['Route']['STATUS'];
 
 			// Check for local file
@@ -144,7 +152,6 @@ class Server{
 			if(is_dir($path)){
 				if(substr($headers['URI'], -1) === '/') {
 					if(is_file($path.'index.php')){
-						ob_clean();
 						$output = "HTTP/1.1 200 OK".$output;
 						try{
 							include $path.'index.php';
@@ -165,7 +172,6 @@ class Server{
 
 			// Check if there are 404 http handler
 			elseif(isset($router['404'])){
-				ob_clean();
 				$output = "HTTP/1.1 404 Not Found".$output;
 				try{
 					$router['404']();
@@ -174,7 +180,6 @@ class Server{
 				}catch(\Exception $e){
 					Scarlets\Error::checkUncaughtError();
 				}
-
 			}
 		}
 

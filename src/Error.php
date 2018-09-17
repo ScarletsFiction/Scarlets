@@ -32,6 +32,9 @@ class Error{
 
 	// Error handler, passes flow over the exception logger with new ErrorException.
 	public static function ErrorHandler($severity, $message, $file, $line){
+		if(ob_get_status())
+			ob_end_clean();
+
 	    if(!(error_reporting() & $severity))
 	        return; // This error code is not included in error_reporting
 
@@ -62,7 +65,7 @@ class Error{
 	    	$trace = $trace[1];
 	    }
 
-		$appConfig = &$reg['config'];
+		$appConfig = &\Scarlets\Config::$data;
 
 	    if($appConfig['app.simplify_trace']){
 	    	$trace = str_replace($reg['path.app'], '{AppRoot}', $trace);
@@ -76,12 +79,14 @@ class Error{
 
 	   	$trace = explode('Scarlets\Error::warning', $trace);
 	    $trace = count($trace) === 1 ? $trace[0] : $trace[1];
-	   	
+
+	   	$trace = explode(': Scarlets\Library\Server::request', $trace)[0];
+
 	    $trace = explode("\n", $trace, 2)[1];
 
 	    $breakline = Scarlets::$isConsole ? '':' <br>';
 	    $url = 'Scarlets Console';
-	    if(!isset($_SERVER['SERVER_NAME']) && !Scarlets::$isConsole){
+	    if(!isset($_SERVER['SERVER_NAME']) || !Scarlets::$isConsole){
 	    	$breakline = '';
 	    	$url = "Startup Handler";
 	    }
