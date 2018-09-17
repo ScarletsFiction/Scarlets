@@ -21,7 +21,7 @@ class SQL {
 	// When debugging is enabled, this will have value
 	public $lastQuery = false;
 
-	public function __construct($databaseName, $options){
+	public function __construct($options){
 		// Default options
 		if(!isset($options['host'])) $options['host'] = 'localhost';
 		if(!isset($options['user'])) $options['user'] = 'root';
@@ -33,13 +33,14 @@ class SQL {
 		if(!isset($options['charset'])) $options['charset'] = 'utf8';
 		if(!isset($options['collation'])) $options['collation'] = 'utf8_unicode_ci';
 		if(!isset($options['debug'])) $options['debug'] = false;
+		if(!isset($options['database'])) throw new \Exception("Database name was not specified");
 
 		$this->debug = &$options['debug'];
 		$this->table_prefix = &$options['table_prefix'];
 
 		// Try to connect
 		try{
-			$this->SQLConnection = new \PDO("$options[driver]:dbname=$databaseName;host=$options[host];port=$options[port]", $options['user'], $options['password']);
+			$this->SQLConnection = new \PDO("$options[driver]:dbname=$options[database];host=$options[host];port=$options[port]", $options['user'], $options['password']);
 		}
 		catch(\PDOException $e) {
 			throw new \PDOException($e->getMessage());
@@ -237,11 +238,11 @@ class SQL {
 			$options = $options . ' ORDER BY ' . implode(', ', $stack);
 		}
 		if(isset($object['LIMIT'])){
-			if(!is_nan($object['LIMIT'][0]) && !is_nan($object['LIMIT'][1])){
-				$options = $options . ' LIMIT ' . $object['LIMIT'][1] . ' OFFSET ' . $object['LIMIT'][0];
-			}
-			else if(!is_nan($object['LIMIT'])){
+			if(!is_nan($object['LIMIT'])){
 				$options = $options . ' LIMIT '. $object['LIMIT'];
+			}
+			else if(!is_nan($object['LIMIT'][0]) && !is_nan($object['LIMIT'][1])){
+				$options = $options . ' LIMIT ' . $object['LIMIT'][1] . ' OFFSET ' . $object['LIMIT'][0];
 			}
 		}
 		

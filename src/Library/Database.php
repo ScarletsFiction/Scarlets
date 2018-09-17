@@ -24,8 +24,9 @@ class Database{
 		// Check if connected
 		if(isset(self::$connectedDB[$credential]))
 			return self::$connectedDB[$credential];
-		else {
-			self::$connectedDB[$credential] = new SQL();
+		else{
+			self::$connectedDB[$credential] = new SQL(self::$credentials[$credential]);
+			return self::$connectedDB[$credential];
 		}
 	}
 
