@@ -121,6 +121,8 @@ class Server{
 			$_FILES = &$data['file'];
 		}
 
+		$_REQUEST = array_merge($_POST, $_GET);
+
 		// Find the matched router
 		$found = false;
 		$router = &Scarlets::$registry['Route'][$headers['METHOD']];
@@ -189,7 +191,7 @@ class Server{
 		} else {
 			$router = &Scarlets::$registry['Route']['STATUS'];
 			if(isset($router['500'])){
-				ob_clean();
+				if(ob_get_contents()) ob_end_clean();
 				$output = "HTTP/1.1 500 Internal Server Error".$output;
 				$httpstatuscode = 500;
 				try{
@@ -202,7 +204,7 @@ class Server{
 		}
 
 		// Clear memory
-		ob_end_clean();
+		if(ob_get_contents()) ob_end_clean();
 
 		// Output error to console
 		if(Scarlets\Error::$hasError)
@@ -212,18 +214,27 @@ class Server{
 
 	public static function &parsePostData(&$postRaw)
 	{
-		// Parse JSON
-		$firstChar = substr($postRaw, 0, 1);
-		if($firstChar === '{' || $firstChar === '[')
-			return json_decode($postRaw, true);
-
-	    // Find post boundary
-	    preg_match('/boundary=(.*)\r/', $postRaw, $matches);
-	    $boundary = str_replace(["\r", "\n"], '', $matches[1]);
 	    $data = [
 	        'post'=>[],
 	        'file'=>[]
 	    ];
+
+		// Parse JSON
+		$firstChar = substr($postRaw, 0, 1);
+		if($firstChar === '{' || $firstChar === '['){
+			$data['post'] = json_decode($postRaw, true);
+			return $data;
+		}
+
+	    // Find post boundary
+	    preg_match('/boundary=(.*)\r/', $postRaw, $matches);
+	    if(!$matches){
+			mb_parse_str($postRaw, $temp);
+			$data['post'] = $temp;
+			return $data;
+	    }
+	    
+	    $boundary = str_replace(["\r", "\n"], '', $matches[1]);
 
 	    // Check if simple query
 	    if (!strlen($boundary)) {
