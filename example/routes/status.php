@@ -12,6 +12,9 @@
 use \Scarlets\Route;
 use \Scarlets\Route\Serve;
 
+// Register Middleware
+\App\Middleware::register();
+
 Route::status(500, function(){
     Serve::view('static.header', [
         'title'=>'Server Message'
