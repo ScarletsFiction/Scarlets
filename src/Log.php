@@ -16,14 +16,21 @@ class Log{
 	public static $type = '';
 	public static function init(){
 		self::$type = &Config::$data['app.log'];
-		if(self::$type === 'errorlog'){
+		if(self::$type === 'errorlog')
 			self::$path = Scarlets::$registry['path.app'].'/error.log';
-		}
 	}
 
 	public static function message($msg){
 		if(self::$type === 'errorlog')
-			file_put_contents(self::$path, $msg."\n---\n", FILE_APPEND);
+			file_put_contents(self::$path, 'Log: '.$msg."\n---\n", FILE_APPEND);
+	}
+
+	public static function broke($msg){
+		while(ob_get_level()){
+			ob_get_clean();
+		}
+		print_r($msg);
+		exit;
 	}
 }
 Log::init();

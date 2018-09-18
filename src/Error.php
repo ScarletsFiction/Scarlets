@@ -68,10 +68,11 @@ class Error{
 		$appConfig = &\Scarlets\Config::$data;
 
 	    if($appConfig['app.simplify_trace']){
-	    	$trace = str_replace($reg['path.app'], '{AppRoot}', $trace);
-	    	$file = str_replace($reg['path.app'], '{AppRoot}', $file);
 	    	$trace = str_replace($reg['path.framework'], '{Framework}', $trace);
 	    	$file = str_replace($reg['path.framework'], '{Framework}', $file);
+	    	$trace = str_replace($reg['path.app'], '{AppRoot}', $trace);
+	    	$file = str_replace($reg['path.app'], '{AppRoot}', $file);
+	    	$trace = str_replace('[internal function]', '{System}', $trace);
 	    }
 
 	    $trace = explode('Scarlets\Error::ErrorHandler', $trace);
@@ -80,13 +81,25 @@ class Error{
 	   	$trace = explode('Scarlets\Error::warning', $trace);
 	    $trace = count($trace) === 1 ? $trace[0] : $trace[1];
 
+	   	$trace = explode('trigger_error', $trace);
+	    $trace = count($trace) === 1 ? $trace[0] : $trace[1];
+
 	   	$trace = explode(': Scarlets\Library\Server::request', $trace)[0];
 
 	    $trace = explode("\n", $trace, 2)[1];
 
+	    // Reset index
+	    $trace = explode("\n#", $trace);
+	    $i = count($trace)-1;
+	    foreach ($trace as &$value) {
+	    	$value = "#$i ".explode(' ', $value, 2)[1];
+	    	$i--;
+	    }
+	    $trace = implode("\n", $trace);
+
 	    $breakline = Scarlets::$isConsole ? '':' <br>';
 	    $url = 'Scarlets Console';
-	    if(!isset($_SERVER['SERVER_NAME']) || !Scarlets::$isConsole){
+	    if(!isset($_SERVER['SERVER_NAME']) && Scarlets::$isConsole){
 	    	$breakline = '';
 	    	$url = "Startup Handler";
 	    }
@@ -119,15 +132,18 @@ class Error{
 			|| $severity === E_USER_DEPRECATED)
 			$exitting = false;
 
-		Log::message($message);
-
-		if($exitting && !$appConfig['app.debug'] && Scarlets::$isWebsite)
+		if($exitting && !$appConfig['app.debug'] && Scarlets::$isWebsite){
+			Log::message($message);
 			Serve::status(500);
+			exit;
+		}
 		else{
 			if(Scarlets::$isConsole)
 				print($message."\n\n");
-			else
+			else{
 				print(str_replace("\n", "<br>\n", $message)."<br><br>\n\n");
+				exit;
+			}
 		}
 	}
 
