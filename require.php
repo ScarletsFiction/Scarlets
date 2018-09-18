@@ -34,21 +34,23 @@ class Scarlets{
 		if(Config::$data['app.url_path'] !== false)
 			Route\Query::$home = &Config::$data['app.url_path'];
 
-		// Include required router
-		include_once self::$registry['path.app']."/routes/status.php";
-		include_once self::$registry['path.app']."/routes/api.php";
-		include_once self::$registry['path.app']."/routes/web.php";
+		// Parse received json data if exist
+		if(!self::$isConsole){
+			$jsonRequest = file_get_contents('php://input');
+			if($jsonRequest)
+				$_POST = json_decode($jsonRequest, true);
+		}
 
-		// Only register website router if from console
-		if(class_exists('\\Scarlets\\Console')){
-			self::$isConsole = true;
-			return;
-		} else
-			header("X-Framework: ScarletsFiction");
+		header("X-Framework: ScarletsFiction");
 
-		$jsonRequest = file_get_contents('php://input');
-		if($jsonRequest)
-			$_POST = json_decode($jsonRequest, true);
+		try{
+			// Include required router
+			include_once self::$registry['path.app']."/routes/status.php";
+			include_once self::$registry['path.app']."/routes/api.php";
+			include_once self::$registry['path.app']."/routes/web.php";
+		} catch(\ExecutionFinish $f) {
+			echo($f->data);
+		}
 	}
 
 	/*
@@ -195,6 +197,14 @@ Scarlets::onShutdown(function(){
     if($error && (!isset(Scarlets::$registry['error']) || !Scarlets::$registry['error']))
 		Scarlets\Error::ErrorHandler($error['type'], $error['message'], $error['file'], $error['line']);
 });
+
+// For throwing an finish event on the middle of execution
+class ExecutionFinish extends Exception{
+	public $data;
+	public function __construct($data = false){
+		$this->data = $data;
+	}
+}
 
 // Framework initialization
 Scarlets::Initialization();
