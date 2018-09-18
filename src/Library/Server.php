@@ -3,10 +3,15 @@ namespace Scarlets\Library;
 use \Scarlets;
 
 class Server{
+	public static $pendingHeader = false;
+	public static function setHeader($text){
+		self::$pendingHeader .= "\n".$text;
+	}
+
 	public static function start($port, $address, $options){
 		// Use this console as web server
 		Scarlets::Website();
-		
+
 		// Disable instant output mode as the content it will be sended through socket
 		Scarlets\Config::set('app', 'instant', false);
 
@@ -123,6 +128,21 @@ class Server{
 
 		$_REQUEST = array_merge($_POST, $_GET);
 
+		// Put some data to SERVER variable
+		if(isset($headers['User-Agent']))
+			$_SERVER['HTTP_USER_AGENT'] = &$headers['User-Agent'];
+		if(isset($headers['Referer']))
+			$_SERVER['HTTP_REFERER'] = &$headers['Referer'];
+		if(isset($headers['Host']))
+			$_SERVER['HTTP_HOST'] = &$headers['Host'];
+		if(isset($headers['Accept']))
+			$_SERVER['HTTP_ACCEPT'] = &$headers['Accept'];
+		if(isset($headers['Accept-Language']))
+			$_SERVER['HTTP_ACCEPT_LANGUAGE'] = &$headers['Accept-Language'];
+		if(isset($headers['Origin']))
+			$_SERVER['HTTP_ORIGIN'] = &$headers['Origin'];
+		// $headers['Accept-Encoding'];
+
 		// Find the matched router
 		$found = false;
 		$router = &Scarlets::$registry['Route'][$headers['METHOD']];
@@ -139,7 +159,9 @@ class Server{
 			}
 		}
 
-		$output = "\nServer: Scarlets\nConnection: close\nContent-Type: text/html\r\n\r\n";
+		$output = self::$pendingHeader;
+		self::$pendingHeader = false;
+		$output .= "\nServer: Scarlets\nConnection: close\nContent-Type: text/html\r\n\r\n";
 
 		if(!$found){
 			ob_clean();
