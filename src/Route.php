@@ -16,6 +16,7 @@ class Route{
 	public static $statusCode = 404;
 	public static $uri = '';
 	public static $this = false;
+	public static $ended = false;
 	private static $namespace = false;
 	private static $prefix = false;
 	private static $name = false;
@@ -68,59 +69,35 @@ class Route{
 	}
 
 	// ---- Route by request method ----
-		public static function get($url, $func, $opts = false){
+		private static function requestMethod($method, $url, $func, $opts){
 			if(self::$namespace || self::$prefix || self::$name || self::$middleware)
 				self::implementCurrentScope($url, $func, $opts);
 
 			if(Scarlets::$isConsole)
-				Route\Handler::register('GET', $url, $func, $opts);
+				Route\Handler::register($method, $url, $func, $opts);
 
-			elseif($_SERVER['REQUEST_METHOD'] === 'GET' && self::handleURL($url, $func, $opts))
+			elseif($_SERVER['REQUEST_METHOD'] === $method && self::handleURL($url, $func, $opts))
 				return true;
+		}
+
+		public static function get($url, $func, $opts = false){
+			return self::requestMethod('GET', $url, $func, $opts);
 		}
 		
 		public static function post($url, $func, $opts = false){
-			if(self::$namespace || self::$prefix || self::$name || self::$middleware)
-				self::implementCurrentScope($url, $func, $opts);
-
-			if(Scarlets::$isConsole)
-				Route\Handler::register('POST', $url, $func, $opts);
-
-			elseif($_SERVER['REQUEST_METHOD'] === 'POST' && self::handleURL($url, $func, $opts))
-				return true;
+			return self::requestMethod('POST', $url, $func, $opts);
 		}
 		
 		public static function delete($url, $func, $opts = false){
-			if(self::$namespace || self::$prefix || self::$name || self::$middleware)
-				self::implementCurrentScope($url, $func, $opts);
-			
-			if(Scarlets::$isConsole)
-				Route\Handler::register('DELETE', $url, $func, $opts);
-
-			elseif($_SERVER['REQUEST_METHOD'] === 'DELETE' && self::handleURL($url, $func, $opts))
-				return true;
+			return self::requestMethod('DELETE', $url, $func, $opts);
 		}
 		
 		public static function put($url, $func, $opts = false){
-			if(self::$namespace || self::$prefix || self::$name || self::$middleware)
-				self::implementCurrentScope($url, $func, $opts);
-			
-			if(Scarlets::$isConsole)
-				Route\Handler::register('PUT', $url, $func, $opts);
-
-			elseif($_SERVER['REQUEST_METHOD'] === 'PUT' && self::handleURL($url, $func, $opts))
-				return true;
+			return self::requestMethod('PUT', $url, $func, $opts);
 		}
 		
 		public static function options($url, $func, $opts = false){
-			if(self::$namespace || self::$prefix || self::$name || self::$middleware)
-				self::implementCurrentScope($url, $func, $opts);
-			
-			if(Scarlets::$isConsole)
-				Route\Handler::register('OPTIONS', $url, $func, $opts);
-
-			elseif($_SERVER['REQUEST_METHOD'] === 'OPTIONS' && self::handleURL($url, $func, $opts))
-				return true;
+			return self::requestMethod('OPTIONS', $url, $func, $opts);
 		}
 		
 		public static function any($url, $func, $opts = false){
@@ -256,52 +233,51 @@ class Route{
 	}
 	
 	// ---- Temporary scope based function ----
-		public static function namespaces($namespace, $func){
-			if(self::$namespace === false)
-				self::$namespace = [];
-			self::$namespace[] = $namespace;
+		private static $scopeConstrain = [];
+		private static function scopeBased($part, $arg1, $func){
+			$current = &self::${$part};
+			if($current === false)
+				$current = [];
+
+			$current[] = $arg1;
+
+			if(!$func){
+				self::$scopeConstrain[] = $part;
+				return new self;
+			}
 			
 			$func();
 
-			array_pop(self::$namespace);
-			if(count(self::$namespace) === 0)
-				self::$namespace = false;
+			array_pop($current);
+			if(count($current) === 0)
+				$current = false;
+
+			// Clear last constrain
+			foreach (self::$scopeConstrain as &$var) {
+				$ref = &self::${$var};
+				if($ref !== false){
+					array_pop($ref);
+					if(count($ref) === 0)
+						$ref = false;
+				}
+				unset($var);
+			}
+		}
+
+		public static function namespaces($namespace, $func = false){
+			return self::scopeBased('namespace', $namespace, $func);
 		}
 		
 		public static function prefix($url, $func){
-			if(self::$prefix === false)
-				self::$prefix = [];
-			self::$prefix[] = $url;
-			
-			$func();
-
-			array_pop(self::$prefix);
-			if(count(self::$prefix) === 0)
-				self::$prefix = false;
+			return self::scopeBased('prefix', $url, $func);
 		}
 		
 		public static function name($name, $func){
-			if(self::$name === false)
-				self::$name = [];
-			self::$name[] = $name;
-			
-			$func();
-
-			array_pop(self::$name);
-			if(count(self::$name) === 0)
-				self::$name = false;
+			return self::scopeBased('name', $name, $func);
 		}
 		
 		public static function middleware($controller, $func){
-			if(self::$middleware === false)
-				self::$middleware = [];
-			self::$middleware[] = $controller;
-			
-			$func();
-
-			array_pop(self::$middleware);
-			if(count(self::$middleware) === 0)
-				self::$middleware = false;
+			return self::scopeBased('middleware', $controller, $func);
 		}
 
 	private static function getCallbackType($func){
@@ -419,12 +395,16 @@ class Route{
 		}
 
 		// Handle middleware
+		$middlewareCallback = false;
 		if($opts !== false){
 			foreach($opts as $ware){
-				if(Route\Middleware::callMiddleware($ware))
+				$middlewareCallback = Route\Middleware::callMiddleware($ware);
+				if($middlewareCallback === false)
 					return false;
 			}
 		}
+		
+		self::$statusCode = 200;
 		
 		// Call callback function
 		if(self::$instantOutput === false){
@@ -445,7 +425,9 @@ class Route{
 				print(call_user_func_array($func, $args));
 			else print(call_user_func($func));
 		}
-		self::$statusCode = 200;
+
+		if(is_callable($middlewareCallback))
+			$middlewareCallback();
 
 		return true;
 	}

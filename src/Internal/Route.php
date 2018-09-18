@@ -58,6 +58,9 @@ class Handler{
 
 class Serve{
 	public static $headerSent = false;
+	public static $pending = []; // [func, callable]
+	public static $pendingLevel = 0;
+
 	public static function view($path, $values = [], $static = false){
 		if($static && isset($_REQUEST['_scarlets']) && strpos($_REQUEST['_scarlets'], '.dynamic.') !== false)
 			return;
@@ -80,10 +83,63 @@ class Serve{
 			${$key} = $value;
 
 		include $path;
+
+		// Mark callable pending to true
+		if(self::$pendingLevel !== 0)
+			self::$pending[self::$pendingLevel][1] = true;
 	}
 
 	public static function plate($path, $values=[]){
+		// Mark callable pending to true
+		if(self::$pendingLevel !== 0)
+			self::$pending[self::$pendingLevel][1] = true;
+	}
 
+	public static function pending($func = false, $childLevel = 0){
+		if(is_array($func)){
+			$level = self::$pendingLevel - $childLevel;
+
+			$ref = false;
+			if(isset(self::$pending[$level]))
+				$ref = &self::$pending[$level][2];
+
+			if($ref === false)
+				trigger_error("Pending serve was not found (index: ".strval($level - 1)." | total: ".(count(self::$pendingLevel) - 1).")");
+				
+			$ref = array_merge($ref, $func);
+			return;
+		}
+
+		ob_start();
+
+		if($func === false)
+			$func = function(){};
+
+		// Call this function when any serve is made
+		self::$pendingLevel = ob_get_level();
+		self::$pending[self::$pendingLevel] = [$func, false, []];
+	}
+
+	public static function resume($func = false){
+		if(self::$pendingLevel === 0)
+			return;
+
+		$data = ob_get_clean();
+		$ref = &self::$pending[self::$pendingLevel];
+
+		if(!$ref[1] || !$func){
+			unset($ref);
+			self::$pendingLevel = ob_get_level();
+			return;
+		}
+
+		call_user_func($ref[0], $ref[2]);
+		print($data);
+		$func();
+
+		self::$pendingLevel = ob_get_level();
+		if(self::$pendingLevel !== 0)
+			self::$pending[self::$pendingLevel - 1][1] = true;
 	}
 
 	public static function status($statusCode){
@@ -102,6 +158,23 @@ class Serve{
 		$type = gettype($text);
 		if($type === 'string')
 			print_r($text);
+
+		// Mark callable pending to true
+		if(self::$pendingLevel !== 0)
+			self::$pending[self::$pendingLevel][1] = true;
+	}
+
+	public static function end(){
+		for ($i = self::$pendingLevel; $i > 0; $i--) {
+			$data = ob_get_clean();
+			$ref = &self::$pending[self::$pendingLevel];
+			call_user_func($ref[0], $ref[2]);
+		}
+
+		if(!Scarlets::$isConsole)
+			throw new \ExecutionFinish();
+
+		self::$pendingLevel = 0;
 	}
 }
 
