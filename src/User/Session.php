@@ -11,19 +11,21 @@ use \Scarlets\Library\Database;
 ---------------------------------------------------------------------------
 |
 | This class is required for internal authentication and security library
-| SFSession does implement triple session protection for avoid collision
+| SFSession does implement dual session protection for avoid collision
 | and other security vulnerability. But using this on unsecured protocol
 | will have some chance to be stealed by MIM Attack.
 |
 | SFSession.id === sifyData.id
-| sifyData.shard === Cookie.shard
+| SessionDB.lastcreated === sifyData.@created
 | sifyData.integrity === SFIntegrity (Not imlemented yet)
 |
 */
 
 class Session{
+	public static $started = false;
+
 	// Saved on browser
-	public static $sifyData = [];
+	public static $sify = [];
 
 	// Always saved on mysql
 	public static $ID = false; // ID Range's depend on your column datatype
@@ -35,10 +37,11 @@ class Session{
 	public static $IPChanged = false;
 
 	// Just for comparing when saving
-	private static $sifyData_ = [];
+	private static $sify_ = [];
 	private static $data_ = [];
 
 	private static $database = false;
+	private static $table = false;
 
 	// Configuration
 	private static $domain = false;
@@ -65,36 +68,46 @@ class Session{
 		// Register database
 		if($config['session.driver'] === 'database'){
 			self::$database = Database::connect($config['session.credential']);
-			self::$database->onTableMissing(function(){
-				self::$database->createTable();
+			self::$table = &$config['session.table'];
+
+			// If the table was not found
+			self::$database->onTableMissing(self::$table, function(){
+				self::$database->createTable(self::$table, [
+					'id' => ['bigint(19)', 'primary', 'key', 'AUTO_INCREMENT'],
+					'session' => 'tinytext',
+					'data' => 'text',
+					'ipaddress' => 'text',
+					'lasturlaccess' => 'text',
+					'lastlistingaccess' => ['int(11)', 'default', 0],
+					'lastrecordedtime' => ['int(11)', 'default', 0],
+					'lastcreated' => ['int(11)', 'default', 0],
+					'blocked' => ['tinyint(1)', 'default', 0]
+				]);
 			});
 		}
 
 		// Execute Session Handler
-		if(isset($_COOKIE['SFSessions']))
+		if(isset($_COOKIE['SFSessions']) && !self::$started)
 			self::load();
 	}
 
 	// Load sifyData from cookie
 	public static function loadSifyData(){
-		if(!isset($_COOKIE['shard']))
-			return;
-
-		$ref = &self::$sifyData;
+		$ref = &self::$sify;
 		$ref = self::extractSifyData();
 		self::$ID = Crypto::dSify($ref[0]);
 		self::$TextID = $ref[0];
 
 		$ref = $ref[1];
 
-		// If shard was different, then destroy it
-		if($ref['shard'] !== $_COOKIE['shard']){
-			self::destroyCookies();
-			return;
-		}
+		// If integrity was different, then destroy it
+		// if(isset($ref['integrity']) && $ref['integrity'] !== $_COOKIE['integrity']){
+		// 	self::destroyCookies();
+		// 	return;
+		// }
 
 		// Make a copy
-		self::$sifyData_ = $ref;
+		self::$sify_ = $ref;
 	}
 
 	// Save sifyData to cookie
@@ -104,50 +117,65 @@ class Session{
 			return;
 		}
 
-		if(serialize(self::$sifyData_) !== serialize(self::$sifyData) || $force){
+		if(serialize(self::$sify_) !== serialize(self::$sify) || $force){
+			self::$FullTextID = 
+			$sified = self::compileSifyData(self::$TextID, self::$sify);
 
-			// Implement Shard Protection
-			if(!isset($_COOKIE['shard']) || !isset(self::$sifyData['shard'])){
-				$_COOKIE['shard'] = Strings::random(8, true);
-				self::$sifyData['shard'] = &$_COOKIE['shard'];
+			$ref = &self::$domain;
+			if(strpos($ref, '@host') !== false){
+				$domain = explode('.', $_SERVER['HTTP_HOST']);
+				if(count($domain)>2)
+					unset($domain[0]);
+				$domain = str_replace('@host', implode('.', $domain), $ref);
 			}
 
-			self::$FullTextID = 
-			$sified = self::compileSifyData(self::$TextID, self::$sifyData);
-
-			$domain = explode('.', $_SERVER['HTTP_HOST']);
-			if(count($domain)>2)
-				unset($domain[0]);
-
-			$domain = implode('.', $domain);
-			setcookie('SFSessions', $sified, time()+2419200, '/', $domain, true);
+			setcookie('SFSessions', $sified, time()+self::$lifetime*60, self::$path, $domain, self::$secure, self::$http_only);
 		}
 	}
 
 	// Load the session data from browser and database
-	public static function load(){
+	public static function &load($return = false){
+		$false = false;
+		if(self::$started){
+			if($return === 'server')
+				return self::$data;
+			elseif($return === 'cookie')
+				return self::$sify;
+			return $false;
+		}
+
+		self::$started = true;
+
 		// Set SFSession data from cookies
 		if(self::$ID === false) self::loadSifyData();
 		$database = &self::$database;
 
 		// Search session in database
-		$data = $database->get('sessions', ['data', 'lastactive', 'blocked', 'ipaddress'], ['id'=>self::$ID]);
+		$data = $database->get(self::$table, ['data', 'lastrecordedtime', 'blocked', 'ipaddress', 'lastcreated'], ['id'=>self::$ID]);
 
-		 // Data found in database
+		// Data found in database
 		if($data !== false){
-			if(!empty(self::$data_)) return;
+			if(!empty(self::$data_)) return $false;
+
+			// Check creation date
+			if(!isset(self::$sify['@created']) || $data['lastcreated'] !== self::$sify['@created']){
+				self::destroyCookies();
+				self::$started = false;
+				$temp = self::load($return);
+				return $temp;
+			}
 
 			self::$data = json_decode($data['data'], true); // Load session data
 			self::$data_ = self::$data; // Just for comparing when shutdown
 
 			// Reset after 15 seconds and update some information
-			if(time()-15 >= $data['lastactive'])
+			if(time()-15 >= $data['lastrecordedtime'])
 			{
 				if($_SERVER['REMOTE_ADDR'] !== $data['ipaddress'])
 					Crypto::$oldIPAddress = $data['ipaddress'];
 
-				$database->update('sessions', [
-					'lastactive' => time(),
+				$database->update(self::$table, [
+					'lastrecordedtime' => time(),
 					'lasturlaccess' => $_SERVER['REQUEST_URI'],
 					'ipaddress' => $_SERVER['REMOTE_ADDR'],
 				], ['id' => self::$ID]);
@@ -156,81 +184,96 @@ class Session{
 			if($data['blocked'] === 1)
 				die('Too many request coming from your IP Address. Please verify if you\'re not a bot..');
 		}
+		else {
+			self::destroyCookies();
+			self::$started = false;
+			$temp = self::load($return);
+			return $temp;
+		}
+		return $false;
 	}
 
 	public static function save($new = false){
 		// Update session on the database
 		if($new === false){
-			self::$database->update('sessions', [
+			self::$database->update(self::$table, [
 				'data' => json_encode(self::$data)
 			], ['id' => self::$ID]);
 		}
 
 		// Write new session to browser and database
 		else {
+			$created = time();
+
 			// Save the session to the database
-			$rawID = self::$database->insert('sessions', [
-				'session' => $newID,
+			$rawID = self::$database->insert(self::$table, [
 				'data' => json_encode(self::$data),
 				'lasturlaccess' => $_SERVER['REQUEST_URI'],
 				'ipaddress' => $_SERVER['REMOTE_ADDR'],
-				'lastcreated' => time()
+				'lastcreated' => $created
 			], 'id');
 
 			self::$ID = $rawID;
+			self::$sify = ['@created' => $created];
+
+			// Convert ID to text
 			$newID = Crypto::Sify($rawID);
+			self::$database->update(self::$table, [
+				'session' => $newID,
+			], ['id' => $rawID]);
 			self::$TextID = $newID;
-			self::$sifyData = [];
 
 			// Write session to browser
-			$sified = self::compileSifyData($newID, self::$sifyData);
+			$sified = self::compileSifyData($newID, self::$sify);
 			$_COOKIE['SFSessions'] = $sified;
 
 			// Save sifyData
 			self::saveSifyData(true);
+			return [$newID, self::$sify];
 		}
 	}
 	
 	public static function destroyCookies($justCookies=false){
-		if(!session_id()) session_start();
-		$_SESSION = [];
-		session_destroy();
-
-		if(!isset($_SERVER['HTTP_COOKIE'])) {
+		if(isset($_SERVER['HTTP_COOKIE'])){
 			$expires = time()-3600;
-			$cookies = explode(';', $_SERVER['HTTP_COOKIE']);
-			$cookies_ = [];
-			foreach($cookies as $cookie) {
-			    $parts = explode('=', $cookie);
-			    $name = trim($parts[0]);
-			    if(!array_search($name, $cookies_)!==false) continue;
-			    $cookies_[] = $name;
+            $cookies = explode(';', $_SERVER['HTTP_COOKIE']);
+            $cookies_ = [];
+            foreach($cookies as $cookie) {
+                $parts = explode('=', $cookie);
+                $name = trim($parts[0]);
+                if(array_search($name, $cookies_) !== false) continue;
+                $cookies_[] = $name;
 
-			    setcookie($name, '0', $expires);
-			    setcookie($name, '0', $expires, '/');
+                setcookie($name, '', $expires);
+                setcookie($name, '', $expires, '/');
 
-				$domain = explode('.', $_SERVER['HTTP_HOST']);
-				if(count($domain)>2){
-					unset($domain[0]);
-				}
-				$domain = implode('.', $domain);
-			    setcookie($name, '0', $expires, '/', $domain);
-			    setcookie($name, '0', $expires, '/', $domain, true);
-			    if(isset($_COOKIE[$name])) unset($_COOKIE[$name]);
-			}
+                $domain = explode('.', $_SERVER['HTTP_HOST']);
+                if(count($domain)>2){
+                    unset($domain[0]);
+                }
+                $domain = implode('.', $domain);
+                setcookie($name, '', $expires, '/', $domain);
+                setcookie($name, '', $expires, '/', $domain, true);
+                if(isset($_COOKIE[$name])) unset($_COOKIE[$name]);
+            }
 		}
 
-		self::$database->delete('sessions', ['id' => self::$ID]);
+		self::$database->delete(self::$table, ['id' => self::$ID]);
 		$_COOKIE = [];
 		self::$data = [];
 		self::$data_ = [];
 		self::$ID = false;
 		self::$TextID = '';
-		self::$sifyData_ = [];
-		self::$sifyData = [];
+		self::$sify_ = [];
+		self::$sify = [];
 	}
 
 	public static function &extractSifyData($str_=false){
+		if(!isset($_COOKIE['SFSessions'])){
+			$data = self::save(true);
+			return $data;
+		}
+
 		if($str_ === false) $str = $_COOKIE['SFSessions'];
 		else $str = &$str_;
 
@@ -246,7 +289,7 @@ class Session{
 
 		// Decode SifyData
 		if(count($data) !== 1){
-			$data[1] = Crypto::decrypt($data[1]);
+			$data[1] = Crypto::decrypt($data[1], false, false, true);
 
 			if($data[1] !== '')
 				$data[1] = json_decode(@gzinflate($data[1]), true);
@@ -256,8 +299,8 @@ class Session{
 		return $data;
 	}
 	
-	public static function compileSifyData($textID, $sifyData){
-		$data = Crypto::encrypt(gzdeflate(json_encode($sifyData), 9));
+	public static function compileSifyData($textID, $sify){
+		$data = Crypto::encrypt(gzdeflate(json_encode($sify), 9), false, false, true);
 		return $textID.'XpDW2bZ'.$data;
 	}
 }
