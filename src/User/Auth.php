@@ -9,24 +9,32 @@ use \Scarlets\Extend\Strings;
 class Auth{
 	public static $database = false;
 	public static $table = false;
+	public static $userID = false;
+	public static $username = false;
+
+	public static $sessions = false;
+	public static $cookies = false;
 
 	public static function init(){
 		$config = Config::load('auth');
 		self::$database = Database::connect($config['auth.database']);
-		self::$table = Database::connect($config['auth.table']);
+		self::$table = $config['auth.table'];
+
+		if(!Session::$started)
+			Session::load();
 	}
 
 	//Return true if not logged in
 	public static function logout(){
-		$sifyData = &Session::$sifyData;
+		$sify = &Session::$sify;
 		$data = &Session::$data;
 
-		if(isset($sifyData['userID']) && $sifyData['userID'] !== '' && $data['userID'] === $sifyData['userID'])
+		if(isset($sify['userID']) && $sify['userID'] !== '' && $data['userID'] === $sify['userID'])
 			$data['oldAccount'] = $data['userID'];
 		else
 			$data = [];
 
-		$sifyData = [];
+		$sify = [];
 		$_COOKIE = [];
 		Session::saveSifyData();
 	}
@@ -35,20 +43,20 @@ class Auth{
 	public static function login($username, $password)
 	{
 		$username = strtolower($username);
-		$data = self::$database->get('users', ['user_id', 'name', 'password'], ['username'=>$username]);
+		$data = self::$database->get(self::$table, ['user_id', 'name', 'password'], ['username'=>$username]);
 
 		if($data !== false && password_verify($password, $data['password']))
 		{
-			$sifyData = &Session::$sifyData;
+			$sify = &Session::$sify;
 			$data = &Session::$data;
 
 			$data['username'] = &$username;
 			$data['userID'] = &$data['user_id'];
 			$data['name'] = &$data['name'];
 
-			$sifyData['username'] = &$username;
-			$sifyData['userID'] = &$data['user_id'];
-			$sifyData['shard'] = &$_COOKIE['shard'];
+			$sify['username'] = &$username;
+			$sify['userID'] = &$data['user_id'];
+			$sify['shard'] = &$_COOKIE['shard'];
 			saveSifyData();
 
 			return true;
@@ -59,22 +67,22 @@ class Auth{
 	//Return {userID, username} if logged in
 	public static function getLoginData($returnBoolOnly = false)
 	{
-		$sifyData = &Session::$sifyData;
+		$sify = &Session::$sify;
 		$data = &Session::$data;
 		self::$userID = false;
 		self::$username = false;
 
 		// Check if cookie and session data have userID
-		if(isset($data['userID']) && isset($sifyData['userID']))
+		if(isset($data['userID']) && isset($sify['userID']))
 		{
 			// Check if exist but different userID
-			if($data['userID'] && $sifyData['userID'] && $data['userID'] !== $sifyData['userID']){
+			if($data['userID'] && $sify['userID'] && $data['userID'] !== $sify['userID']){
 				Session::destroyCookies();
 				return false;
 			}
 
 			// Check if zero or empty
-			else if(!$data['userID'] || !$sifyData['userID'])
+			else if(!$data['userID'] || !$sify['userID'])
 				return false;
 			
 			// All ok
@@ -102,7 +110,7 @@ class Auth{
 			return [false, 'Username not valid'];
 
 		// Check for existance
-		$temp = self::$database->get('users', ['user_id'], [
+		$temp = self::$database->get(self::$table, ['user_id'], [
 			'OR'=>[
 				'username'=>$data['username'],
 				'email[~]'=>'|'.$data['email']
@@ -114,20 +122,20 @@ class Auth{
 			return [false, 'Email already used'];
 		}
 
-		$userID = self::$database->insert('users', $data, 'userID');
+		$userID = self::$database->insert(self::$table, $data, 'userID');
 		return [true, $userID];
 	}
 
 	public static function isUsernameExist($username)
 	{
-		if(self::$database->get('users', ['user_id'], ['username'=>$username]) !== false)
+		if(self::$database->get(self::$table, ['user_id'], ['username'=>$username]) !== false)
 			return true;
 		return false;
 	}
 
 	public static function isEmailExist($email)
 	{
-		if(self::$database->get('users', ['user_id'], ['email[~]'=>$email]) !== false)
+		if(self::$database->get(self::$table, ['user_id'], ['email[~]'=>$email]) !== false)
 			return true;
 		return false;
 	}
