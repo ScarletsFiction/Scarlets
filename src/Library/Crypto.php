@@ -55,7 +55,7 @@ class Crypto{
 
 		// Apply mask
 		foreach($ref as $key => $value){
-			$str = str_replace($key, $value, $astr);
+			$str = str_replace($key, $value, $str);
 		}
 
 		// Random Lowercase
@@ -77,11 +77,11 @@ class Crypto{
 	}
 
 	// SFSessionID unmask
-	public static function &dSify($astr){
+	public static function &dSify(&$astr){
 		$ref = &self::$sify_mask;
 		$str = strtoupper($astr);
 		foreach($ref as $key => $value){
-			$str = str_replace($value, $key, $astr);
+			$str = str_replace($value, $key, $str);
 		}
 		return $str;
 	}
@@ -91,7 +91,7 @@ class Crypto{
 		$ref = &self::$MD5_mask;
 		$str = strtolower(md5($str_));
 		foreach($ref as $key => $value){
-			$str = str_replace($key, $value, $astr);
+			$str = str_replace($key, $value, $str);
 		}
 		return $str;
 	}

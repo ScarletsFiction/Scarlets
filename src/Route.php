@@ -239,7 +239,10 @@ class Route{
 			if($current === false)
 				$current = [];
 
-			$current[] = $arg1;
+			if(is_array($arg1))
+				$current = array_merge($current, $arg1);
+			else
+				$current[] = $arg1;
 
 			if(!$func){
 				self::$scopeConstrain[] = $part;
@@ -268,15 +271,15 @@ class Route{
 			return self::scopeBased('namespace', $namespace, $func);
 		}
 		
-		public static function prefix($url, $func){
+		public static function prefix($url, $func = false){
 			return self::scopeBased('prefix', $url, $func);
 		}
 		
-		public static function name($name, $func){
+		public static function name($name, $func = false){
 			return self::scopeBased('name', $name, $func);
 		}
 		
-		public static function middleware($controller, $func){
+		public static function middleware($controller, $func = false){
 			return self::scopeBased('middleware', $controller, $func);
 		}
 
@@ -391,6 +394,7 @@ class Route{
 
 		// Handle controller
 		if(!is_callable($func)){
+			trigger_error("'$func' is not callable");
 			return;
 		}
 
