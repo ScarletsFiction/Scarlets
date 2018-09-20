@@ -17,6 +17,7 @@ class SQL {
 	public $transactionCounter = 0;
 	public $debug = false;
 	public $table_prefix = '';
+	public $name = '';
 
 	// When debugging is enabled, this will have value
 	public $lastQuery = false;
@@ -33,7 +34,8 @@ class SQL {
 		if(!isset($options['charset'])) $options['charset'] = 'utf8';
 		if(!isset($options['collation'])) $options['collation'] = 'utf8_unicode_ci';
 		if(!isset($options['debug'])) $options['debug'] = false;
-		if(!isset($options['database'])) throw new \Exception("Database name was not specified");
+		if(!isset($options['database'])) trigger_error("Database name was not specified");
+		$this->name = $options['database'];
 
 		$this->debug = &$options['debug'];
 		$this->table_prefix = &$options['table_prefix'];
@@ -41,6 +43,8 @@ class SQL {
 		// Try to connect
 		try{
 			$this->SQLConnection = new \PDO("$options[driver]:dbname=$options[database];host=$options[host];port=$options[port]", $options['user'], $options['password']);
+			$this->SQLConnection->setAttribute(\PDO::ATTR_STRINGIFY_FETCHES, false);
+			$this->SQLConnection->setAttribute(\PDO::ATTR_EMULATE_PREPARES, false);
 		}
 		catch(\PDOException $e) {
 			throw new \PDOException($e->getMessage());
@@ -48,7 +52,8 @@ class SQL {
 	}
 
 	// SQLQuery
-	public function query($query, $arrayData, $from){
+	private $queryRetry = false;
+	public function &query($query, $arrayData, $from){
 		if($this->debug)
 			$this->lastQuery = [$query, $arrayData];
 
@@ -56,8 +61,20 @@ class SQL {
 		$result = $statement->execute($arrayData);
 
 		$error = $statement->errorInfo();
-		if(!empty($error[2]))
-			throw new \Exception($error[2]);
+		if(!empty($error[2])){
+			if(strpos($error[2], "Table") !== false && strpos($error[2], "doesn't exist") !== false){
+				$tableName = explode($this->name.'.', $error[2])[1];
+				$tableName = explode("'", $tableName)[0];
+				if(!$this->queryRetry && is_callable($this->whenTableMissing[$tableName])){
+					$this->queryRetry = true;
+					$this->whenTableMissing[$tableName]();
+					$this->queryRetry = false;
+					$temp = $this->query($query, $arrayData, $from);
+					return $temp;
+				}
+			}
+			trigger_error($error[2]);
+		}
 
 		if($from === 'select')
 			$result = $statement->fetchAll(\PDO::FETCH_ASSOC);
@@ -135,7 +152,7 @@ class SQL {
 						continue;
 					}
 					else {
-						throw new \Exception('SQL where: value of ' . $this->validateText($matches[1]) . ' is non-numeric and can\'t be accepted');
+						trigger_error('SQL where: value of ' . $this->validateText($matches[1]) . ' is non-numeric and can\'t be accepted');
 					}
 				}
 				else if($matches[3] === '!')
@@ -159,7 +176,7 @@ class SQL {
 						}
 
 						else
-							throw new \Exception('SQL where: value of' . $this->validateText($matches[1]) . ' with type ' . $type . ' can\'t be accepted');
+							trigger_error('SQL where: value of' . $this->validateText($matches[1]) . ' with type ' . $type . ' can\'t be accepted');
 					}
 				}
 				else if ($matches[3] === '~' || $matches[3] === '!~')
@@ -197,7 +214,7 @@ class SQL {
 					}
 
 					else
-						throw new \Exception('SQL where: value ' . $this->validateText($matches[1]) . ' with type ' . $type . ' can\'t be accepted');
+						trigger_error('SQL where: value ' . $this->validateText($matches[1]) . ' with type ' . $type . ' can\'t be accepted');
 				}
 			}
 		}
@@ -256,15 +273,19 @@ class SQL {
 		return [$where_ . $options, $objectData];
 	}
 
-	public function createTable($tableName, $columns)
+	private $whenTableMissing = [];
+	public function onTableMissing($table, $func){
+		$this->whenTableMissing[$table] = $func;
+	}
+
+	public function &createTable($tableName, $columns)
 	{
 		if($this->table_prefix !== '') $tableName = $this->table_prefix;
 
 		$columns_ = array_keys($columns);
 		for($i = 0; $i < count($columns_); $i++){
-			if(gettype($columns[$columns_[$i]]) === 'array'){
-				$columns_[$i] = $this->validateText($columns_[$i]).' '.strtoupper($columns[$columns_[$i]][0]).' '.$this->validateText($columns[$columns_[$i]][1]);
-			}
+			if(gettype($columns[$columns_[$i]]) === 'array')
+				$columns_[$i] = $this->validateText($columns_[$i]).' '.strtoupper(implode(' ', $columns[$columns_[$i]]));
 			else
 				$columns_[$i] = $this->validateText($columns_[$i]).' '.strtoupper(strval($columns[$columns_[$i]]));
 		}
@@ -273,7 +294,7 @@ class SQL {
 		return $this->query($query, [], 'create');
 	}
 
-	public function select($tableName, $select='*', $where=false){
+	public function &select($tableName, $select='*', $where=false){
 		if($this->table_prefix !== '') $tableName = $this->table_prefix;
 
 		$select_ = $select;
@@ -289,7 +310,20 @@ class SQL {
 		return $this->query($query, $wheres[1], 'select');
 	}
 
-	public function delete($tableName, $where){
+	public function &get($tableName, $select='*', $where=false){
+		if(!$where)
+			$where = [];
+		$where['LIMIT'] = 1;
+		$temp = $this->select($tableName, $select, $where);
+		if(!$temp){
+			$false = false;
+			return $false;
+		}
+		$temp = $temp[0];
+		return $temp;
+	}
+
+	public function &delete($tableName, $where){
 		if($this->table_prefix !== '') $tableName = $this->table_prefix;
 
 		if($where){
@@ -303,7 +337,7 @@ class SQL {
 		}
 	}
 
-	public function insert($tableName, $object){
+	public function &insert($tableName, $object){
 		if($this->table_prefix !== '') $tableName = $this->table_prefix;
 
 		$objectName = [];
@@ -321,7 +355,7 @@ class SQL {
 		return $this->query($query, $objectData, 'insert');
 	}
 
-	public function update($tableName, $object, $where=false){
+	public function &update($tableName, $object, $where=false){
 		if($this->table_prefix !== '') $tableName = $this->table_prefix;
 
 		$wheres = $this->makeWhere($where);
@@ -337,7 +371,7 @@ class SQL {
 		return $this->query($query, array_merge($objectData, $wheres[1]), 'update');
 	}
 
-	public function drop($tableName){
+	public function &drop($tableName){
 		if($this->table_prefix !== '') $tableName = $this->table_prefix;
 		
 		return $this->query("DROP TABLE " . $this->validateText($tableName), [], 'drop');
