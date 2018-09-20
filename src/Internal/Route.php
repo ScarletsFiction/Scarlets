@@ -212,22 +212,16 @@ class Middleware{
 		$name = $name[0];
 
 		// Priority the user defined middleware
-		if(isset(self::$register[$name])){
+		if(isset(self::$register[$name]))
 			return call_user_func_array(self::$register[$name], $data);
-		}
 
 		// Then check for build-in middleware
-		elseif(is_callable('self::'.$name)){
+		elseif(is_callable('self::'.$name))
 			return call_user_func_array('self::'.$name, $data);
-		}
 
 		else {
 			Scarlets\Error::warning('Middleware for "'.$name.'" was not defined');
 			return true;
 		}
-	}
-
-	private static function throttle($request = 1, $timer = 3){
-		return;
 	}
 }

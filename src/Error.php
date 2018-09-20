@@ -32,8 +32,13 @@ class Error{
 
 	// Error handler, passes flow over the exception logger with new ErrorException.
 	public static function ErrorHandler($severity, $message, $file, $line){
-		if(ob_get_status())
-			ob_end_clean();
+		if(E_RECOVERABLE_ERROR === $severity){
+		    throw new ErrorException($message, $severity, 0, $file, $line);
+		    return;
+		}
+
+		while(ob_get_level())
+			ob_get_clean();
 
 	    if(!(error_reporting() & $severity))
 	        return; // This error code is not included in error_reporting
@@ -155,24 +160,24 @@ class Error{
 	}
 
 	// http://php.net/manual/en/errorfunc.constants.php
-	public static function ErrorType($type) 
-	{ 
-	    if($type === E_ERROR) return 'E_ERROR'; 
-	    elseif($type === E_WARNING) return 'E_WARNING'; 
-	    elseif($type === E_PARSE) return 'E_PARSE'; 
-	    elseif($type === E_NOTICE) return 'E_NOTICE'; 
-	    elseif($type === E_CORE_ERROR) return 'E_CORE_ERROR'; 
-	    elseif($type === E_CORE_WARNING) return 'E_CORE_WARNING'; 
-	    elseif($type === E_COMPILE_ERROR) return 'E_COMPILE_ERROR'; 
-	    elseif($type === E_COMPILE_WARNING) return 'E_COMPILE_WARNING'; 
-	    elseif($type === E_USER_ERROR) return 'E_USER_ERROR'; 
-	    elseif($type === E_USER_WARNING) return 'E_USER_WARNING'; 
-	    elseif($type === E_USER_NOTICE) return 'E_USER_NOTICE'; 
-	    elseif($type === E_STRICT) return 'E_STRICT'; 
-	    elseif($type === E_RECOVERABLE_ERROR) return 'E_RECOVERABLE_ERROR'; 
-	    elseif($type === E_DEPRECATED) return 'E_DEPRECATED'; 
-	    elseif($type === E_USER_DEPRECATED) return 'E_USER_DEPRECATED'; 
-	    return "E_UNDEFINED"; 
+	public static function ErrorType($type)
+	{
+	    if($type === E_ERROR) return 'E_ERROR';
+	    elseif($type === E_WARNING) return 'E_WARNING';
+	    elseif($type === E_PARSE) return 'E_PARSE';
+	    elseif($type === E_NOTICE) return 'E_NOTICE';
+	    elseif($type === E_CORE_ERROR) return 'E_CORE_ERROR';
+	    elseif($type === E_CORE_WARNING) return 'E_CORE_WARNING';
+	    elseif($type === E_COMPILE_ERROR) return 'E_COMPILE_ERROR';
+	    elseif($type === E_COMPILE_WARNING) return 'E_COMPILE_WARNING';
+	    elseif($type === E_USER_ERROR) return 'E_USER_ERROR';
+	    elseif($type === E_USER_WARNING) return 'E_USER_WARNING';
+	    elseif($type === E_USER_NOTICE) return 'E_USER_NOTICE';
+	    elseif($type === E_STRICT) return 'E_STRICT';
+	    elseif($type === E_RECOVERABLE_ERROR) return 'E_RECOVERABLE_ERROR';
+	    elseif($type === E_DEPRECATED) return 'E_DEPRECATED';
+	    elseif($type === E_USER_DEPRECATED) return 'E_USER_DEPRECATED';
+	    return "E_UNDEFINED";
 	}
 
 	public static function checkUncaughtError(){
@@ -183,12 +188,14 @@ class Error{
 }
 
 // Always show error on travis
-if(getenv('CI')){
+if(getenv('CI'))
 	ini_set('display_errors', 1);
-	ini_set('log_errors', 1);
-} else {
+else {
 	ini_set('display_errors', 0);
-	ini_set('log_errors', 0);
 	set_error_handler(['\\Scarlets\\Error', "ErrorHandler"], E_ALL);
 }
 ini_set('error_reporting', E_ALL);
+
+// Catch fatal error
+ini_set('log_errors', 1);
+ini_set('error_log', Scarlets::$registry['path.app'].'/error.log');

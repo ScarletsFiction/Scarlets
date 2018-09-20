@@ -162,6 +162,8 @@ class Scarlets{
 
 		$reg['path.framework.src'] = __DIR__.'/src';
 		$reg['path.framework.library'] = __DIR__.'/src/Library';
+		
+		include_once __DIR__."/src/Error.php";
 
 		// Initialize configuration
 		$config = Config::load('app');
@@ -173,14 +175,12 @@ class Scarlets{
 
 		if($config['app.url_path'] !== false)
 			$_SERVER['REQUEST_URI'] = explode($config['app.url_path'], $_SERVER['REQUEST_URI'])[1];
-
 	}
 }
 
 spl_autoload_register('\\Scarlets::AppClassLoader');
 
 include_once __DIR__."/src/Config.php";
-include_once __DIR__."/src/Error.php";
 
 // Handle uncaught error on shutdown
 Scarlets::onShutdown(function(){

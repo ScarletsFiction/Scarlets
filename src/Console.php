@@ -314,7 +314,7 @@ class Console{
 
 	public static function help($pattern, $callback){
 		if(strpos($pattern, ' ') !== false)
-			throw new \Exception("Console help's pattern can't have a space ($pattern)");
+			trigger_error("Console help's pattern can't have a space ($pattern)");
 
 		self::$commands[$pattern.'.h'] = &$callback;
 	}

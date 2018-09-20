@@ -62,7 +62,7 @@ class Language{
 			}
 			return;
 		}
-		throw new \Exception("LanguageID not exist: ".$languageID, 1);
+		trigger_error("LanguageID not exist: ".$languageID, 1);
 	}
 
 	public static function &get($key, $values = [], $languageID=0){
