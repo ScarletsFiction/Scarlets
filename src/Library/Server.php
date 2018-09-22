@@ -5,6 +5,38 @@ use \Scarlets;
 class Server {
 	public static $pendingHeader = '';
 	public static $requestMicrotime = 0;
+	private static $whenComplete = [];
+	private static $whenStart = [];
+
+	/*
+		> Listen to request finish event
+		Here you can register a event handler after
+		any client request was finished 
+
+		(function) function
+	*/
+	public static function onComplete($function){
+		if(array_search($function, self::$whenComplete) === false)
+			self::$whenComplete[] = $function;
+	}
+
+	/*
+		> Listen to request start event
+		Here you can register a event handler before
+		any client request was started
+
+		(function) function
+	*/
+	public static function onStart($function){
+		if(array_search($function, self::$whenStart) === false)
+			self::$whenStart[] = $function;
+	}
+
+	/*
+		> Set header sent from the server
+
+		(text) string
+	*/
 	public static function setHeader($text){
 		self::$pendingHeader .= "\n".$text;
 	}
@@ -36,6 +68,11 @@ class Server {
 		// Create the socket server
 		Scarlets\Library\Socket::create($address, $port, function($socket, $data) use($options) {
 			self::$requestMicrotime = microtime(true);
+
+		    // Run any start event if exist
+			$list = &self::$whenStart;
+			foreach ($list as &$function)
+				$function();
 
 		    $body = '';
 		    socket_getpeername($socket, $address);
@@ -111,6 +148,12 @@ class Server {
 				print_r(" [$httpstatuscode]\n");
 				print_r($headers['User-Agent']."\n");
 		    }
+
+		    // Run any complete event if exist
+			$list = &self::$whenComplete;
+			foreach ($list as &$function)
+				$function();
+
 		    return true;
 		});
 	}
