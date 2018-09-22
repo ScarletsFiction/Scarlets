@@ -152,15 +152,10 @@ class Session{
 			$ref = &self::$domain;
 			if(strpos($ref, '@host') !== false){
 				$domain = explode('.', $_SERVER['HTTP_HOST']);
-				$count = count($domain);
-				if($count > 2)
+				if(count($domain) > 2)
 					unset($domain[0]);
-				elseif ($count == 1)
-					$domain = $_SERVER['HTTP_HOST'];
-				if($count != 1)
-					$domain = str_replace('@host', implode('.', $domain), $ref);
-				
-				$domain = explode(':', $domain)[0];
+
+				$domain = str_replace('@host', implode('.', $domain), $ref);
 			}
 
 			$cookieData = ['SFSessions', $sified, time()+self::$lifetime*60, self::$path, $domain, self::$secure, self::$http_only];
@@ -286,9 +281,9 @@ class Session{
                 setcookie($name, '', $expires, '/');
 
                 $domain = explode('.', $_SERVER['HTTP_HOST']);
-                if(count($domain)>2){
+                if(count($domain)>2)
                     unset($domain[0]);
-                }
+
                 $domain = implode('.', $domain);
                 setcookie($name, '', $expires, '/', $domain);
                 setcookie($name, '', $expires, '/', $domain, true);

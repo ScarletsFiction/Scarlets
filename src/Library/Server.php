@@ -42,6 +42,13 @@ class Server {
 	}
 
 	public static function setCookie($name, $value, $time=3600, $path='/', $domain=false, $secure=false, $http_only=false){
+		// Domain check
+		$domain = explode('.', $domain);
+		if(count($domain) === 2 && $domain[0] === '')
+			unset($domain[0]);
+
+		$domain = explode(':', implode('.', $domain))[0];
+
     	$date = date("D, d M Y H:i:s", $time) . ' GMT';
     	$cookie = "Set-Cookie: $name=".rawurlencode($value)."; Expires=$date; Max-Age=".($time - time())."; Path=$path";
     	if($domain)
