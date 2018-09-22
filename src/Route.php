@@ -1,6 +1,7 @@
 <?php 
 namespace Scarlets;
 use Scarlets;
+use Scarlets\Route\Middleware;
 include_once __DIR__."/Internal/Route.php";
 
 /*
@@ -22,6 +23,7 @@ class Route{
 	private static $name = false;
 	private static $middleware = false;
 	private static $waitName = false;
+	private static $skipScope = false;
 
 	private static function implementCurrentScope(&$url, &$func, &$opts){
 		if(self::$namespace && !is_callable($func))
@@ -199,9 +201,7 @@ class Route{
 	}
 	
 	// $http = http status like 301 or redirect method
-	public static function redirect($from, $to, $http, $data = false){
-		if(!self::handleURL($from, false, false, true)) return;
-
+	public static function redirect($to, $http = 301, $data = false){
 		if(!is_numeric($http)){
 			// GET method
 			if(strtolower($method) === 'get'){
@@ -246,10 +246,12 @@ class Route{
 
 			if(!$func){
 				self::$scopeConstrain[] = $part;
-				return new self;
+				return self::$this;
 			}
 			
-			$func();
+			if(!self::$skipScope)
+				$func();
+			else self::$skipScope = false;
 
 			array_pop($current);
 			if(count($current) === 0)
@@ -272,6 +274,10 @@ class Route{
 		}
 		
 		public static function prefix($url, $func = false){
+			// Execute only if there are a matched url
+			if(strpos($_SERVER['REQUEST_URI'], $url) === false)
+				self::$skipScope = true;
+
 			return self::scopeBased('prefix', $url, $func);
 		}
 		
@@ -430,8 +436,10 @@ class Route{
 			else print(call_user_func($func));
 		}
 
-		if(is_callable($middlewareCallback))
-			$middlewareCallback();
+		if(is_callable($middlewareCallback)){
+			call_user_func_array($middlewareCallback, Middleware::$pendingArgs);
+			Middleware::$pendingArgs = [];
+		}
 
 		return true;
 	}

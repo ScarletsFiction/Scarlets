@@ -89,7 +89,16 @@ class Serve{
 			self::$pending[self::$pendingLevel][1] = true;
 	}
 
-	public static function plate($path, $values=[]){
+	public static function plate($path){
+		if(isset($_REQUEST['_scarlets']) && strpos($_REQUEST['_scarlets'], '.dynamic.') !== false)
+			return;
+
+		if(Scarlets::$isConsole && !self::$headerSent)
+			self::status(200);
+
+		$path = Scarlets::$registry['path.plate'].'/'.str_replace('.', '/', $path).'.php';
+		include $path;
+		
 		// Mark callable pending to true
 		if(self::$pendingLevel !== 0)
 			self::$pending[self::$pendingLevel][1] = true;
@@ -104,7 +113,7 @@ class Serve{
 				$ref = &self::$pending[$level][2];
 
 			if($ref === false)
-				trigger_error("Pending serve was not found (index: ".strval($level - 1)." | total: ".(count(self::$pendingLevel) - 1).")");
+				trigger_error("Pending serves was not found (index: ".$level." | total: ".(count(self::$pendingLevel) - 1).")");
 				
 			$ref = array_merge($ref, $func);
 			return;
@@ -142,15 +151,19 @@ class Serve{
 			self::$pending[self::$pendingLevel - 1][1] = true;
 	}
 
-	public static function status($statusCode){
+	public static function status($statusCode, $headerOnly = false){
 		if(self::$headerSent) return;
 		http_response_code($statusCode);
+
+		if($headerOnly) return;
 		
 		$router = &Scarlets::$registry['Route']['STATUS'];
 
 		if(isset($router[$statusCode])){
+			if(ob_get_level()) ob_get_clean();
 			self::$headerSent = true;
 			$router[$statusCode]();
+			exit;
 		}
 	}
 
@@ -164,7 +177,10 @@ class Serve{
 			self::$pending[self::$pendingLevel][1] = true;
 	}
 
-	public static function end(){
+	public static function end($text = false){
+		if($text !== false)
+			self::raw($text);
+
 		for ($i = self::$pendingLevel; $i > 0; $i--) {
 			$data = ob_get_clean();
 			$ref = &self::$pending[self::$pendingLevel];
@@ -201,6 +217,7 @@ class Middleware{
 	// Register user defined middleware
 	// $register['name'] = function(){}
 	public static $register = [];
+	public static $pendingArgs = [];
 
 	// Returning true value will cancel the current request
 	public static function callMiddleware($text){
@@ -215,13 +232,13 @@ class Middleware{
 		if(isset(self::$register[$name]))
 			return call_user_func_array(self::$register[$name], $data);
 
-		// Then check for build-in middleware
-		elseif(is_callable('self::'.$name))
-			return call_user_func_array('self::'.$name, $data);
-
 		else {
 			Scarlets\Error::warning('Middleware for "'.$name.'" was not defined');
 			return true;
 		}
+	}
+
+	public static function pending(){
+		self::$pendingArgs = array_merge(self::$pendingArgs, func_get_args());
 	}
 }
