@@ -76,9 +76,9 @@ class SQL {
 			trigger_error($error[2]);
 		}
 
-		if($from === 'select')
+		if($from === 'select' || $from === 'count')
 			$result = $statement->fetchAll(\PDO::FETCH_ASSOC);
-		if($from === 'insert')
+		elseif($from === 'insert')
 			$result = $this->SQLConnection->lastInsertId();
 
 		return $result;
@@ -188,7 +188,7 @@ class SQL {
 					$likes = [];
 					for ($a = 0; $a < count($value); $a++) {
 						$likes[] = $this->validateText($matches[1]) . ($matches[3] === '!~' ? ' NOT' : '') . ' LIKE ?';
-						if(strpos($value, '%') === false) $value[$a] = '%'.$value[$a].'%';
+						if(strpos($value[$a], '%') === false) $value[$a] = '%'.$value[$a].'%';
 						$objectData[] = $value[$a];
 					}
 
@@ -255,7 +255,7 @@ class SQL {
 			$options = $options . ' ORDER BY ' . implode(', ', $stack);
 		}
 		if(isset($object['LIMIT'])){
-			if(!is_nan($object['LIMIT'])){
+			if(!is_array($object['LIMIT']) && !is_nan($object['LIMIT'])){
 				$options = $options . ' LIMIT '. $object['LIMIT'];
 			}
 			else if(!is_nan($object['LIMIT'][0]) && !is_nan($object['LIMIT'][1])){
@@ -294,6 +294,15 @@ class SQL {
 		return $this->query($query, [], 'create');
 	}
 
+	public function count($tableName, $where=false){
+		if($this->table_prefix !== '') $tableName = $this->table_prefix;
+
+		$wheres = $this->makeWhere($where);
+		$query = "SELECT COUNT(1) FROM " . $this->validateText($tableName) . $wheres[0];
+		
+		return $this->query($query, $wheres[1], 'count')[0]['COUNT(1)'];
+	}
+
 	public function &select($tableName, $select='*', $where=false){
 		if($this->table_prefix !== '') $tableName = $this->table_prefix;
 
@@ -315,12 +324,15 @@ class SQL {
 			$where = [];
 		$where['LIMIT'] = 1;
 		$temp = $this->select($tableName, $select, $where);
+
+		// if empty or false
 		if(!$temp){
 			$false = false;
 			return $false;
 		}
-		$temp = $temp[0];
-		return $temp;
+		
+		// else
+		return $temp[0];
 	}
 
 	public function &delete($tableName, $where){
