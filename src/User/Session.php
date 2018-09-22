@@ -3,6 +3,7 @@ namespace Scarlets\User;
 use \Scarlets;
 use \Scarlets\Config;
 use \Scarlets\Library\Crypto;
+use \Scarlets\Library\Server;
 use \Scarlets\Library\Database;
 
 /*
@@ -89,6 +90,33 @@ class Session{
 		// Execute Session Handler
 		if(isset($_COOKIE['SFSessions']) && !self::$started)
 			self::load();
+
+		// Register session save event
+		$saveData = function(){
+			if(serialize(self::$data_) !== serialize(self::$data))
+				self::save();
+		};
+		if(Scarlets::$isConsole){
+			Server::onComplete($saveData);
+
+			// Reset session data before any request
+			Server::onStart(function(){
+				$started = false;
+				$sify = [];
+				$ID = false;
+				$TextID = '';
+				$FullTextID = '';
+				$data = [];
+				$IPChanged = false;
+				$sify_ = [];
+				$data_ = [];
+
+				if(isset($_COOKIE['SFSessions']))
+					self::load();
+			});
+		}
+		else
+			Scarlets::onShutdown($saveData);
 	}
 
 	// Load sifyData from cookie
@@ -112,8 +140,8 @@ class Session{
 
 	// Save sifyData to cookie
 	public static function saveSifyData($force=false){
-		if(headers_sent()){
-			Log::message('Couldn\'t save sifyData because header already sent. Make sure you save it before any body content being sent');
+		if(!Scarlets::$isConsole && headers_sent()){
+			trigger_error('Couldn\'t save sifyData because header already sent. Make sure you save it before any body content being sent');
 			return;
 		}
 
@@ -124,12 +152,22 @@ class Session{
 			$ref = &self::$domain;
 			if(strpos($ref, '@host') !== false){
 				$domain = explode('.', $_SERVER['HTTP_HOST']);
-				if(count($domain)>2)
+				$count = count($domain);
+				if($count > 2)
 					unset($domain[0]);
-				$domain = str_replace('@host', implode('.', $domain), $ref);
+				elseif ($count == 1)
+					$domain = $_SERVER['HTTP_HOST'];
+				if($count != 1)
+					$domain = str_replace('@host', implode('.', $domain), $ref);
+				
+				$domain = explode(':', $domain)[0];
 			}
 
-			setcookie('SFSessions', $sified, time()+self::$lifetime*60, self::$path, $domain, self::$secure, self::$http_only);
+			$cookieData = ['SFSessions', $sified, time()+self::$lifetime*60, self::$path, $domain, self::$secure, self::$http_only];
+			if(!Scarlets::$isConsole)
+				call_user_func_array('setcookie', $cookieData);
+			else
+				call_user_func_array('Scarlets\Library\Server::setCookie', $cookieData);
 		}
 	}
 
