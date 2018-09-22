@@ -11,13 +11,16 @@
 |
 */
 namespace Scarlets\Library\Database;
+use \PDO;
+use \PDOException;
 
 class SQL {
 	public $SQLConnection;
 	public $transactionCounter = 0;
 	public $debug = false;
 	public $table_prefix = '';
-	public $name = '';
+	public $database = '';
+	public $type = 'SQL';
 
 	// When debugging is enabled, this will have value
 	public $lastQuery = false;
@@ -30,25 +33,41 @@ class SQL {
 		if(isset($options['username'])) $options['user'] = $options['username'];
 		if(!isset($options['password'])) $options['password'] = '';
 		if(!isset($options['driver'])) $options['driver'] = 'mysql';
-		if(!isset($options['table_prefix'])) $options['table_prefix'] = '';
 		if(!isset($options['charset'])) $options['charset'] = 'utf8';
-		if(!isset($options['collation'])) $options['collation'] = 'utf8_unicode_ci';
 		if(!isset($options['debug'])) $options['debug'] = false;
 		if(!isset($options['database'])) trigger_error("Database name was not specified");
-		$this->name = $options['database'];
+		$this->database = $options['database'];
 
 		$this->debug = &$options['debug'];
-		$this->table_prefix = &$options['table_prefix'];
+		$this->table_prefix = $options['database'];
+		if(isset($options['table_prefix']) && $options['table_prefix'] !== '')
+			$this->table_prefix .= '.'.$options['table_prefix'];
 
 		// Try to connect
 		try{
-			$this->SQLConnection = new \PDO("$options[driver]:dbname=$options[database];host=$options[host];port=$options[port]", $options['user'], $options['password']);
-			$this->SQLConnection->setAttribute(\PDO::ATTR_STRINGIFY_FETCHES, false);
-			$this->SQLConnection->setAttribute(\PDO::ATTR_EMULATE_PREPARES, false);
+			$this->SQLConnection = new PDO("$options[driver]:dbname=$options[database];host=$options[host];port=$options[port];charset=$options[charset]", $options['user'], $options['password']);
+			$this->SQLConnection->setAttribute(PDO::ATTR_STRINGIFY_FETCHES, false);
+			$this->SQLConnection->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);
+			$this->SQLConnection->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 		}
-		catch(\PDOException $e) {
-			throw new \PDOException($e->getMessage());
+		catch(PDOException $e) {
+			trigger_error($e->getMessage());
 		}
+	}
+
+	/*
+		> Change database
+		This may work for MySQL only and will 
+		back to original state after the query
+		was executed
+	
+		(dbname) Database Name
+	*/
+	public function change($options){
+		$this->table_prefix = $options['database'];
+		$this->database = $options['database'];
+		if(isset($options['table_prefix']) && $options['table_prefix'] !== '')
+			$this->table_prefix .= '.'.$options['table_prefix'];
 	}
 
 	// SQLQuery
@@ -57,24 +76,30 @@ class SQL {
 		if($this->debug)
 			$this->lastQuery = [$query, $arrayData];
 
-		$statement = $this->SQLConnection->prepare($query);
-		$result = $statement->execute($arrayData);
+		try{
+			$statement = $this->SQLConnection->prepare($query);
+			$result = $statement->execute($arrayData);
+		} catch(PDOException $e){
+			$msg = $e->getMessage();
+			if($msg){
+				if(strpos($msg, "Table") !== false && strpos($msg, "doesn't exist") !== false){
+					$tableName = explode($this->table_prefix.'.', $msg)[1];
+					$tableName = $this->table_prefix.'.'.explode("'", $tableName)[0];
 
-		$error = $statement->errorInfo();
-		if(!empty($error[2])){
-			if(strpos($error[2], "Table") !== false && strpos($error[2], "doesn't exist") !== false){
-				$tableName = explode($this->name.'.', $error[2])[1];
-				$tableName = explode("'", $tableName)[0];
-				if(!$this->queryRetry && is_callable($this->whenTableMissing[$tableName])){
-					$this->queryRetry = true;
-					$this->whenTableMissing[$tableName]();
-					$this->queryRetry = false;
-					$temp = $this->query($query, $arrayData, $from);
-					return $temp;
+					$ref = &$this->whenTableMissing;
+					if(!$this->queryRetry && isset($ref[$tableName]) && is_callable($ref[$tableName])){
+						$this->queryRetry = true;
+						$ref[$tableName]();
+						$this->queryRetry = false;
+						$temp = $this->query($query, $arrayData, $from);
+						return $temp;
+					}
 				}
+				trigger_error($msg);
 			}
-			trigger_error($error[2]);
 		}
+
+		// $error = $statement->errorInfo();
 
 		if($from === 'select' || $from === 'count')
 			$result = $statement->fetchAll(\PDO::FETCH_ASSOC);
@@ -84,34 +109,25 @@ class SQL {
 		return $result;
 	}
 
-    public function beginTransaction()
+    public function transaction($func)
     {
-        if(!$this->transactionCounter++)
-            return parent::beginTransaction();
-        $this->exec('SAVEPOINT trans'.$this->transactionCounter);
-        return $this->transactionCounter >= 0;
-    }
-
-    public function commit()
-    {
-        if(!--$this->transactionCounter)
-            return parent::commit();
-        return $this->transactionCounter >= 0;
-    }
-
-    public function rollback()
-    {
-        if(--$this->transactionCounter){
-            $this->exec('ROLLBACK TO trans'.$this->transactionCounter + 1);
-            return true;
-        }
-        return parent::rollback();
+        $this->transactionCounter++;
+        $this->SQLConnection->exec('SAVEPOINT trans'.$this->transactionCounter);
+        $rollback = $func($this);
+        if($rollback)
+            $this->SQLConnection->exec('ROLLBACK TO trans'.$this->transactionCounter);
+        else $this->SQLConnection->commit();
+        $this->transactionCounter--;
     }
 
 	// The code below could be similar with Javascript version
 	// But the PHP version doesn't include preprocessData
 	private function validateText($text){
 		return '`'.preg_replace('/[^a-zA-Z0-9_\.]+/m', '', $text).'`';
+	}
+
+	private function validateTable($table){
+		return preg_split('/[^a-zA-Z0-9_\.]/', $table, 2)[0];
 	}
 	
 	/* columnName[operator]
@@ -275,12 +291,12 @@ class SQL {
 
 	private $whenTableMissing = [];
 	public function onTableMissing($table, $func){
-		$this->whenTableMissing[$table] = $func;
+		$this->whenTableMissing[$this->database.'.'.$table] = $func;
 	}
 
 	public function &createTable($tableName, $columns)
 	{
-		if($this->table_prefix !== '') $tableName = $this->table_prefix;
+		if($this->table_prefix !== '') $tableName = $this->table_prefix.'.'.$tableName;
 
 		$columns_ = array_keys($columns);
 		for($i = 0; $i < count($columns_); $i++){
@@ -289,22 +305,22 @@ class SQL {
 			else
 				$columns_[$i] = $this->validateText($columns_[$i]).' '.strtoupper(strval($columns[$columns_[$i]]));
 		}
-		$query = 'CREATE TABLE IF NOT EXISTS '.$this->validateText($tableName).' ('.implode(', ', $columns_).')';
+		$query = 'CREATE TABLE IF NOT EXISTS '.$this->validateTable($tableName).' ('.implode(', ', $columns_).')';
 
 		return $this->query($query, [], 'create');
 	}
 
 	public function count($tableName, $where=false){
-		if($this->table_prefix !== '') $tableName = $this->table_prefix;
+		if($this->table_prefix !== '') $tableName = $this->table_prefix.'.'.$tableName;
 
 		$wheres = $this->makeWhere($where);
-		$query = "SELECT COUNT(1) FROM " . $this->validateText($tableName) . $wheres[0];
+		$query = "SELECT COUNT(1) FROM " . $this->validateTable($tableName) . $wheres[0];
 		
 		return $this->query($query, $wheres[1], 'count')[0]['COUNT(1)'];
 	}
 
 	public function &select($tableName, $select='*', $where=false){
-		if($this->table_prefix !== '') $tableName = $this->table_prefix;
+		if($this->table_prefix !== '') $tableName = $this->table_prefix.'.'.$tableName;
 
 		$select_ = $select;
 		if($select!=='*')
@@ -314,8 +330,8 @@ class SQL {
 		else $select_ = false;
 		
 		$wheres = $this->makeWhere($where);
-		$query = "SELECT " . ($select_?implode(', ', $select_):$select) . " FROM " . $this->validateText($tableName) . $wheres[0];
-		
+		$query = "SELECT " . ($select_?implode(', ', $select_):$select) . " FROM " . $this->validateTable($tableName) . $wheres[0];
+
 		return $this->query($query, $wheres[1], 'select');
 	}
 
@@ -336,21 +352,21 @@ class SQL {
 	}
 
 	public function &delete($tableName, $where){
-		if($this->table_prefix !== '') $tableName = $this->table_prefix;
+		if($this->table_prefix !== '') $tableName = $this->table_prefix.'.'.$tableName;
 
 		if($where){
 			$wheres = $this->makeWhere($where);
-			$query = "DELETE FROM " . $this->validateText($tableName) . $wheres[0];
+			$query = "DELETE FROM " . $this->validateTable($tableName) . $wheres[0];
 			return $this->query($query, $wheres[1], 'delete');
 		}
 		else{
-			$query = "TRUNCATE TABLE " . $this->validateText($tableName);
+			$query = "TRUNCATE TABLE " . $this->validateTable($tableName);
 			return $this->query($query, [], 'truncate');
 		}
 	}
 
 	public function &insert($tableName, $object){
-		if($this->table_prefix !== '') $tableName = $this->table_prefix;
+		if($this->table_prefix !== '') $tableName = $this->table_prefix.'.'.$tableName;
 
 		$objectName = [];
 		$objectName_ = [];
@@ -362,13 +378,13 @@ class SQL {
 
 			$objectData[] = $object[$columns[$i]];
 		}
-		$query = "INSERT INTO " . $this->validateText($tableName) . " (" . implode(', ', $objectName) . ") VALUES (" . implode(', ', $objectName_) . ")";
+		$query = "INSERT INTO " . $this->validateTable($tableName) . " (" . implode(', ', $objectName) . ") VALUES (" . implode(', ', $objectName_) . ")";
 		
 		return $this->query($query, $objectData, 'insert');
 	}
 
 	public function &update($tableName, $object, $where=false){
-		if($this->table_prefix !== '') $tableName = $this->table_prefix;
+		if($this->table_prefix !== '') $tableName = $this->table_prefix.'.'.$tableName;
 
 		$wheres = $this->makeWhere($where);
 		$objectName = [];
@@ -378,14 +394,14 @@ class SQL {
 			$objectName[] = $this->validateText($columns[$i]).' = ?';
 			$objectData[] = $object[$columns[$i]];
 		}
-		$query = "UPDATE " . $this->validateText($tableName) . " SET " . implode(', ', $objectName) . $wheres[0];
+		$query = "UPDATE " . $this->validateTable($tableName) . " SET " . implode(', ', $objectName) . $wheres[0];
 
 		return $this->query($query, array_merge($objectData, $wheres[1]), 'update');
 	}
 
 	public function &drop($tableName){
-		if($this->table_prefix !== '') $tableName = $this->table_prefix;
+		if($this->table_prefix !== '') $tableName = $this->table_prefix.'.'.$tableName;
 		
-		return $this->query("DROP TABLE " . $this->validateText($tableName), [], 'drop');
+		return $this->query("DROP TABLE " . $this->validateTable($tableName), [], 'drop');
 	}
 }
