@@ -2,10 +2,23 @@
 namespace Scarlets\Library;
 use \Scarlets;
 
-class Server{
-	public static $pendingHeader = false;
+class Server {
+	public static $pendingHeader = '';
+	public static $requestMicrotime = 0;
 	public static function setHeader($text){
 		self::$pendingHeader .= "\n".$text;
+	}
+
+	public static function setCookie($name, $value, $time=3600, $path='/', $domain=false, $secure=false, $http_only=false){
+    	$date = date("D, d M Y H:i:s", $time) . ' GMT';
+    	$cookie = "Set-Cookie: $name=".rawurlencode($value)."; Expires=$date; Max-Age=".($time - time())."; Path=$path";
+    	if($domain)
+    		$cookie .= '; Domain='.$domain;
+    	if($secure)
+    		$cookie .= '; Secure';
+    	if($http_only)
+    		$cookie .= '; HttpOnly';
+		self::setHeader($cookie);
 	}
 
 	public static function start($port, $address, $options){
@@ -22,6 +35,8 @@ class Server{
 
 		// Create the socket server
 		Scarlets\Library\Socket::create($address, $port, function($socket, $data) use($options) {
+			self::$requestMicrotime = microtime(true);
+
 		    $body = '';
 		    socket_getpeername($socket, $address);
 		    $_SERVER['REMOTE_ADDR'] = $address;
@@ -33,7 +48,7 @@ class Server{
 		    $headers['URI'] = $headers[0][1];
 
 		    // Check if it requested a file
-			$path = Scarlets::$registry['path.public'].$headers['URI'];
+			$path = Scarlets::$registry['path.public'].explode('?', $headers['URI'], 2)[0];
 		    $file = @fopen($path, "rb");
 			if($file){
 			    // Get requested content type
@@ -160,11 +175,11 @@ class Server{
 		}
 
 		$output = self::$pendingHeader;
-		self::$pendingHeader = false;
+		self::$pendingHeader = '';
 		$output .= "\nServer: Scarlets\nConnection: close\nContent-Type: text/html\r\n\r\n";
 
 		if(!$found){
-			ob_clean();
+			ob_get_clean();
 			$router = &Scarlets::$registry['Route']['STATUS'];
 
 			// Check for local file
@@ -227,6 +242,7 @@ class Server{
 
 		// Clear memory
 		if(ob_get_contents()) ob_end_clean();
+		self::$pendingHeader = '';
 
 		// Output error to console
 		if(Scarlets\Error::$hasError)
