@@ -395,6 +395,12 @@ class Route{
 			$matched = true;
 		}
 
+		// Reroute last slash
+		elseif(substr($requestURI, -1, 1) === '/' && substr($requestURI, 0, -1) === $url){
+			$matched = true;
+			$requestURI = substr($requestURI, 0, -1);
+		}
+
 		if(!$matched) return false;
 		if($checkOnly) return $matched;
 
@@ -420,8 +426,8 @@ class Route{
 		if(self::$instantOutput === false){
 			ob_start();
 			if(count($args) !== 0)
-				print(call_user_func_array($func, $args));
-			else print($func());
+				print_r(call_user_func_array($func, $args));
+			else print_r($func());
 
 			if(Scarlets\Error::$hasError !== true)
 				echo(ob_get_contents());
@@ -432,8 +438,8 @@ class Route{
 		}
 		else {
 			if($args)
-				print(call_user_func_array($func, $args));
-			else print(call_user_func($func));
+				print_r(call_user_func_array($func, $args));
+			else print_r(call_user_func($func));
 		}
 
 		if(is_callable($middlewareCallback)){
@@ -442,6 +448,22 @@ class Route{
 		}
 
 		return true;
+	}
+
+	/*
+		> Force Secure
+		Force any http request to be send from https protocol
+	*/
+	public static function forceSecure(){
+		if(\Scarlets::$isConsole){
+			return;
+		}
+		
+		if(empty($_SERVER['HTTPS']) || $_SERVER['HTTPS'] == "off"){
+		    $redirect = 'https://' . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'];
+		    header('Location: '.$redirect, true);
+		    exit;
+		}
 	}
 }
 
