@@ -14,13 +14,13 @@ namespace Scarlets\Library\Database;
 use \PDO;
 use \PDOException;
 
-class SQL {
-	public $SQLConnection;
-	public $transactionCounter = 0;
+class SQL{
+	public $connection;
 	public $debug = false;
-	public $table_prefix = '';
-	public $database = '';
 	public $type = 'SQL';
+	private $transactionCounter = 0;
+	private $database = '';
+	private $table_prefix = '';
 
 	// When debugging is enabled, this will have value
 	public $lastQuery = false;
@@ -45,24 +45,16 @@ class SQL {
 
 		// Try to connect
 		try{
-			$this->SQLConnection = new PDO("$options[driver]:dbname=$options[database];host=$options[host];port=$options[port];charset=$options[charset]", $options['user'], $options['password']);
-			$this->SQLConnection->setAttribute(PDO::ATTR_STRINGIFY_FETCHES, false);
-			$this->SQLConnection->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);
-			$this->SQLConnection->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+			$this->connection = new PDO("$options[driver]:dbname=$options[database];host=$options[host];port=$options[port];charset=$options[charset]", $options['user'], $options['password']);
+			$this->connection->setAttribute(PDO::ATTR_STRINGIFY_FETCHES, false);
+			$this->connection->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);
+			$this->connection->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 		}
 		catch(PDOException $e) {
 			trigger_error($e->getMessage());
 		}
 	}
 
-	/*
-		> Change database
-		This may work for MySQL only and will 
-		back to original state after the query
-		was executed
-	
-		(dbname) Database Name
-	*/
 	public function change($options){
 		$this->table_prefix = $options['database'];
 		$this->database = $options['database'];
@@ -72,12 +64,12 @@ class SQL {
 
 	// SQLQuery
 	private $queryRetry = false;
-	public function &query($query, $arrayData, $from){
+	public function &query($query, $arrayData, $get = false){
 		if($this->debug)
 			$this->lastQuery = [$query, $arrayData];
 
 		try{
-			$statement = $this->SQLConnection->prepare($query);
+			$statement = $this->connection->prepare($query);
 			$result = $statement->execute($arrayData);
 		} catch(PDOException $e){
 			$msg = $e->getMessage();
@@ -91,7 +83,7 @@ class SQL {
 						$this->queryRetry = true;
 						$ref[$tableName]();
 						$this->queryRetry = false;
-						$temp = $this->query($query, $arrayData, $from);
+						$temp = $this->query($query, $arrayData, $get);
 						return $temp;
 					}
 				}
@@ -101,10 +93,10 @@ class SQL {
 
 		// $error = $statement->errorInfo();
 
-		if($from === 'select' || $from === 'count')
+		if($get === 'rows')
 			$result = $statement->fetchAll(\PDO::FETCH_ASSOC);
-		elseif($from === 'insert')
-			$result = $this->SQLConnection->lastInsertId();
+		elseif($get === 'insertID')
+			$result = $this->connection->lastInsertId();
 
 		return $result;
 	}
@@ -112,11 +104,11 @@ class SQL {
     public function transaction($func)
     {
         $this->transactionCounter++;
-        $this->SQLConnection->exec('SAVEPOINT trans'.$this->transactionCounter);
+        $this->connection->exec('SAVEPOINT trans'.$this->transactionCounter);
         $rollback = $func($this);
         if($rollback)
-            $this->SQLConnection->exec('ROLLBACK TO trans'.$this->transactionCounter);
-        else $this->SQLConnection->commit();
+            $this->connection->exec('ROLLBACK TO trans'.$this->transactionCounter);
+        else $this->connection->commit();
         $this->transactionCounter--;
     }
 
@@ -141,7 +133,7 @@ class SQL {
 
 	// ex: ["AND"=>["id"=>12, "OR"=>["name"=>"myself", "name"=>"himself"]], "LIMIT"=>1]
 		// Select one where (id == 12 && (name == "myself" || name == "himself"))
-	public function makeWhere($object, $comparator=false, $children=false){
+	private function makeWhere($object, $comparator=false, $children=false){
 		if(!$object) return ['', []];
 		$wheres = [];
 
@@ -316,7 +308,7 @@ class SQL {
 		$wheres = $this->makeWhere($where);
 		$query = "SELECT COUNT(1) FROM " . $this->validateTable($tableName) . $wheres[0];
 		
-		return $this->query($query, $wheres[1], 'count')[0]['COUNT(1)'];
+		return $this->query($query, $wheres[1], 'rows')[0]['COUNT(1)'];
 	}
 
 	public function &select($tableName, $select='*', $where=false){
@@ -332,7 +324,7 @@ class SQL {
 		$wheres = $this->makeWhere($where);
 		$query = "SELECT " . ($select_?implode(', ', $select_):$select) . " FROM " . $this->validateTable($tableName) . $wheres[0];
 
-		return $this->query($query, $wheres[1], 'select');
+		return $this->query($query, $wheres[1], 'rows');
 	}
 
 	public function &get($tableName, $select='*', $where=false){
@@ -357,7 +349,7 @@ class SQL {
 		if($where){
 			$wheres = $this->makeWhere($where);
 			$query = "DELETE FROM " . $this->validateTable($tableName) . $wheres[0];
-			return $this->query($query, $wheres[1], 'delete');
+			return $this->query($query, $wheres[1]);
 		}
 		else{
 			$query = "TRUNCATE TABLE " . $this->validateTable($tableName);
@@ -380,7 +372,7 @@ class SQL {
 		}
 		$query = "INSERT INTO " . $this->validateTable($tableName) . " (" . implode(', ', $objectName) . ") VALUES (" . implode(', ', $objectName_) . ")";
 		
-		return $this->query($query, $objectData, 'insert');
+		return $this->query($query, $objectData, 'insertID');
 	}
 
 	public function &update($tableName, $object, $where=false){
@@ -396,12 +388,12 @@ class SQL {
 		}
 		$query = "UPDATE " . $this->validateTable($tableName) . " SET " . implode(', ', $objectName) . $wheres[0];
 
-		return $this->query($query, array_merge($objectData, $wheres[1]), 'update');
+		return $this->query($query, array_merge($objectData, $wheres[1]));
 	}
 
 	public function &drop($tableName){
 		if($this->table_prefix !== '') $tableName = $this->table_prefix.'.'.$tableName;
 		
-		return $this->query("DROP TABLE " . $this->validateTable($tableName), [], 'drop');
+		return $this->query("DROP TABLE " . $this->validateTable($tableName), []);
 	}
 }

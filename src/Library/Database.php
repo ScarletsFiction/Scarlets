@@ -9,14 +9,16 @@ class Database{
 	public static $default = false;
 	public static $credentials = false;
 
-	/*
-		> Connect
-		This function will return the connected database handler.
-		If the database haven't connected, it will automatically
-		connect.
-	
-		(credential) CredentialID that configured on the configuration
-	*/
+	/**
+	 * Connect with database credential
+	 * 
+	 * This function will return the connected database handler.
+	 * If the database haven't connected, it will automatically
+	 * connect.
+	 *
+	 * @param string $credential CredentialID that configured on the configuration
+	 * @return \Scarlets\Interfaces\Database\SQL
+	 */
 	public static function &connect($credential=false){
 		// Use default credential if not specified
 		if($credential === false)
