@@ -95,28 +95,31 @@ class Server {
 			$path = Scarlets::$registry['path.public'].explode('?', $headers['URI'], 2)[0];
 		    $file = @fopen($path, "rb");
 			if($file){
-			    // Get requested content type
-			    $contentType = explode('/', explode(',', explode("Accept: ", $data)[1])[0])[0];
-			    $contentType .= '/'.pathinfo($path)['extension'];
+				$info = pathinfo($path);
+				if(isset($info['extension'])){
+				    // Get requested content type
+				    $contentType = explode('/', explode(',', explode("Accept: ", $data)[1])[0])[0];
+				    $contentType .= '/'.pathinfo($path)['extension'];
 
-				$fileSize  = filesize($path);
-	  			$time = date('r', filemtime($path));
-				socket_write($socket, "HTTP/1.1 200 OK");
-				socket_write($socket, "\nContent-Type: ".$contentType);
-				socket_write($socket, "\nServer: Scarlets Mini Server");
-				socket_write($socket, "\nPragma: public");
-				socket_write($socket, "\nCache-Control: public");
-				socket_write($socket, "\nLast-Modified: $time");
-				socket_write($socket, "\nConnection: close");
-				socket_write($socket, "\nContent-Length: $fileSize\n\n");
+					$fileSize  = filesize($path);
+		  			$time = date('r', filemtime($path));
+					socket_write($socket, "HTTP/1.1 200 OK");
+					socket_write($socket, "\nContent-Type: ".$contentType);
+					socket_write($socket, "\nServer: Scarlets Mini Server");
+					socket_write($socket, "\nPragma: public");
+					socket_write($socket, "\nCache-Control: public");
+					socket_write($socket, "\nLast-Modified: $time");
+					socket_write($socket, "\nConnection: close");
+					socket_write($socket, "\nContent-Length: $fileSize\n\n");
 
-				fseek($file, 0);
-				while(!feof($file)){
-					socket_write($socket, @fread($file, 16384));
-					flush();
+					fseek($file, 0);
+					while(!feof($file)){
+						socket_write($socket, @fread($file, 16384));
+						flush();
+					}
+					@fclose($file);
+			    	return true;
 				}
-				@fclose($file);
-		    	return true;
 		    }
 
 		    unset($headers[0]);
