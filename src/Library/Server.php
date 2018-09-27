@@ -93,14 +93,16 @@ class Server {
 
 		    // Check if it requested a file
 			$path = Scarlets::$registry['path.public'].explode('?', $headers['URI'], 2)[0];
-		    $file = @fopen($path, "rb");
-			if($file){
+			if(file_exists($path)){
+		    	$file = @fopen($path, "rb");
+		    	
 			    // Get requested content type
-			    $contentType = explode('/', explode(',', explode("Accept: ", $data)[1])[0])[0];
-			    $contentType .= '/'.pathinfo($path)['extension'];
+			    $info = pathinfo($path);
+				$contentType = explode('/', explode(',', explode("Accept: ", $data)[1])[0])[0];
+				$contentType .= '/'.$info['extension'];
 
 				$fileSize  = filesize($path);
-	  			$time = date('r', filemtime($path));
+		  		$time = date('r', filemtime($path));
 				socket_write($socket, "HTTP/1.1 200 OK");
 				socket_write($socket, "\nContent-Type: ".$contentType);
 				socket_write($socket, "\nServer: Scarlets Mini Server");
@@ -116,7 +118,7 @@ class Server {
 					flush();
 				}
 				@fclose($file);
-		    	return true;
+			    return true;
 		    }
 
 		    unset($headers[0]);
