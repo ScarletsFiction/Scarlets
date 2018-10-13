@@ -89,10 +89,15 @@ class Serve{
 			self::$pending[self::$pendingLevel][1] = true;
 	}
 
-	public static function plate($path){
-		if(isset($_REQUEST['_scarlets']) && strpos($_REQUEST['_scarlets'], '.dynamic.') !== false)
+	public static function special($data){
+		if(!isset($_REQUEST['_scarlets']) || strpos($_REQUEST['_scarlets'], '.dynamic.') === false)
 			return;
 
+		$temp = str_replace('-->', '--|&>', $data);
+		echo('<!-- SF-Special:'.json_encode($temp).'-->');
+	}
+
+	public static function plate($path){
 		if(Scarlets::$isConsole && !self::$headerSent)
 			self::status(200);
 
