@@ -23,13 +23,18 @@ class Middleware{
 	        // On request finished
 	        return function(){
 	            $body = ob_get_clean();
-
-	            // Output the body with header and footer
-	            Serve::view('static.header', [
+	            $headData = [
 	                'title'=>'Home'
-	            ]);
+	            ];
+
+	            // This will trigger 'special' router event on ScarletsFrame
+	            // When using lazy route mode
+	            Serve::special($headData);
+
+	            // Output the body with header and footer (lazy mode will send the $body only)
+	            Serve::view('static.header', $headData, true);
 	            Serve::raw($body);
-	            Serve::view('static.footer');
+	            Serve::view('static.footer', true);
 
 	            // Skip other routes
 	            Serve::end();
