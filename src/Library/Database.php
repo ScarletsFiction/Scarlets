@@ -19,7 +19,7 @@ class Database{
 	 * @param string $credential CredentialID that configured on the configuration
 	 * @return \Scarlets\Interfaces\Database\SQL
 	 */
-	public static function &connect($credential=false){
+	public static function &connect($credential=false, $returnConnection = false){
 		// Use default credential if not specified
 		if($credential === false)
 			$credential = self::$default;
@@ -61,6 +61,7 @@ class Database{
 			return $copy;
 		}
 
+		if($returnConnection) return $db->connection;
 		return $db;
 	}
 
