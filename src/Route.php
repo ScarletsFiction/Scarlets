@@ -34,6 +34,9 @@ class Route{
 				$url = '/'.$url;
 
 			$url = '/'.implode('/', self::$prefix).$url;
+
+			if(strpos($url, '//') !== false)
+				trigger_error("The route can't have double slash \"$url\"");
 		}
 
 		if(self::$name && $opts !== false){
@@ -421,31 +424,33 @@ class Route{
 		}
 		
 		self::$statusCode = 200;
-		
+		$pendingData = null;
+
 		// Call callback function
 		if(self::$instantOutput === false){
 			ob_start();
 			if(count($args) !== 0)
-				print_r(call_user_func_array($func, $args));
-			else print_r($func());
+				$pendingData = call_user_func_array($func, $args);
+			else $pendingData = $func();
 
-			if(Scarlets\Error::$hasError !== true)
-				echo(ob_get_contents());
-			else
-				Scarlets\Error::$hasError = false;
+			if(Scarlets\Error::$hasError === false)
+				echo ob_get_contents();
+			else Scarlets\Error::$hasError = false;
 
 			ob_end_clean();
 		}
 		else {
-			if($args)
-				print_r(call_user_func_array($func, $args));
-			else print_r(call_user_func($func));
+			if($args) $pendingData = call_user_func_array($func, $args);
+			else $pendingData = call_user_func($func);
 		}
 
 		if(is_callable($middlewareCallback)){
+			Middleware::$pendingData = $pendingData;
 			call_user_func_array($middlewareCallback, Middleware::$pendingArgs);
 			Middleware::$pendingArgs = [];
+			Middleware::$pendingData = null;
 		}
+		else echo $pendingData;
 
 		return true;
 	}

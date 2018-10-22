@@ -165,9 +165,8 @@ class Serve{
 		$router = &Scarlets::$registry['Route']['STATUS'];
 
 		if(isset($router[$statusCode])){
-			if(ob_get_level()) ob_get_clean();
 			self::$headerSent = true;
-			$router[$statusCode]();
+			$router[$statusCode](ob_get_level() ?: ob_get_clean());
 			exit;
 		}
 	}
@@ -223,6 +222,7 @@ class Middleware{
 	// $register['name'] = function(){}
 	public static $register = [];
 	public static $pendingArgs = [];
+	public static $pendingData = [];
 
 	// Returning true value will cancel the current request
 	public static function callMiddleware($text){
