@@ -122,22 +122,7 @@ class Error{
 
 		// die($message);
 
-		$exitting = true;
-		$warningAsError = $appConfig['app.warning_as_error'];
-		if($warningAsError && ($severity === E_WARNING
-			|| $severity === E_CORE_WARNING
-			|| $severity === E_COMPILE_WARNING
-			|| $severity === E_COMPILE_WARNING
-			))
-			$exitting = false;
-
-		elseif($severity === E_NOTICE
-			|| $severity === E_USER_NOTICE
-			|| $severity === E_DEPRECATED
-			|| $severity === E_USER_DEPRECATED)
-			$exitting = false;
-
-		if($exitting && !$appConfig['app.debug'] && Scarlets::$isWebsite){
+		if(!$appConfig['app.debug'] && Scarlets::$isWebsite){
 			Log::message($message);
 			Serve::status(500);
 			exit;
