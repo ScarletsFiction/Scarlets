@@ -121,6 +121,12 @@ class SQL{
 	private function validateTable($table){
 		return preg_split('/[^a-zA-Z0-9_\.]/', $table, 2)[0];
 	}
+
+	private function extractSpecial($field){
+		$field = explode('#', $field)[0];
+		if(strpos($field, '[') === false) return [$field];
+		return explode('[', str_replace([']', '"', "'", '`'], '', $field));
+	}
 	
 	/* columnName[operator]
 		~ [Like]
@@ -145,49 +151,50 @@ class SQL{
 		for($i = 0; $i < count($columns); $i++){
 			$value = $object[$columns[$i]];
 
-			preg_match('/([a-zA-Z0-9_\.]+)(\[(\>\=?|\<\=?|\!|\<\>|\>\<|\!?~)\])?/', $columns[$i], $matches);
-			$check = strtolower($matches[1]);
+			$matches = $this->extractSpecial($columns[$i]);
+			
+			$check = strtolower($matches[0]);
 			if($check==='and' || $check==='or') continue;
 			if(!$children && in_array($check, $specialList) !== false) continue;
 
-			if(isset($matches[3])){
-				if(in_array($matches[3], ['>', '>=', '<', '<=']))
+			if(isset($matches[1])){
+				if(in_array($matches[1], ['>', '>=', '<', '<=']))
 				{
 					if(!is_nan($value))
 					{
-						$wheres[] = $this->validateText($matches[1]) . ' ' . $matches[3] . ' ?';
+						$wheres[] = $this->validateText($matches[0]) . ' ' . $matches[1] . ' ?';
 						$objectData[] = $value;
 						continue;
 					}
 					else {
-						trigger_error('SQL where: value of ' . $this->validateText($matches[1]) . ' is non-numeric and can\'t be accepted');
+						trigger_error('SQL where: value of ' . $this->validateText($matches[0]) . ' is non-numeric and can\'t be accepted');
 					}
 				}
-				else if($matches[3] === '!')
+				else if($matches[1] === '!')
 				{
 					$type = gettype($value);
 					if(!$type)
-						$wheres[] = $this->validateText($matches[1]) . ' IS NOT NULL';
+						$wheres[] = $this->validateText($matches[0]) . ' IS NOT NULL';
 					else{
 						if($type === 'array'){
 							$temp = [];
 							for ($a = 0; $a < count($value); $a++) {
 								$temp[] = '?';
 							}
-							$wheres[] = $this->validateText($matches[1]) . ' NOT IN ('. implode(', ', $temp) .')';
+							$wheres[] = $this->validateText($matches[0]) . ' NOT IN ('. implode(', ', $temp) .')';
 							$objectData = array_merge($objectData, $value);
 						}
 
 						else if($type==='integer' || $type==='double' || $type==='boolean' || $type==='string'){
-							$wheres[] = $this->validateText($matches[1]) . ' != ?';
+							$wheres[] = $this->validateText($matches[0]) . ' != ?';
 							$objectData[] = $value;
 						}
 
 						else
-							trigger_error('SQL where: value of' . $this->validateText($matches[1]) . ' with type ' . $type . ' can\'t be accepted');
+							trigger_error('SQL where: value of' . $this->validateText($matches[0]) . ' with type ' . $type . ' can\'t be accepted');
 					}
 				}
-				else if ($matches[3] === '~' || $matches[3] === '!~')
+				else if ($matches[1] === '~' || $matches[1] === '!~')
 				{
 					if(gettype($value) !== 'array'){
 						$value = [$value];
@@ -195,7 +202,7 @@ class SQL{
 
 					$likes = [];
 					for ($a = 0; $a < count($value); $a++) {
-						$likes[] = $this->validateText($matches[1]) . ($matches[3] === '!~' ? ' NOT' : '') . ' LIKE ?';
+						$likes[] = $this->validateText($matches[0]) . ($matches[1] === '!~' ? ' NOT' : '') . ' LIKE ?';
 						if(strpos($value[$a], '%') === false) $value[$a] = '%'.$value[$a].'%';
 						$objectData[] = $value[$a];
 					}
@@ -205,24 +212,24 @@ class SQL{
 			} else {
 				$type = gettype($value);
 				if(!$type)
-					$wheres[] = $this->validateText($matches[1]) . ' IS NULL';
+					$wheres[] = $this->validateText($matches[0]) . ' IS NULL';
 				else{
 					if($type === 'array'){
 						$temp = [];
 						for ($a = 0; $a < count($value); $a++) {
 							$temp[] = '?';
 						}
-						$wheres[] = $this->validateText($matches[1]) . ' IN ('. implode(', ', $temp) .')';
+						$wheres[] = $this->validateText($matches[0]) . ' IN ('. implode(', ', $temp) .')';
 						$objectData = array_merge($objectData, $value);
 					}
 
 					else if($type==='integer' || $type==='double' || $type==='boolean' || $type==='string'){
-						$wheres[] = $this->validateText($matches[1]) . ' = ?';
+						$wheres[] = $this->validateText($matches[0]) . ' = ?';
 						$objectData[] = $value;
 					}
 
 					else
-						trigger_error('SQL where: value ' . $this->validateText($matches[1]) . ' with type ' . $type . ' can\'t be accepted');
+						trigger_error('SQL where: value ' . $this->validateText($matches[0]) . ' with type ' . $type . ' can\'t be accepted');
 				}
 			}
 		}
@@ -253,10 +260,12 @@ class SQL{
 
 		$options = '';
 		if(isset($object['ORDER'])){
+			if(is_string($object['ORDER']))
+				$object['ORDER'] = [$object['ORDER']=>'ASC'];
 			$columns = array_keys($object['ORDER']);
 			$stack = [];
 			for($i = 0; $i < count($columns); $i++){
-				$order = strtoupper($object['ORDER'][$columns[i]]);
+				$order = strtoupper($object['ORDER'][$columns[$i]]);
 				if($order !== 'ASC' && $order !== 'DESC') continue;
 				$stack[] = $this->validateText($columns[$i]) . ' ' . $order;
 			}
@@ -377,13 +386,24 @@ class SQL{
 
 	public function &update($tableName, $object, $where=false){
 		if($this->table_prefix !== '') $tableName = $this->table_prefix.'.'.$tableName;
-
 		$wheres = $this->makeWhere($where);
+
 		$objectName = [];
 		$objectData = [];
 		$columns = array_keys($object);
 		for($i = 0; $i < count($columns); $i++){
-			$objectName[] = $this->validateText($columns[$i]).' = ?';
+			$special = $this->extractSpecial($columns[$i]);
+			if(count($special) === 1)
+				$objectName[] = "`$special[0]` = ?";
+			else {
+				if($special[1] === '+' && is_string($object[$columns[$i]]))
+					$objectName[] = "`$special[0]` = CONCAT(`$special[0]`, ?)";
+
+				elseif(in_array($special[1], ['*', '-', '/', '%', '+']))
+					$objectName[] = "`$special[0]` = `$special[0]` $special[1] ?";
+
+				else trigger_error("No operation for '$special[1]'");
+			}
 			$objectData[] = $object[$columns[$i]];
 		}
 		$query = "UPDATE " . $this->validateTable($tableName) . " SET " . implode(', ', $objectName) . $wheres[0];
