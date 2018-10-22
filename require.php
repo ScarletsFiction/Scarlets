@@ -39,9 +39,9 @@ class Scarlets{
 			$jsonRequest = file_get_contents('php://input');
 			if($jsonRequest)
 				$_POST = json_decode($jsonRequest, true);
+			
+			header("X-Framework: ScarletsFiction");
 		}
-
-		header("X-Framework: ScarletsFiction");
 
 		try{
 			// Include required router
