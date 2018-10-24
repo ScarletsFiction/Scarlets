@@ -70,7 +70,18 @@ class Server {
 		// Remove console mode so error handler can show the website address
 		$_SERVER['SERVER_NAME'] = &$address;
 
-	    echo Scarlets\Console::chalk("\nScarlets server started on ", 'green')."http://$address".($port !== 80 ? ":$port" : '')."\nUse CTRL+C 2 times to exit\n\n";
+	    echo Scarlets\Console::chalk("\nScarlets server started on ", 'green');
+	    if($address !== 'public')
+	   		echo "http://$address".($port !== 80 ? ":$port" : '');
+	   	else {
+	   		$IPs = Scarlets\Library\Socket::getIPAddress();
+
+	   		if(count($IPs) > 1) echo ":\n";
+	   		foreach ($IPs as $value) {
+	   			echo "http://$value".($port !== 80 ? ":$port" : '');
+	   		}
+	   	}
+	    echo "\nUse CTRL+C 2 times to exit\n\n";
 
 		// Create the socket server
 		Scarlets\Library\Socket::create($address, $port, function($socket, $data) use($options) {
@@ -91,20 +102,36 @@ class Server {
 		    $headers['METHOD'] = $headers[0][0];
 		    $headers['URI'] = $headers[0][1];
 
+			// Reroute last slash
+			if(Scarlets\Config::$data['app.sensitive_web_route'] === false){
+				$requestURI = explode('?', $headers['URI'], 2);
+				if(substr($requestURI[0], -1, 1) === '/' && $requestURI[0] !== '/'){
+					$matched = true;
+					$headers['URI'] = substr($requestURI[0], 0, -1);
+
+					if(isset($requestURI[1]))
+						$headers['URI'] .= '?'.$requestURI[1];
+				}
+			}
+
 		    // Check if it requested a file
 			$path = Scarlets::$registry['path.public'].explode('?', $headers['URI'], 2)[0];
 		    $file = @fopen($path, "rb");
 			if($file){
 				$info = pathinfo($path);
 				if(isset($info['extension'])){
+					socket_write($socket, "HTTP/1.1 200 OK");
+					
 				    // Get requested content type
-				    $contentType = explode('/', explode(',', explode("Accept: ", $data)[1])[0])[0];
-				    $contentType .= '/'.pathinfo($path)['extension'];
+				    $accept = explode("Accept: ", $data);
+				    if(isset($accept[1])){
+					    $contentType = explode('/', explode(',', $accept[1])[0])[0];
+					    $contentType .= '/'.pathinfo($path)['extension'];
+						socket_write($socket, "\nContent-Type: ".$contentType);
+				    }
 
 					$fileSize  = filesize($path);
 		  			$time = date('r', filemtime($path));
-					socket_write($socket, "HTTP/1.1 200 OK");
-					socket_write($socket, "\nContent-Type: ".$contentType);
 					socket_write($socket, "\nServer: Scarlets Mini Server");
 					socket_write($socket, "\nPragma: public");
 					socket_write($socket, "\nCache-Control: public");
@@ -232,7 +259,7 @@ class Server {
 		$output .= "\nServer: Scarlets\nConnection: close\nContent-Type: text/html\r\n\r\n";
 
 		if(!$found){
-			ob_get_clean();
+			ob_get_contents();
 			$router = &Scarlets::$registry['Route']['STATUS'];
 
 			// Check for local file

@@ -34,14 +34,18 @@ Console::command('help', function(){
 }, 'Show registered command list');
 
 Console::command(['serve {0} {1} {*}', 'serve {0} {1}', 'serve {0}', 'serve'], function($port=8000, $address='localhost', $options=0){
-	if($address === 'network')
-		$address = gethostbyname(gethostname());
-
 	if($options !== 0){
 		$temp = explode(' ', $options);
 		$options = 0;
 		if(in_array('--verbose', $temp)) $options |= 1;
 		if(in_array('--log', $temp)) $options |= 2;
+	}
+
+	// Swap if different
+	if(!is_numeric($port) && is_numeric($address)){
+		$addr = $port;
+		$port = $address;
+		$address = $addr;
 	}
 
 	if($port === '--verbose'){

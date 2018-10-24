@@ -16,9 +16,13 @@ class Socket{
         ob_implicit_flush();
 
         $address = $address ?: 'localhost';
-
         $sock = socket_create(AF_INET, SOCK_STREAM, 0);
-        socket_bind($sock, $address, $port) or die('Could not bind to address');
+
+        if($address === 'public') 
+            self::bindToPublic($sock, $port);
+        else 
+            socket_bind($sock, $address, $port) or die('Could not bind to address');
+
         socket_listen($sock);
         $clients = [$sock];
 
@@ -83,9 +87,13 @@ class Socket{
         ob_implicit_flush();
 
         $address = $address ?: 'localhost';
-
         $sock = socket_create(AF_INET, SOCK_STREAM, 0);
-        socket_bind($sock, $address, $port) or die('Could not bind to address');
+
+        if($address === 'public') 
+            self::bindToPublic($sock, $port);
+        else 
+            socket_bind($sock, $address, $port) or die('Could not bind to address');
+
         socket_listen($sock);
 
         // Avoid too many function call in loop
@@ -118,5 +126,33 @@ class Socket{
             $status = floor($status);
         }
         return $status;
+    }
+
+    private static function bindToPublic($sock, $port){
+        $IPs = self::getIPAddress();
+        foreach ($IPs as $value) {
+            socket_bind($sock, $value, $port);
+        }
+    }
+
+    public static function getIPAddress(){
+        if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN')
+            $IPs = shell_exec('ipconfig | findstr IPv4');
+        else
+            $IPs = shell_exec("ifconfig | grep 'inet addr'");
+
+        // Remove local address
+        $IPs = preg_replace('/^.*127\..*/', '', $IPs);
+
+        // Get the IP Address Array
+        preg_match_all('/(?:[0-9]{1,3}\.){3}[0-9]{1,3}/', $IPs, $matches);
+
+        $IPs = [];
+        foreach ($matches as $value) {
+            if(!in_array($value[0], $IPs))
+                $IPs[] = $value[0];
+        }
+        
+        return $IPs;
     }
 }

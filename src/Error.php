@@ -139,7 +139,7 @@ class Error{
 
 	public static function &getUnreadError(){
 		$temp = self::$currentError;
-		self::$currentError = '';
+		self::$currentError = [];
 		self::$hasError = false;
 		return $temp;
 	}
