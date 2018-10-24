@@ -41,6 +41,18 @@ class Scarlets{
 				$_POST = json_decode($jsonRequest, true);
 			
 			header("X-Framework: ScarletsFiction");
+
+			// Reroute last slash
+			if(Config::$data['app.sensitive_web_route'] === false){
+				$requestURI = explode('?', $_SERVER['REQUEST_URI'], 2);
+				if(substr($requestURI[0], -1, 1) === '/' && $requestURI[0] !== '/'){
+					$matched = true;
+					$_SERVER['REQUEST_URI'] = substr($requestURI[0], 0, -1);
+					
+					if(isset($requestURI[1]))
+						$_SERVER['REQUEST_URI'] .= '?'.$requestURI[1];
+				}
+			}
 		}
 
 		try{
@@ -191,7 +203,8 @@ Scarlets::onShutdown(function(){
 		$httpCode = Route::$statusCode;
 
 	// Trigger HTTP status Callback
-	Route\Serve::status($httpCode);
+	if(!Scarlets::$isConsole)
+		Route\Serve::status($httpCode);
 
 	$error = error_get_last();
     if($error && (!isset(Scarlets::$registry['error']) || !Scarlets::$registry['error']))

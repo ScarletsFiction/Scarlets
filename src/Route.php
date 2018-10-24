@@ -82,27 +82,27 @@ class Route{
 				Route\Handler::register($method, $url, $func, $opts);
 
 			elseif($_SERVER['REQUEST_METHOD'] === $method && self::handleURL($url, $func, $opts))
-				return true;
+				exit;
 		}
 
 		public static function get($url, $func, $opts = false){
-			return self::requestMethod('GET', $url, $func, $opts);
+			self::requestMethod('GET', $url, $func, $opts);
 		}
 		
 		public static function post($url, $func, $opts = false){
-			return self::requestMethod('POST', $url, $func, $opts);
+			self::requestMethod('POST', $url, $func, $opts);
 		}
 		
 		public static function delete($url, $func, $opts = false){
-			return self::requestMethod('DELETE', $url, $func, $opts);
+			self::requestMethod('DELETE', $url, $func, $opts);
 		}
 		
 		public static function put($url, $func, $opts = false){
-			return self::requestMethod('PUT', $url, $func, $opts);
+			self::requestMethod('PUT', $url, $func, $opts);
 		}
 		
 		public static function options($url, $func, $opts = false){
-			return self::requestMethod('OPTIONS', $url, $func, $opts);
+			self::requestMethod('OPTIONS', $url, $func, $opts);
 		}
 		
 		public static function any($url, $func, $opts = false){
@@ -304,15 +304,17 @@ class Route{
 	}
 
 	public static function handleURL($url, $func, $opts, $checkOnly = false){
-		$matched = false;
+		$matched = $haveMatchAll = false;
 		$args = [];
+		$requestURI = explode('?', $_SERVER['REQUEST_URI'], 2)[0];
 
 		if(substr($url, 0, 1) !== '/')
 			$url = '/'.$url;
-
-		$requestURI = explode('?', $_SERVER['REQUEST_URI'], 2)[0];
-		if($url === $requestURI)
+		
+		if($url === $requestURI){
 			$matched = true;
+			$requestURI = '';
+		}
 
 		# /text/{0}/{:}
 		elseif(strpos($url, '{') !== false){
@@ -332,8 +334,14 @@ class Route{
 				// Replace temporary URL
 				if($matches[1] !== ''){
 					$current = explode($matches[1], $requestURI, 2);
+
 					if(count($current) === 1)
 						return false;
+
+					$left = substr($current[1], 0, 1);
+					if($left !== '' && $left !== '/')
+						return false;
+
 					$requestURI = $current[1];
 					$current = $current[0]; // Extracted from RequestURI
 				} else
@@ -353,7 +361,8 @@ class Route{
 
 				// Get string after param number
 				$matches = substr($matches[0], $i);
-				$argNumber = intval($argNumber);
+				if($argNumber !== false)
+					$argNumber = intval($argNumber);
 				$argData = null;
 
 				// Optional
@@ -375,11 +384,17 @@ class Route{
 
 				// Match after
 				elseif(substr($matches, 0, 1) === '*'){
+					$haveMatchAll = true;
 					$argData = $current;
 				}
 
+				// Argument Match
+				elseif(substr($matches, 0, 1) === '.'){
+					// ToDo
+				}
+
 				// No options
-				elseif($matches === false || $matches === ''){
+				else{ // if($matches === false || $matches === ''){
 					if(strpos($current, '/') !== false) return false; // Strict
 					$argData = $current;
 				}
@@ -387,6 +402,7 @@ class Route{
 				// Check if the required param was not found
 				if(!$optional && $argData === null)
 					return false;
+				else $requestURI = explode($argData, $requestURI, 2)[1];
 
 				// Prepare the argument data
 				if($argNumber !== false)
@@ -398,14 +414,10 @@ class Route{
 			$matched = true;
 		}
 
-		// Reroute last slash
-		elseif(substr($requestURI, -1, 1) === '/' && substr($requestURI, 0, -1) === $url){
-			$matched = true;
-			$requestURI = substr($requestURI, 0, -1);
-		}
-
+		// Return unrecognized route
 		if(!$matched) return false;
 		if($checkOnly) return $matched;
+		if(!$haveMatchAll && strlen($requestURI) !== 0) return false;
 
 		// Handle controller
 		if(!is_callable($func)){
@@ -416,6 +428,9 @@ class Route{
 		// Handle middleware
 		$middlewareCallback = false;
 		if($opts !== false){
+			if(!is_array($opts))
+				$opts = [$opts];
+
 			foreach($opts as $ware){
 				$middlewareCallback = Route\Middleware::callMiddleware($ware);
 				if($middlewareCallback === false)
@@ -445,7 +460,7 @@ class Route{
 		}
 
 		if(is_callable($middlewareCallback)){
-			Middleware::$pendingData = $pendingData;
+			Middleware::$pendingData = &$pendingData;
 			call_user_func_array($middlewareCallback, Middleware::$pendingArgs);
 			Middleware::$pendingArgs = [];
 			Middleware::$pendingData = null;
