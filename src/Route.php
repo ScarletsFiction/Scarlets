@@ -74,7 +74,7 @@ class Route{
 	}
 
 	// ---- Route by request method ----
-		private static function requestMethod($method, $url, $func, $opts){
+		private static function requestMethod($method, &$url, &$func, &$opts){
 			if(self::$namespace || self::$prefix || self::$name || self::$middleware)
 				self::implementCurrentScope($url, $func, $opts);
 
@@ -237,6 +237,7 @@ class Route{
 	
 	// ---- Temporary scope based function ----
 		private static $scopeConstrain = [];
+		private static $constrainLength = [];
 		private static function scopeBased($part, $arg1, $func){
 			$current = &self::${$part};
 			if($current === false)
@@ -251,7 +252,9 @@ class Route{
 				self::$scopeConstrain[] = $part;
 				return self::$this;
 			}
-			
+
+			self::$constrainLength[] = count(self::$scopeConstrain);
+
 			if(!self::$skipScope)
 				$func();
 			else self::$skipScope = false;
@@ -261,14 +264,17 @@ class Route{
 				$current = false;
 
 			// Clear last constrain
-			foreach (self::$scopeConstrain as &$var) {
-				$ref = &self::${$var};
+			if(count(self::$constrainLength) >= 2)
+				$delete = array_pop(self::$constrainLength) - self::$constrainLength[count(self::$constrainLength)-1];
+			else $delete = count(self::$scopeConstrain);
+			for ($i = $delete - 1; $i >= 0; $i--){
+				$ref = &self::${self::$scopeConstrain[$i]};
 				if($ref !== false){
 					array_pop($ref);
 					if(count($ref) === 0)
 						$ref = false;
 				}
-				unset($var);
+				unset(self::$scopeConstrain[$i]);
 			}
 		}
 
@@ -310,7 +316,7 @@ class Route{
 
 		if(substr($url, 0, 1) !== '/')
 			$url = '/'.$url;
-		
+
 		if($url === $requestURI){
 			$matched = true;
 			$requestURI = '';
@@ -402,7 +408,10 @@ class Route{
 				// Check if the required param was not found
 				if(!$optional && $argData === null)
 					return false;
-				else $requestURI = explode($argData, $requestURI, 2)[1];
+				else{
+					$split = explode($argData, $requestURI, 2);
+					$requestURI = isset($split[1]) ? $split[1] : $split[0];
+				}
 
 				// Prepare the argument data
 				if($argNumber !== false)
@@ -423,6 +432,19 @@ class Route{
 		if(!is_callable($func)){
 			trigger_error("'$func' is not callable");
 			return;
+		}
+
+		if($_SERVER['REQUEST_METHOD'] === 'DELETE' || $_SERVER['REQUEST_METHOD'] === 'PUT'){
+			$received = file_get_contents('php://input');
+			if(strlen($received) !== 0){
+				$firstChar = substr($received, 0, 1);
+				if($firstChar === '{' || $firstChar === '[')
+					$_REQUEST = json_decode($received, true);
+				else{
+					parse_str($received, $parses);
+					$_REQUEST = $parses;
+				}
+			}
 		}
 
 		// Handle middleware
