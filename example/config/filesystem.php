@@ -1,17 +1,5 @@
 <?php
-
 return [
-
-/*
-|--------------------------------------------------------------------------
-| Default Cache Store
-|--------------------------------------------------------------------------
-|
-| This option controls the default cache storage while using the caching library.
-|
-*/
-'cache_storage' => 'app',
-
 /*
 |--------------------------------------------------------------------------
 | Filesystem Storages
@@ -35,5 +23,4 @@ return [
     	'path' => $frame['path.app'].'/storage/framework'
     ]
 ],
-
 ];
