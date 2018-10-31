@@ -11,7 +11,8 @@ return [
 | This will be used by scarlets to identify which app is running.
 |
 */
-'appid' => 'hello123',
+'appid' => '123',
+'appname' => 'Hello World',
 
 /*
 |--------------------------------------------------------------------------
@@ -71,7 +72,6 @@ return [
 |
 */
 'debug' => true,
-'warning_as_error' => false,
 'simplify_trace' => true,
 
 /*
@@ -103,6 +103,17 @@ return [
 |
 */
 'buffer' => false,
+
+/*
+|--------------------------------------------------------------------------
+| Sensitive web route
+|--------------------------------------------------------------------------
+|
+| You can change this option to true if you prefer to strictly route
+| last slash as a different route. (ex: "/apps/" is not equal to "/apps" )
+|
+*/
+'sensitive_web_route' => false,
 
 /*
 |--------------------------------------------------------------------------
