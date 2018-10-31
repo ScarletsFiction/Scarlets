@@ -265,7 +265,7 @@ class Route{
 
 			// Clear last constrain
 			if(count(self::$constrainLength) >= 2)
-				$delete = array_pop(self::$constrainLength) - self::$constrainLength[count(self::$constrainLength)-1];
+				$delete = array_pop(self::$constrainLength) - self::$constrainLength[count(self::$constrainLength) - 1] + 1;
 			else $delete = count(self::$scopeConstrain);
 			for ($i = $delete - 1; $i >= 0; $i--){
 				$ref = &self::${self::$scopeConstrain[$i]};
@@ -274,7 +274,7 @@ class Route{
 					if(count($ref) === 0)
 						$ref = false;
 				}
-				unset(self::$scopeConstrain[$i]);
+				array_pop(self::$scopeConstrain);
 			}
 		}
 
