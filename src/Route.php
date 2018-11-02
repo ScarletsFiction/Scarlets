@@ -209,18 +209,18 @@ class Route{
 			// GET method
 			if(strtolower($method) === 'get'){
 				if($data)
-					header('Location: '.explode('?', $URL)[0].'?'.http_build_query($data));
+					header('Location: '.explode('?', $to)[0].'?'.http_build_query($data));
 				else
-					header('Location: '.$URL);
+					header("Location: $to");
 			}
 
 			// POST method
 			else {
 				?><!DOCTYPE html><html><head></head><body>
-				<form id="autoForm" action="<?php echo(sanitizeURL($url));?>" method="post">
-				<?php 
+				<form id="autoForm" action="<?= $to ?>" method="post">
+				<?php
 					if($data) foreach ($data as $key => $value) {
-						echo('<input type="hidden" name="'.sanitizeText($key).'" value="'.sanitizeText($value).'">');
+						echo('<input type="hidden" name="'.htmlentities($key).'" value="'.htmlentities($value).'">');
 					}
 				?>
 				</form>
@@ -248,10 +248,9 @@ class Route{
 			else
 				$current[] = $arg1;
 
-			if(!$func){
-				self::$scopeConstrain[] = $part;
+			self::$scopeConstrain[] = $part;
+			if(!$func)
 				return self::$this;
-			}
 
 			self::$constrainLength[] = count(self::$scopeConstrain);
 
@@ -259,22 +258,33 @@ class Route{
 				$func();
 			else self::$skipScope = false;
 
-			array_pop($current);
-			if(count($current) === 0)
-				$current = false;
+			if(is_array($current)){
+				array_pop($current);
+				if(count($current) === 0)
+					$current = false;
+			}
 
 			// Clear last constrain
-			if(count(self::$constrainLength) >= 2)
-				$delete = array_pop(self::$constrainLength) - self::$constrainLength[count(self::$constrainLength) - 1] + 1;
-			else $delete = count(self::$scopeConstrain);
+			if(count(self::$constrainLength) >= 2) // Get delta of newest constraint length with the older length
+				$delete = array_pop(self::$constrainLength) - self::$constrainLength[count(self::$constrainLength) - 1];
+			else $delete = array_pop(self::$constrainLength);
+
+			$skipOnce = false; // Because when $func is defined, the scope will removed
 			for ($i = $delete - 1; $i >= 0; $i--){
-				$ref = &self::${self::$scopeConstrain[$i]};
-				if($ref !== false){
-					array_pop($ref);
-					if(count($ref) === 0)
-						$ref = false;
+				$temp = array_pop(self::$scopeConstrain);
+				if($skipOnce === false){
+					$skipOnce = true;
+					continue;
 				}
-				array_pop(self::$scopeConstrain);
+				$ref = &self::${$temp};
+				
+				$count = count($ref);
+				if($count !== 0){
+					array_pop($ref);
+					$count--;
+				}
+				if($count === 0)
+					$ref = false;
 			}
 		}
 
