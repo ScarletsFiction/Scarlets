@@ -23,9 +23,9 @@ class Auth{
 	public static $cookies = false;
 
 	public static function init(){
-		$config = Config::load('auth');
-		self::$database = Database::connect($config['auth.database']);
-		self::$table = $config['auth.table'];
+		$config = &Config::load('auth')['auth.users'];
+		self::$database = Database::connect($config['database']);
+		self::$table = $config['table'];
 
 		if(!Session::$started)
 			Session::load();
