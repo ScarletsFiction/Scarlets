@@ -20,7 +20,11 @@ class Crypto{
 
 		$ivlen = openssl_cipher_iv_length($cipher);
 		$iv = openssl_random_pseudo_bytes($ivlen);
-		$ciphertext = openssl_encrypt($str, $cipher, $pass, 0, $iv);
+		$ciphertext = openssl_encrypt($str, $cipher, $pass, OPENSSL_RAW_DATA, $iv);
+
+		// An initialization vector has different security requirements than a key, so the IV usually does not need to be secret.
+		// However, in most cases, it is important that an initialization vector is never reused under the same key.
+		// https://en.wikipedia.org/wiki/Block_cipher_mode_of_operation#Initialization_vector_.28IV.29
 		$str = base64_encode($iv.':~:'.$ciphertext);
 
 		if($mask && self::$crypto_mask){
@@ -45,7 +49,7 @@ class Crypto{
 		}
 
 		$data = explode(':~:', base64_decode($str));
-		return openssl_decrypt($data[1], $cipher, $pass, 0, $data[0]);
+		return openssl_decrypt($data[1], $cipher, $pass, OPENSSL_RAW_DATA, $data[0]);
 	}
 
 	// SFSessionID mask
