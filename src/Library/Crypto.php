@@ -15,12 +15,9 @@ class Crypto{
 	public static $crypto_mask = [];
 
 	public static function &encrypt($str, $pass=false, $cipher=false, $mask=false){
-		if(!$pass) $pass = &self::$key;
-		if(!$cipher) $cipher = &self::$cipher;
-
 		$ivlen = openssl_cipher_iv_length($cipher);
 		$iv = openssl_random_pseudo_bytes($ivlen);
-		$ciphertext = openssl_encrypt($str, $cipher, $pass, OPENSSL_RAW_DATA, $iv);
+		$ciphertext = openssl_encrypt($str, $cipher ? $cipher : self::$cipher, $pass ? $pass : self::$key, OPENSSL_RAW_DATA, $iv);
 
 		// An initialization vector has different security requirements than a key, so the IV usually does not need to be secret.
 		// However, in most cases, it is important that an initialization vector is never reused under the same key.
@@ -38,9 +35,6 @@ class Crypto{
 	}
 
 	public static function decrypt($str, $pass=false, $cipher=false, $mask=false){
-		if(!$pass) $pass = &self::$key;
-		if(!$cipher) $cipher = &self::$cipher;
-
 		if($mask && self::$crypto_mask){
 			$ref = &self::$crypto_mask;
 			foreach($ref as $key => $value){
@@ -49,7 +43,10 @@ class Crypto{
 		}
 
 		$data = explode(':~:', base64_decode($str));
-		return openssl_decrypt($data[1], $cipher, $pass, OPENSSL_RAW_DATA, $data[0]);
+		if(!isset($data[1]))
+			return null;
+
+		return openssl_decrypt($data[1], $cipher ? $cipher : self::$cipher, $pass ? $pass : self::$key, OPENSSL_RAW_DATA, $data[0]);
 	}
 
 	// SFSessionID mask
