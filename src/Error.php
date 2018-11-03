@@ -18,6 +18,7 @@ class Error{
 	// This can avoid multiple error of single error
 	public static $lastError = [];
 	public static $hasError = false;
+	public static $triggerErrorPage = false;
 
 	public static $currentError = [];
 
@@ -44,6 +45,7 @@ class Error{
 	        return; // This error code is not included in error_reporting
 
 	    self::$hasError = true;
+	    Serve::status(500, true);
 
 	    // Check if Error already processed
 	    if(in_array($file.$line, self::$lastError))
@@ -124,6 +126,8 @@ class Error{
 
 		if(!$appConfig['app.debug'] && Scarlets::$isWebsite){
 			Log::message($message);
+			if(!self::$triggerErrorPage) exit;
+
 			Serve::status(500);
 			exit;
 		}

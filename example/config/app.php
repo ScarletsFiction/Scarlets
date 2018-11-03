@@ -70,6 +70,8 @@ return [
 | stack traces will be shown on every error that occurs within your
 | application. If disabled, the general error page will be shown.
 |
+| Warning: Don't ever show error log to the user
+|          Make sure debug is turned off on production mode
 */
 'debug' => true,
 'simplify_trace' => true,

@@ -90,23 +90,28 @@ class Scarlets{
 
 		(function) function
 	*/
-	public static function onShutdown($function){
+	public static function onShutdown($function, $first = true){
 		if(!isset(self::$registry['shutdown'])){
 			function beforeShutdown(){
-				if(!isset(Scarlets::$registry['shutdown']))
-					return;
+				$list = &Scarlets::$registry['shutdown'];
 
-				$list = Scarlets::$registry['shutdown'];
-				foreach ($list as &$function)
-					$function();
-
-				Scarlets::$registry['shutdown'];
+				try{
+					foreach ($list as &$function)
+						if($function()) exit;
+				} catch(ExecutionFinish $e) {
+					exit;
+				}
 			}
 
 			self::$registry['shutdown'] = [$function];
 			register_shutdown_function('beforeShutdown');
 		}
-		else self::$registry['shutdown'][] = $function;
+		else{
+			if($first)
+				array_unshift(self::$registry['shutdown'], $function);
+			else
+				self::$registry['shutdown'][] = $function;
+		}
 	}
 
 	/*
@@ -207,6 +212,7 @@ Scarlets::onShutdown(function(){
 		Route\Serve::status($httpCode);
 
 	$error = error_get_last();
+	Scarlets\Error::$triggerErrorPage = true;
     if($error && (!isset(Scarlets::$registry['error']) || !Scarlets::$registry['error']))
 		Scarlets\Error::ErrorHandler($error['type'], $error['message'], $error['file'], $error['line']);
 });
