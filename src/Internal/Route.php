@@ -181,7 +181,7 @@ class Serve{
 			self::$pending[self::$pendingLevel][1] = true;
 	}
 
-	public static function end($text = false){
+	public static function end($text = false, $statusCode = 200){
 		if($text !== false)
 			self::raw($text);
 
@@ -190,6 +190,8 @@ class Serve{
 			$ref = &self::$pending[self::$pendingLevel];
 			call_user_func($ref[0], $ref[2]);
 		}
+
+		self::status($statusCode, true);
 
 		if(!Scarlets::$isConsole)
 			throw new \ExecutionFinish();
