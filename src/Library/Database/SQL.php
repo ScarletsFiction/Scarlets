@@ -177,6 +177,8 @@ class SQL{
 						$wheres[] = $this->validateText($matches[0]) . ' IS NOT NULL';
 					else{
 						if($type === 'array'){
+							if(empty($value)) trigger_error("'$matches[0]' array couldn't be empty");
+							
 							$temp = [];
 							for ($a = 0; $a < count($value); $a++) {
 								$temp[] = '?';
@@ -215,6 +217,8 @@ class SQL{
 					$wheres[] = $this->validateText($matches[0]) . ' IS NULL';
 				else{
 					if($type === 'array'){
+						if(empty($value)) trigger_error("'$matches[0]' array couldn't be empty");
+
 						$temp = [];
 						for ($a = 0; $a < count($value); $a++) {
 							$temp[] = '?';
