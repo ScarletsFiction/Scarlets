@@ -123,6 +123,9 @@ class Session{
 	public static function loadSifyData(){
 		$ref = &self::$sify;
 		$ref = self::extractSifyData();
+		if($ref === false)
+			return false;
+
 		self::$ID = Crypto::dSify($ref[0]);
 		self::$TextID = $ref[0];
 
@@ -136,6 +139,7 @@ class Session{
 
 		// Make a copy
 		self::$sify_ = $ref;
+		return true;
 	}
 
 	// Save sifyData to cookie
@@ -180,7 +184,8 @@ class Session{
 		self::$started = true;
 
 		// Set SFSession data from cookies
-		if(self::$ID === false) self::loadSifyData();
+		if(self::$ID === false && !self::loadSifyData())
+			return $false;
 		$database = &self::$database;
 
 		// Search session in database
@@ -303,7 +308,10 @@ class Session{
 
 	public static function &extractSifyData($str_=false){
 		if(!isset($_COOKIE['SFSessions'])){
-			$data = self::save(true);
+			if(empty(self::$data))
+				$data = false;
+			else
+				$data = self::save(true);
 			return $data;
 		}
 
