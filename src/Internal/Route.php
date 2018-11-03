@@ -192,6 +192,7 @@ class Serve{
 		}
 
 		self::status($statusCode, true);
+		self::$headerSent = true;
 
 		if(!Scarlets::$isConsole)
 			throw new \ExecutionFinish();
