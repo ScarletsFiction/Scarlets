@@ -67,7 +67,7 @@ class AccessToken{
 	}
 
 	public static function parse($accessToken){
-		$temp = explode('|', Crypto::decrypt($accessToken), true);
+		$temp = explode('|', Crypto::decrypt($accessToken));
 		if(count($temp) !== 4){
 			self::$error = 'invalid';
 			return false;
@@ -87,8 +87,8 @@ class AccessToken{
 			return false;
 		}
 
-		self::$data['permissions'] = &$expiration['permissions'];
 		self::$data = &$temp;
+		self::$data['permissions'] = &$expiration['permissions'];
 		return true;
 	}
 
