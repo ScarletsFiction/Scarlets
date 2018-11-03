@@ -15,20 +15,22 @@ use Scarlets\Config;
 
 class AccessToken{
 	/*
-		AccessToken Structure
+		AccessToken Object Structure (Keep it simple to reduce token length)
 		{
-			appID:0,
-			tokenID:0,
-			userID:0,
-			username:'me',
-			expiration:0,
-			permissions:'|0|12|2|5|' // Must be started and closed with '|'
+			appID,
+			tokenID,
+			userID,
+			expiration (UTC timestamp)
 		}
 	*/
 	public static $data = [];
+
+	// Database config reference
 	public static $db = false;
 	public static $token_table = false;
 	public static $app_table = false;
+
+	// permissions: '|0|12|2|5|' // Must be started and closed with '|'
 	public static $permissions = false;
 	public static $error = false;
 
@@ -40,20 +42,53 @@ class AccessToken{
 		self::$app_table = $config['app_table'];
 	}
 
+	public static function parseAvailableToken(){
+        if(isset($_REQUEST['access_token']))
+        	return self::parse($_REQUEST['access_token']);
+
+		$headers = '';
+        if(isset($_SERVER['HTTP_AUTHORIZATION'])) // Nginx or FastCGI
+            $headers = $_SERVER["HTTP_AUTHORIZATION"];
+
+		elseif(isset($_SERVER['Authorization']))
+            $headers = $_SERVER["Authorization"];
+
+        elseif(function_exists('apache_request_headers')){
+            $requestHeaders = apache_request_headers();
+
+            if(isset($requestHeaders['Authorization']))
+                $headers = $requestHeaders['Authorization'];
+        }
+
+        if(stripos($headers, 'bearer ') === 0)
+            return self::parse(substr($headers, 7));
+
+        return false;
+	}
+
 	public static function parse($accessToken){
-		$temp = json_decode(Crypto::decrypt($accessToken), true);
-		if(!$temp || !isset($temp['tokenID'])){
+		$temp = explode('|', Crypto::decrypt($accessToken), true);
+		if(count($temp) !== 4){
 			self::$error = 'invalid';
 			return false;
 		}
 
-		$expiration = self::$db->get(self::$token_table, ['user_id', 'expiration'], ['token_id'=>$temp['tokenID']]);
+		// Expand structure
+		$temp = [
+			'appID'=>$temp[0],
+			'tokenID'=>$temp[1],
+			'userID'=>$temp[2],
+			'expiration'=>$temp[3]
+		];
+
+		$expiration = self::$db->get(self::$token_table, ['user_id', 'expiration', 'permissions'], ['token_id'=>$temp['tokenID']]);
 		if(!$expiration || $expiration['expiration'] <= time() || $temp['userID'] != $expiration['user_id']){
 			self::$error = 'expired';
 			return false;
 		}
 
-		self::$data = $temp;
+		self::$data['permissions'] = &$expiration['permissions'];
+		self::$data = &$temp;
 		return true;
 	}
 
@@ -82,15 +117,22 @@ class AccessToken{
 		return $permissions;
 	}
 
-	public static function refresh($addionalSeconds = 2678400){
-		self::$data['expiration'] = time() + $addionalSeconds;
+	// 'expires_in' in seconds
+	public static function refresh($expires_in = 2592000){
+		self::$data['expiration'] = time() + $expires_in;
 
 		self::$db->update(self::$token_table, [
 			'expiration'=>self::$data['expiration'],
 			'permissions'=>self::$data['permissions']
 		], ['token_id'=>self::$data['tokenID']]);
 
-		return Crypto::encrypt(json_encode(self::$data));
+		// Simplify structure
+		return Crypto::encrypt(implode('|', [
+			self::$data['appID'],
+			self::$data['tokenID'],
+			self::$data['userID'],
+			self::$data['expiration']
+		]));
 	}
 
 	// Access token will valid for one day
@@ -101,13 +143,12 @@ class AccessToken{
 		if(!$app) return false;
 
 		// Clean old access token
-		self::$db->delete(self::$app_table, ['app_id'=>$appID, 'user_id'=>$userData['userID']]);
+		self::$db->delete(self::$token_table, ['app_id'=>$appID, 'user_id'=>$userData['userID']]);
 
 		self::$data = [
 			'appID'=>$appID,
 			'tokenID'=>0,
 			'userID'=>$userData['userID'],
-			'username'=>$userData['username'],
 			'expiration'=>time() + 86400,
 			'permissions'=>$userData['permissions']
 		];
@@ -119,7 +160,13 @@ class AccessToken{
 			'permissions'=>$userData['permissions']
 		]);
 
-		return Crypto::encrypt(json_encode(self::$data));
+		// Simplify structure
+		return Crypto::encrypt(implode('|', [
+			self::$data['appID'],
+			self::$data['tokenID'],
+			self::$data['userID'],
+			self::$data['expiration']
+		]));
 	}
 }
 
