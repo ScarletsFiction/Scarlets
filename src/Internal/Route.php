@@ -225,6 +225,7 @@ class Middleware{
 	// $register['name'] = function(){}
 	public static $register = [];
 	public static $pendingArgs = [];
+	public static $routerArgs = [];
 	public static $pendingData = [];
 
 	// Returning true value will cancel the current request

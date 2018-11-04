@@ -456,6 +456,7 @@ class Route{
 				}
 			}
 		}
+		Route\Middleware::$routerArgs = &$args;
 
 		// Handle middleware
 		$middlewareCallback = false;
