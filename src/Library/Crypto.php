@@ -15,7 +15,7 @@ class Crypto{
 	public static $crypto_mask = [];
 
 	public static function &encrypt($str, $pass=false, $cipher=false, $mask=false){
-		$ivlen = openssl_cipher_iv_length($cipher);
+		$ivlen = openssl_cipher_iv_length($cipher ? $cipher : self::$cipher);
 		$iv = openssl_random_pseudo_bytes($ivlen);
 		$ciphertext = openssl_encrypt($str, $cipher ? $cipher : self::$cipher, $pass ? $pass : self::$key, OPENSSL_RAW_DATA, $iv);
 

@@ -242,35 +242,31 @@ class Session{
 		// Write new session to browser and database
 		else {
 			$created = time();
+			$rawID = rand(1,9999).strrev(time());
+			self::$ID = $rawID;
+
+			// Convert ID to text
+			$newID = Crypto::Sify($rawID);
+			self::$TextID = $newID;
 
 			// Save the session to the database
-			$rawID = self::$database->insert(self::$table, [
+			self::$database->insert(self::$table, [
+				'id' => $rawID,
+				'session' => $newID,
 				'data' => json_encode(self::$data),
 				'lasturlaccess' => $_SERVER['REQUEST_URI'],
 				'ipaddress' => $_SERVER['REMOTE_ADDR'],
 				'lastcreated' => $created
-			], 'id');
+			]);
 
-			self::$ID = $rawID;
 			self::$sify = ['@created' => $created];
-
-			// Convert ID to text
-			$newID = Crypto::Sify($rawID);
-			self::$database->update(self::$table, [
-				'session' => $newID,
-			], ['id' => $rawID]);
-			self::$TextID = $newID;
-
-			// Write session to browser
-			$sified = self::compileSifyData($newID, self::$sify);
-			$_COOKIE['SFSessions'] = $sified;
 
 			// Save sifyData
 			self::saveSifyData(true);
 			return [$newID, self::$sify];
 		}
 	}
-	
+
 	public static function destroyCookies($justCookies=false){
 		if(isset($_SERVER['HTTP_COOKIE'])){
 			$expires = time()-3600;
@@ -333,15 +329,15 @@ class Session{
 			$data[1] = Crypto::decrypt($data[1], false, false, true);
 
 			if($data[1] !== '')
-				$data[1] = json_decode(@gzinflate($data[1]), true);
+				$data[1] = json_decode($data[1], true);
 			else $data[1] = [];
 		}
 		else $data[1] = false;
 		return $data;
 	}
-	
+
 	public static function compileSifyData($textID, $sify){
-		$data = Crypto::encrypt(gzdeflate(json_encode($sify), 9), false, false, true);
+		$data = Crypto::encrypt(json_encode($sify), false, false, true);
 		return $textID.'XpDW2bZ'.$data;
 	}
 }
