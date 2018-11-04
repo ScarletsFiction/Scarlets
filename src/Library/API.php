@@ -13,4 +13,26 @@ class API{
 		
 		return $requested;
 	}
+
+	// ['required', 'optional' => 'default']
+	public static function missing($array){
+		foreach ($array as $key => $value) {
+			if(is_numeric($key)){
+				$value = explode('=', str_replace(' ', '', $value), 2);
+				if(isset($_REQUEST[$value[0]])){
+					if(isset($value[1])){
+						if($value[1] === 'int' && !is_numeric($_REQUEST[$value[0]]))
+							return $value[0];
+						elseif(substr($value[1], 0, 1) === 'r' && !preg_match(substr($value[1], 1), $_REQUEST[$value[0]]))
+							return $value[0];
+					}
+					continue;
+				}
+				return $value[0];
+			}
+
+			$_REQUEST[$key] = $value;
+		}
+		return false;
+	}
 }
