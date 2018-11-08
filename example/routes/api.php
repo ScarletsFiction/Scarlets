@@ -15,8 +15,7 @@ use \Scarlets\Route\Serve;
 //    return $request->user();
 //}, ['auth:api', 'throttle:60,1']);
 
-Route::middleware('auth:api', function(){
-    Route::get('/user', function(){
-        //
-    });
+# /api/status
+Route::prefix('api')->middleware('auth:api,public', function(){
+    Route::get('/status', 'App\Api\Sample::website');
 });

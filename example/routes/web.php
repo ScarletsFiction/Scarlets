@@ -32,10 +32,6 @@ Route::get('/text/{0:[A-Za-z]+}', function($text = ['world']){
     return "Hello, $text[0]";
 }, 'name:text');
 
-// Optional message
-Route::get('/hello/{0?}', function($message = 'world'){
-    Serve::view('hello', ['message' => 'Hello, '.$message]);
-});
 
 Route::namespaces('App\Http\Controllers', function(){
     // Class controller at "App\Http\Controllers" Namespace
@@ -56,7 +52,7 @@ Route::prefix('admin', function(){
         Serve::raw("Hi admin!");
 
         // Or route to User List
-        Route::route('list.users');
+        // Route::route('list.users');
     });
 });
 

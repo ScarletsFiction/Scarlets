@@ -32,7 +32,7 @@ Route::status(404, function(){
     ]);
     Serve::view('status', [
         'status' => '404 Not Found',
-        'information' => "The request for ".Route::$uri." was not found"
+        'information' => "The request for ".$_SERVER['REQUEST_URI']." was not found"
     ]);
     Serve::view('static.footer');
 });

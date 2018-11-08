@@ -1,17 +1,56 @@
 <?php
 namespace App;
+use \Scarlets\Route;
+use \Scarlets\Error;
 use \Scarlets\Route\Serve;
 use \Scarlets\Library\Cache;
+use \Scarlets\Library\Server;
+use \Scarlets\Route\Middleware as Mainware;
 
 class Middleware{
 	public static function register(){
+		// Get function list on this class
 		$currentClass = get_class();
 		$list = get_class_methods($currentClass);
+
+		// Register functions on route middleware
 		foreach ($list as $function) {
 			if($function === 'register')
 				continue;
 
-			\Scarlets\Route\Middleware::$register[$function] = $currentClass.'::'.$function;
+			Mainware::$register[$function] = $currentClass.'::'.$function;
+		}
+	}
+
+	public static function auth($type, $scope = 'public', $for = false){
+		if($type === 'api'){
+			Header::set('Content-type: application/json');
+
+			// Register a callback when any error was happen
+			\Scarlets::onShutdown(function(){
+				if(Error::$hasError)
+					Serve::end('{"error":"Internal server error"}', 500);
+			});
+
+			// Only authenticated user who can access
+			if($scope === 'private'){
+				// Handle user access token here
+				Auth\User::init();
+				self::origin('*');
+
+				// Prevent further execution if not authenticated
+				if(!Auth\User::$data || Auth\User::$data['userID'] === false)
+					Serve::end('{"error":"Authentication failed"}', 401);
+			}
+
+			// Public access but limited to your domain (You can read about CORS)
+			else
+				self::origin(['https://www.mywebsite.com', 'https://my.profile.com']);
+
+			return function(){
+				// Output all returned data from function as JSON
+				Serve::end(json_encode(Mainware::$pendingData), 200);
+			};
 		}
 	}
 
@@ -21,20 +60,26 @@ class Middleware{
 	        ob_start();
 
 	        // On request finished
-	        return function(){
+	        return function($headerData, $footerData){
 	            $body = ob_get_clean();
-	            $headData = [
-	                'title'=>'Home'
-	            ];
 
 	            // This will trigger 'special' router event on ScarletsFrame
-	            // When using lazy route mode
-	            Serve::special($headData);
+	            // When using dynamic route mode
+	            Serve::special($headerData);
 
-	            // Output the body with header and footer (lazy mode will send the $body only)
-	            Serve::view('static.header', $headData, true);
+	            // Output the body with header and footer
+	            Serve::view('static.header', $headerData, true);
 	            Serve::raw($body);
-	            Serve::view('static.footer', true);
+	            Serve::view('static.footer', $footerData, true);
+
+	            $elapsed = 1;
+	            if(\Scarlets::$isConsole)
+	            	$elapsed = round(microtime(true) - Server::$requestMicrotime, 5);
+
+	            else
+	            	$elapsed = round(microtime(true) - $GLOBALS['startupWebsiteTime'], 5);
+
+        		Serve::raw("\n<benchmark><!-- Dynamic page generated in ".$elapsed." seconds. --></benchmark>");
 
 	            // Skip other routes
 	            Serve::end();
@@ -45,30 +90,26 @@ class Middleware{
 	}
 
 	public static function origin($allowed = '*'){
-	    if($allowed === '*')
-	    	$allowed = $_SERVER['HTTP_ORIGIN'];
-	    else
-	    	$allowed = str_replace('|', ',', $allowed);
-
 		if(isset($_SERVER['HTTP_ORIGIN'])){
-			$setHeader = function($text){
-				if(\Scarlets::$isConsole)
-					\Scarlets\Library\Server::setHeader($text);
-				else header($text);
-			};
-			
-		    $setHeader('Access-Control-Allow-Origin: '.$allowed);
-		    $setHeader('Access-Control-Allow-Credentials: true');
-		    $setHeader('Access-Control-Max-Age: 86400');
+		    if($allowed === '*')
+		    	true;
+		    elseif(is_array($allowed) && in_array($_SERVER['HTTP_ORIGIN'], $allowed))
+		    	true;
+		    else
+		    	exit;
 
-			// Skip server process if javascript only send header for checking
-			if($_SERVER['REQUEST_METHOD'] == 'OPTIONS'){
-			    if(isset($_SERVER['HTTP_ACCESS_CONTROL_REQUEST_METHOD']))
-			        $setHeader('Access-Control-Allow-Methods: GET, POST, OPTIONS');
-			    if(isset($_SERVER['HTTP_ACCESS_CONTROL_REQUEST_HEADERS']))
-			        $setHeader('Access-Control-Allow-Headers: '.$_SERVER['HTTP_ACCESS_CONTROL_REQUEST_HEADERS']);
-			    exit(0);
-			}
+		    Header::set('Access-Control-Allow-Origin: '.$_SERVER['HTTP_ORIGIN']);
+		    Header::set('Access-Control-Allow-Credentials: true');
+		    Header::set('Access-Control-Max-Age: 86400');
+
+			if(isset($_SERVER['HTTP_ACCESS_CONTROL_REQUEST_METHOD']))
+			    Header::set('Access-Control-Allow-Methods: PUT, DELETE, GET, POST, OPTIONS');
+			if(isset($_SERVER['HTTP_ACCESS_CONTROL_REQUEST_HEADERS']))
+			    Header::set('Access-Control-Allow-Headers: '.$_SERVER['HTTP_ACCESS_CONTROL_REQUEST_HEADERS']);
+
+			// Skip server process if it's only send options header
+			if($_SERVER['REQUEST_METHOD'] == 'OPTIONS')
+			    exit;
 		}
 	}
 
@@ -91,5 +132,13 @@ class Middleware{
 	        Serve::status(404);
 	        return true;
 	    }
+	}
+}
+
+class Header{
+	public static function set($text){
+		if(\Scarlets::$isConsole)
+			\Scarlets\Library\Server::setHeader($text);
+		else header($text);
 	}
 }
