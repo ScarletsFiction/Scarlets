@@ -15,8 +15,6 @@ class Handler{
 			foreach($requests as &$method){
 				Scarlets::$registry['Route'][$method] = [];
 			}
-		} else {
-			Scarlets\Route::$uri = $_SERVER['REQUEST_URI'];
 		}
 	}
 

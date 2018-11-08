@@ -208,7 +208,6 @@ class Server {
 			$headers['URI'] = explode('?', $headers['URI']);
 			mb_parse_str($headers['URI'][1], $_GET);
 			$_SERVER['REQUEST_URI'] = &$headers['URI'][0];
-			\Scarlets\Route::$uri = $_SERVER['REQUEST_URI'];
 		} else {
 			$_GET = [];
 			$_SERVER['REQUEST_URI'] = &$headers['URI'];
@@ -248,9 +247,11 @@ class Server {
 
 		if(!$found){
 			$router = &Scarlets::$registry['Route']['ANY'];
-			foreach ($router as $key => $func) {
-				if(\Scarlets\Route::handleURL($key, $func[0], $func[1]))
-					$found = true;
+			if($router){
+				foreach ($router as $key => $func) {
+					if(\Scarlets\Route::handleURL($key, $func[0], $func[1]))
+						$found = true;
+				}
 			}
 		}
 

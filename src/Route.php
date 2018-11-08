@@ -15,7 +15,6 @@ include_once __DIR__."/Internal/Route.php";
 class Route{
 	public static $instantOutput = false;
 	public static $statusCode = 404;
-	public static $uri = '';
 	public static $this = false;
 	public static $ended = false;
 	private static $namespace = false;
@@ -294,7 +293,7 @@ class Route{
 		
 		public static function prefix($url, $func = false){
 			// Execute only if there are a matched url
-			if(strpos($_SERVER['REQUEST_URI'], $url) === false)
+			if(!Scarlets::$isConsole && strpos($_SERVER['REQUEST_URI'], $url) === false)
 				self::$skipScope = true;
 
 			return self::scopeBased('prefix', $url, $func);
@@ -419,8 +418,12 @@ class Route{
 				if(!$optional && $argData === null)
 					return false;
 				else{
-					$split = explode($argData, $requestURI, 2);
-					$requestURI = isset($split[1]) ? $split[1] : $split[0];
+					if(is_array($argData))
+						$requestURI = $argData[0];
+					else{
+						$split = explode($argData, $requestURI, 2);
+						$requestURI = isset($split[1]) ? $split[1] : $split[0];
+					}
 				}
 
 				// Prepare the argument data
