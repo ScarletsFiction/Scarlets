@@ -414,23 +414,22 @@ class Route{
 					$argData = $current;
 				}
 
-				// Check if the required param was not found
-				if(!$optional && $argData === null)
-					return false;
-				else{
-					if(is_array($argData))
-						$requestURI = $argData[0];
-					else{
-						$split = explode($argData, $requestURI, 2);
-						$requestURI = isset($split[1]) ? $split[1] : $split[0];
-					}
-				}
-
 				// Prepare the argument data
 				if($argNumber !== false)
 					$args[$argNumber] = $argData;
 				else
 					$args[] = $argData;
+
+				// Check if the required param was not found
+				if(!$optional && $argData === null)
+					return false;
+				else {
+					if(is_array($argData))
+						$argData = $argData[0];
+
+					$split = explode($argData, $requestURI, 2);
+					$requestURI = isset($split[1]) ? $split[1] : $split[0];
+				}
 			}
 
 			$matched = true;

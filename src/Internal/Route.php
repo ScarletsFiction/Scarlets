@@ -220,7 +220,6 @@ class Query{
 
 class Middleware{
 	// Register user defined middleware
-	// $register['name'] = function(){}
 	public static $register = [];
 	public static $pendingArgs = [];
 	public static $routerArgs = [];
@@ -249,3 +248,6 @@ class Middleware{
 		self::$pendingArgs = array_merge(self::$pendingArgs, func_get_args());
 	}
 }
+Middleware::$register['name'] = function($name){
+	// Scarlets::$registry['Route']['NAME'][$name] = ;
+};
