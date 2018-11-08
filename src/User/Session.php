@@ -35,7 +35,7 @@ class Session{
 	public static $data = [];
 
 	// Will return old IP Address if it's different with last record
-	public static $IPChanged = false;
+	public static $oldIPAddress = false;
 
 	// Just for comparing when saving
 	private static $sify_ = [];
@@ -101,15 +101,15 @@ class Session{
 
 			// Reset session data before any request
 			Server::onStart(function(){
-				$started = false;
-				$sify = [];
-				$ID = false;
-				$TextID = '';
-				$FullTextID = '';
-				$data = [];
-				$IPChanged = false;
-				$sify_ = [];
-				$data_ = [];
+				self::$started = false;
+				self::$sify = [];
+				self::$ID = false;
+				self::$TextID = '';
+				self::$FullTextID = '';
+				self::$data = [];
+				self::$oldIPAddress = false;
+				self::$sify_ = [];
+				self::$data_ = [];
 
 				if(isset($_COOKIE['SFSessions']))
 					self::load();
@@ -210,7 +210,7 @@ class Session{
 			if(time()-15 >= $data['lastrecordedtime'])
 			{
 				if($_SERVER['REMOTE_ADDR'] !== $data['ipaddress'])
-					Crypto::$oldIPAddress = $data['ipaddress'];
+					self::$oldIPAddress = $data['ipaddress'];
 
 				$database->update(self::$table, [
 					'lastrecordedtime' => time(),
