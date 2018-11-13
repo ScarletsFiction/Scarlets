@@ -53,9 +53,28 @@ class Session{
 	private static $http_only = false;
 
 	public static function init(){
-		// If the client was unable to send cookies but able to send from url request
-		if(isset($_POST['SFSessions']) && !isset($_COOKIE['SFSessions']))
-			$_COOKIE['SFSessions'] = $_POST['SFSessions'];
+		// If the client was unable to send cookies but able to send from other way
+		if(!isset($_COOKIE['SFSessions'])){
+			if(isset($_REQUEST['SFSessions']))
+				$_COOKIE['SFSessions'] = $_REQUEST['SFSessions'];
+			else {
+				$headers = '';
+		        if(isset($_SERVER['HTTP_SFSESSIONS'])) // Nginx or FastCGI
+		            $headers = $_SERVER["HTTP_SFSESSIONS"];
+
+				elseif(isset($_SERVER['SFSessions']))
+		            $headers = $_SERVER["SFSessions"];
+
+		        elseif(function_exists('apache_request_headers')){
+		            $requestHeaders = apache_request_headers();
+
+		            if(isset($requestHeaders['SFSessions']))
+		                $headers = $requestHeaders['SFSessions'];
+		        }
+
+		        $_COOKIE['SFSessions'] = $headers;
+			}
+		}
 
 		// Load configuration
 		$config = Config::load('session');
@@ -316,7 +335,7 @@ class Session{
 
 		// Check if there are duplicated cookies
 		$data = explode('XpDW2bZ', $str);
-		if(count($data) === 1){
+		if(count($data) === 1 && isset($_SERVER['HTTP_COOKIE'])){
 			$cookies = explode('SFSessions=', $_SERVER['HTTP_COOKIE']);
 			if(count($data) >= 3){
 				$cookies = explode(';', $cookies[2])[0];
