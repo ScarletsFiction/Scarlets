@@ -119,6 +119,9 @@ class AccessToken{
 
 	// 'expires_in' in seconds
 	public static function refresh($expires_in = 2592000){
+		if(!isset(self::$data['tokenID']))
+			return ['error'=>'Access token was not found'];
+
 		self::$data['expiration'] = time() + $expires_in;
 
 		self::$db->update(self::$token_table, [
@@ -167,6 +170,11 @@ class AccessToken{
 			self::$data['userID'],
 			self::$data['expiration']
 		]));
+	}
+
+	// Delete access token from database
+	public static function revoke($tokenID){
+		self::$db->delete(self::$token_table, ['token_id'=>$tokenID]);
 	}
 }
 
