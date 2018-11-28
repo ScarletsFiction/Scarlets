@@ -45,7 +45,10 @@ class Error{
 	        return; // This error code is not included in error_reporting
 
 	    self::$hasError = true;
-	    Serve::status(500, true);
+
+	    // Send error status if it's a website
+	    if(Scarlets::$isWebsite)
+	    	Serve::status(500, true);
 
 	    // Check if Error already processed
 	    if(in_array($file.$line, self::$lastError))
