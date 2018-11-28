@@ -201,10 +201,19 @@ class WebRequest{
 	}
 	
 	// From other server to local file
-	public static function download($from, $to, $type="curl")
+	public static function download($from, $to, $type = "default")
 	{
-		if($type=="socket")
-		{
+		if($type === "default"){
+			$file = file_get_contents($from, false, stream_context_create([
+    			"ssl"=>[
+    			    "verify_peer"=>false,
+    			    "verify_peer_name"=>false,
+    			],
+			]));
+			file_put_contents($to, $file);
+		}
+		
+		elseif($type === "socket"){
 			#chunk = 10MB
 			$chunksize = 10 * (1024 * 1024);
 			
@@ -217,13 +226,11 @@ class WebRequest{
 			$i_handle = fsockopen($parts['host'], 80, $errstr, $errcode, 5);
 			$o_handle = fopen($to, 'wb');
 		
-			if ($i_handle == false || $o_handle == false) {
+			if ($i_handle == false || $o_handle == false)
 				return false;
-			}
 		
-			if (!empty($parts['query'])) {
+			if (!empty($parts['query']))
 				$parts['path'] .= '?' . $parts['query'];
-			}
 		
 			# Send the request to the server for the file
 	
@@ -240,7 +247,10 @@ class WebRequest{
 			$headers = array();
 			while(!feof($i_handle)) {
 				$line = fgets($i_handle);
-				if ($line == "\r\n") break;
+
+				if ($line == "\r\n")
+					break;
+
 				$headers[] = $line;
 			}
 		
@@ -263,38 +273,35 @@ class WebRequest{
 				$buf = '';
 				$buf = fread($i_handle, $chunksize);
 				$bytes = fwrite($o_handle, $buf);
-				if ($bytes == false) {
+				if ($bytes == false)
 					return false;
-				}
 				$cnt += $bytes;
 			
-				#We're done reading when we've reached the conent length
+				# We're done reading when we've reached the content length
 				if ($cnt >= $length) break;
 			}
 		
 			fclose($i_handle);
 			fclose($o_handle);
-			return $cnt;	
+			return $cnt;
 		}
 		
-		elseif($type=="direct"){
+		elseif($type === "direct"){
 			$rh = fopen($from, 'rb');
 			$wh = fopen($to, 'wb');
-			if (!$rh || !$wh) {
+			if (!$rh || !$wh)
 				return false;
-			}
 
 			while (!feof($rh)) {
-				if (fwrite($wh, fread($rh, 1024)) === FALSE) {
+				if (fwrite($wh, fread($rh, 1024)) === FALSE)
 					return false;
-				}
 			}
+
 			fclose($rh);
 			fclose($wh);
-			return true;
 		}
 
-		elseif($type=="curl"){
+		elseif($type === "curl"){
 			if(is_file($from))
 		        copy($from, $to); 
 		    else {
@@ -309,8 +316,10 @@ class WebRequest{
 		        curl_exec($ch);
 		        curl_close($ch);
 		    }
-			return true;
 		}
+
+		else return false;
+		return true;
 	}
 	
 	// allowedExt = array
