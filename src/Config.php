@@ -40,7 +40,10 @@ class Config{
 	}
 
 	public static function &get($file, $key){
-		return self::$data[$file.$key];
+		if(!in_array($file, self::$loaded))
+			self::load($file);
+
+		return self::$data[$file.'.'.$key];
 	}
 }
 
