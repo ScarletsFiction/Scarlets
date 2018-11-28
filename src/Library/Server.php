@@ -247,11 +247,9 @@ class Server {
 
 		if(!$found){
 			$router = &Scarlets::$registry['Route']['ANY'];
-			if($router){
-				foreach ($router as $key => $func) {
-					if(\Scarlets\Route::handleURL($key, $func[0], $func[1]))
-						$found = true;
-				}
+			foreach ($router as $key => $func) {
+				if(\Scarlets\Route::handleURL($key, $func[0], $func[1]))
+					$found = true;
 			}
 		}
 
