@@ -120,7 +120,7 @@ class Console{
 
 			// Check if zero argument
 			if($argsLen === 0){
-				$return = $commands();
+				$return = call_user_func($commands);
 				echo("\n");
 				return $return;
 			}
