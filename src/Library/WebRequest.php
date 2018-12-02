@@ -88,6 +88,7 @@ class WebRequest{
         curl_setopt($ch, CURLOPT_URL, $url);
 		curl_setopt($ch, CURLOPT_ENCODING, "gzip");
 		curl_setopt($ch, CURLOPT_USERAGENT, $userAgent);
+		curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
 
 		curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);
 		curl_setopt($ch, CURLOPT_MAXREDIRS, 5);
@@ -99,9 +100,6 @@ class WebRequest{
 		}
 		curl_setopt($ch, CURLOPT_HTTPHEADER, $header);
 
-		curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-		curl_setopt($ch, CURLINFO_HEADER_OUT, 1);
-
 		$result = curl_exec($ch);
 		if($options){
 			if(isset($options['utf8']))
@@ -111,32 +109,63 @@ class WebRequest{
 				$err = curl_errno($ch);
 				$errmsg = curl_error($ch);
 				$header = curl_getinfo($ch);
-				$myHeader = $header['request_header'];
-				$header = substr($result, 0, $header['header_size']);
 				curl_close($ch);
-			
-				preg_match_all("#Set-Cookie:\\s+(?<cookie>[^=]+=[^;]+)#m", $header, $matches); 
-				$cookiesOut = implode("; ", $matches['cookie']);
-				
-				$body = substr($result, $header['header_size']);
-				if(!isset($options['returnheader']) && isset($options['cookiefile'])){
-					if(strlen($cookiesOut)>=2)
-						file_put_contents($options['cookiefile'], $cookiesOut);
 
-					return $body;
+				$http_code = $header['http_code'];
+				$body = substr($result, $header['header_size']);
+				$header = self::parseHTTPHeader(substr($result, 0, $header['header_size']));
+
+				if(isset($header['Set-Cookie'])){
+					if(is_array($header['Set-Cookie']))
+						$cookies = implode("; ", $header['Set-Cookie']);
+					else $cookies = $header['Set-Cookie'];
 				}
+				else $cookies = false;
 				
-				$header['errno'] = $err;
-				$header['errmsg'] = $errmsg;
-				$header['headers'] = $header_content;
-				$header['content'] = $body;
-				$header['cookies'] = $cookiesOut;
-				return $header;
+				if(isset($options['cookiefile']) && $cookies !== false){
+					file_put_contents($options['cookiefile'], $cookies);
+
+					if(!isset($options['returnheader']))
+						return $body;
+				}
+
+				$return = [];
+				$return['error_no'] = $err;
+				$return['error_msg'] = $errmsg;
+				
+				// http://php.net/manual/en/function.curl-getinfo.php#41332
+				$return['http_code'] = $http_code;
+				$return['headers'] = $header;
+				$return['body'] = $body;
+				$return['cookies'] = $cookies;
+				return $return;
 			}
 		}
 		
 		curl_close($ch);
 		return $result;
+	}
+
+	private static function parseHTTPHeader($data){
+		$data = explode("\n", str_replace("\r", '', trim($data)));
+		unset($data[0]);
+
+		$header = [];
+		foreach ($data as $value) {
+			$value = explode(': ', $value, 2);
+
+			// Check if already exist
+			if(isset($header[$value[0]])){
+				$ref = &$header[$value[0]];
+				if(is_array($ref))
+					$ref[] = $value[1];
+				else $ref = [$ref, $value[1]];
+			}
+
+			// Create new if not
+		    else $header[$value[0]] = $value[1];
+		}
+		return $header;
 	}
 
 	// From this server to client browser
