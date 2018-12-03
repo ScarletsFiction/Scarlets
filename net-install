@@ -22,17 +22,6 @@ if(strpos($status, 'fail')!==false){
 	echo("\nCurrently the framework is unstable");
 }
 
-echo "\nDo you want to use this directory for your project? (y/n) ";
-$handle = fopen ("php://stdin","r");
-$line = fgets($handle);
-if(trim($line) != 'y'){
-    echo "Please type your directory:\n";
-	$root = trim(fgets($handle));
-	if(!is_dir($root))
-		mkdir($root, 0777, true);
-}
-fclose($handle);
-
 echo(" - Determining archive size\n");
 $headers = get_headers('https://github.com/ScarletsFiction/Scarlets/archive/master.zip', true);
 if(isset($headers['Content-Length']))
@@ -52,19 +41,44 @@ $zip->extractTo($root.'/vendor/scarletsfiction/');
 $zip->close();
 rename($root.'/vendor/scarletsfiction/Scarlets-master', $root.'/vendor/scarletsfiction/scarlets');
 
-echo(" - Moving files\n");
-$list = new RecursiveDirectoryIterator($root.'/vendor/scarletsfiction/scarlets/example/');
-$list = new RecursiveIteratorIterator($list);
-$list = new RegexIterator($list, '/example.(.*[^\.])$/', RegexIterator::GET_MATCH);
-foreach($list as $path){
-	$dir = $root.'/'.dirname($path[1]);
-	if(!is_dir($dir))
-		mkdir($dir, 0777, true);
-	rename($root.'/vendor/scarletsfiction/scarlets/'.$path[0], $root.'/'.$path[1]);
-}
+// Check if project already exist
+if(is_dir($root.'/app') && is_dir($root.'/config') && is_dir($root.'/routes') && file_exists($root.'/scarlets'))
+	echo " + Project already exist\n";
 
-echo(" - Changing root folder (root.php)\n");
-file_put_contents($root.'/root.php', str_replace('/../require.php', '/vendor/scarletsfiction/scarlets/require.php', file_get_contents($root.'/root.php')));
+// Create new project
+else {
+	echo "\nDo you want to use this directory for your project? (y/n) ";
+	$handle = fopen ("php://stdin","r");
+	$line = fgets($handle);
+	if(trim($line) != 'y'){
+	    echo "Please type your directory:\n";
+		$root = trim(fgets($handle));
+		if(!is_dir($root))
+			mkdir($root, 0777, true);
+	}
+	fclose($handle);
+
+	echo(" - Moving files\n");
+	$list = new RecursiveDirectoryIterator($root.'/vendor/scarletsfiction/scarlets/example/');
+	$list = new RecursiveIteratorIterator($list);
+	$list = new RegexIterator($list, '/example.(.*[^\.])$/', RegexIterator::GET_MATCH);
+	foreach($list as $path){
+		$dir = $root.'/'.dirname($path[1]);
+
+		// Create new directory
+		if(!is_dir($dir))
+			mkdir($dir, 0777, true);
+
+		// Skip if already exist
+		else continue;
+
+		// Move files
+		rename($root.'/vendor/scarletsfiction/scarlets/'.$path[0], $root.'/'.$path[1]);
+	}
+
+	echo(" - Changing root folder (root.php)\n");
+	file_put_contents($root.'/root.php', str_replace('/../require.php', '/vendor/scarletsfiction/scarlets/require.php', file_get_contents($root.'/root.php')));
+}
 
 echo(" - Delete temporary file\n");
 try{
