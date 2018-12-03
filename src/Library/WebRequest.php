@@ -163,7 +163,7 @@ class WebRequest{
 			}
 
 			// Create new if not
-		    else $header[$value[0]] = $value[1];
+		    elseif(isset($value[1])) $header[$value[0]] = $value[1];
 		}
 		return $header;
 	}
