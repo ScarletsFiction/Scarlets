@@ -37,6 +37,8 @@ class Scarlets{
 		// Parse received json data if exist
 		if(!self::$isConsole){
 			$jsonRequest = file_get_contents('php://input');
+
+			// Put to $_POST because it's usually been send from POST method
 			if($jsonRequest)
 				$_POST = json_decode($jsonRequest, true);
 			
@@ -52,6 +54,16 @@ class Scarlets{
 					if(isset($requestURI[1]))
 						$_SERVER['REQUEST_URI'] .= '?'.$requestURI[1];
 				}
+			}
+
+			// Apply custom request method
+			if(isset($_SERVER['HTTP_X_REQ_METHOD'])){
+				$_REQUEST = $_POST;
+				$_SERVER['REQUEST_METHOD'] = $_SERVER['HTTP_X_REQ_METHOD'];
+
+				// Copy to $_GET variable
+				if($_SERVER['REQUEST_METHOD'] === 'GET')
+					$_GET = $_POST;
 			}
 		}
 
