@@ -36,12 +36,11 @@ class Scarlets{
 
 		// Parse received json data if exist
 		if(!self::$isConsole){
-			$jsonRequest = file_get_contents('php://input');
 
 			// Put to $_POST because it's usually been send from POST method
-			if($jsonRequest)
-				$_POST = json_decode($jsonRequest, true);
-			
+			if(isset($_SERVER["CONTENT_TYPE"]) && $_SERVER["CONTENT_TYPE"] === 'application/json')
+				$_POST = json_decode(file_get_contents('php://input'), true);
+
 			header("X-Framework: ScarletsFiction");
 
 			// Reroute last slash
