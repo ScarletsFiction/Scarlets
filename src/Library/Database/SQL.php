@@ -432,27 +432,46 @@ class SQL{
 		$columns = array_keys($object);
 		for($i = 0; $i < count($columns); $i++){
 			$special = $this->extractSpecial($columns[$i]);
+			$tableEscaped = $this->validateText($special[0]);
+
 			if(count($special) === 1)
-				$objectName[] = "`$special[0]` = ?";
+				$objectName[] = "$tableEscaped = ?";
 			else {
 				if(is_string($object[$columns[$i]])){
 					// Append
 					if($special[1] === 'append')
-						$objectName[] = "`$special[0]` = CONCAT(`$special[0]`, ?)";
+						$objectName[] = "$tableEscaped = CONCAT($tableEscaped, ?)";
 
 					// Prepend
 					elseif($special[1] === 'prepend')
-						$objectName[] = "`$special[0]` = CONCAT(?, `$special[0]`)";
+						$objectName[] = "$tableEscaped = CONCAT(?, $tableEscaped)";
 
 					else trigger_error("No operation for '$special[1]'");
 				}
 
+				elseif(is_array($object[$columns[$i]])){
+					// Replace
+					if($special[1] === 'replace')
+						$objectName[] = "$tableEscaped = REPLACE($tableEscaped, ?, ?)";
+
+					// Wrap
+					elseif($special[1] === 'wrap')
+						$objectName[] = "$tableEscaped = CONCAT(?, $tableEscaped, ?)";
+
+					else trigger_error("No operation for '$special[1]'");
+					
+					$objectData[] = $object[$columns[$i]][0];
+					$objectData[] = $object[$columns[$i]][1];
+					continue;
+				}
+
 				// Math
 				elseif(in_array($special[1], ['*', '-', '/', '%', '+']))
-					$objectName[] = "`$special[0]` = `$special[0]` $special[1] ?";
+					$objectName[] = "$tableEscaped = $tableEscaped $special[1] ?";
 
 				else trigger_error("No operation for '$special[1]'");
 			}
+
 			$objectData[] = $object[$columns[$i]];
 		}
 		$query = "UPDATE " . $this->validateTable($tableName) . " SET " . implode(', ', $objectName) . $wheres[0];
