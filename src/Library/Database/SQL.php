@@ -381,7 +381,7 @@ class SQL{
 		$obtained = $this->query($query, $wheres[1], 'rows');
 
 		$data = [];
-		if(!isset($obtained[0])) return $data;
+		if(!isset($obtained[0])) return false;
 		$obtained = $obtained[0];
 
 		for ($i=0; $i < count($columns); $i++) { 
@@ -459,7 +459,7 @@ class SQL{
 						$objectName[] = "$tableEscaped = CONCAT(?, $tableEscaped, ?)";
 
 					else trigger_error("No operation for '$special[1]'");
-					
+
 					$objectData[] = $object[$columns[$i]][0];
 					$objectData[] = $object[$columns[$i]][1];
 					continue;
