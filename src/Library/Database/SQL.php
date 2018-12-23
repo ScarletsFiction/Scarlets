@@ -380,10 +380,11 @@ class SQL{
 		$query = "SELECT ".substr($selectQuery, 1)." FROM " . $this->validateTable($tableName) . $wheres[0];
 		$obtained = $this->query($query, $wheres[1], 'rows');
 
-		$data = [];
-		if(!isset($obtained[0])) return false;
+		$data = false;
+		if(!isset($obtained[0])) return $data;
 		$obtained = $obtained[0];
 
+		$data = [];
 		for ($i=0; $i < count($columns); $i++) { 
 			$data[$columns[$i]] = $obtained[$i] === 1;
 		}
