@@ -356,6 +356,41 @@ class SQL{
 		return $temp[0];
 	}
 
+	public function has($tableName, $where){
+		if($this->table_prefix !== '') $tableName = $this->table_prefix.'.'.$tableName;
+
+		$where['LIMIT'] = 1;
+		$wheres = $this->makeWhere($where);
+		$query = "SELECT 1 FROM " . $this->validateTable($tableName) . $wheres[0];
+		return !empty($this->query($query, $wheres[1], 'rows'));
+	}
+
+	// Only avaiable for string columns
+	public function &isEmpty($tableName, $columns, $where){
+		if($this->table_prefix !== '') $tableName = $this->table_prefix.'.'.$tableName;
+
+		$where['LIMIT'] = 1;
+		$wheres = $this->makeWhere($where);
+		
+		$selectQuery = '';
+		for ($i=0; $i < count($columns); $i++) { 
+			$selectQuery .= ','.$this->validateText($columns[$i])." = '' AS '$i'";
+		}
+
+		$query = "SELECT ".substr($selectQuery, 1)." FROM " . $this->validateTable($tableName) . $wheres[0];
+		$obtained = $this->query($query, $wheres[1], 'rows');
+
+		$data = [];
+		if(!isset($obtained[0])) return $data;
+		$obtained = $obtained[0];
+
+		for ($i=0; $i < count($columns); $i++) { 
+			$data[$columns[$i]] = $obtained[$i] === 1;
+		}
+
+		return $data;
+	}
+
 	public function &delete($tableName, $where){
 		if($this->table_prefix !== '') $tableName = $this->table_prefix.'.'.$tableName;
 
@@ -400,9 +435,19 @@ class SQL{
 			if(count($special) === 1)
 				$objectName[] = "`$special[0]` = ?";
 			else {
-				if($special[1] === '+' && is_string($object[$columns[$i]]))
-					$objectName[] = "`$special[0]` = CONCAT(`$special[0]`, ?)";
+				if(is_string($object[$columns[$i]])){
+					// Append
+					if($special[1] === 'append')
+						$objectName[] = "`$special[0]` = CONCAT(`$special[0]`, ?)";
 
+					// Prepend
+					elseif($special[1] === 'prepend')
+						$objectName[] = "`$special[0]` = CONCAT(?, `$special[0]`)";
+
+					else trigger_error("No operation for '$special[1]'");
+				}
+
+				// Math
 				elseif(in_array($special[1], ['*', '-', '/', '%', '+']))
 					$objectName[] = "`$special[0]` = `$special[0]` $special[1] ?";
 
