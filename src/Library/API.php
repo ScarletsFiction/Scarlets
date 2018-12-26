@@ -1,5 +1,6 @@
 <?php
 namespace Scarlets\Library;
+use \Scarlets\Route\Serve;
 
 class API{
 	public static function fields($array){
@@ -34,5 +35,15 @@ class API{
 			$_REQUEST[$key] = $value;
 		}
 		return false;
+	}
+
+	public static function request($field, $default = null){
+		if(isset($_REQUEST[$field]))
+			return $_REQUEST[$field];
+
+		if($default !== null)
+			return $default;
+
+		Serve::end('{"error":"\''.$field.'\' are required"}');
 	}
 }

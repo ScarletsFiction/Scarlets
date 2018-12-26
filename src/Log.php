@@ -22,7 +22,7 @@ class Log{
 
 	public static function message($msg){
 		if(self::$type === 'errorlog')
-			file_put_contents(self::$path, 'Log: '.$msg."\n---\n", FILE_APPEND);
+			file_put_contents(self::$path, 'Log: '.print_r($msg, true)."\n---\n", FILE_APPEND);
 	}
 
 	public static function broke($msg){
