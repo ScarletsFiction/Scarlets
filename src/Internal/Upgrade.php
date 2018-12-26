@@ -1,7 +1,15 @@
 <?php
 
+set_error_handler("warning_handler", E_WARNING);
+function warning_handler($errno, $errstr){
+	echo('  - '.$errstr."\n\n");
+	echo("  - Upgrade failed\n");
+	exit;
+}
+
 $root = realpath(__DIR__."/../..");
 $parent = realpath($root.'/..');
+$projectFolder = getcwd();
 
 if($options === 'rollback'){
 	if(!is_dir($parent.'/scarlets_backup')){
@@ -36,7 +44,7 @@ echo(" - Checking latest commit date\n");
 $status = file_get_contents('https://api.github.com/repos/ScarletsFiction/Scarlets/branches/master', 0, $context);
 $status = strtotime(json_decode($status, true)['commit']['commit']['committer']['date']);
 
-$last = filemtime(__DIR__."/Console.php");
+$last = 0;//filemtime(__DIR__."/Console.php");
 
 if($status <= $last){
 	echo("   Looks like the framework already up to date");
@@ -79,6 +87,7 @@ rename($root.'/temp/Scarlets-master/LICENSE', $root.'/LICENSE');
 rename($root.'/temp/Scarlets-master/README.md', $root.'/README.md');
 rename($root.'/temp/Scarlets-master/require.php', $root.'/require.php');
 rename($root.'/temp/Scarlets-master/src', $root.'/src');
+rename($root.'/temp/Scarlets-master/net-install', $projectFolder.'/net-install');
 
 echo(" - Delete temporary file\n");
 try{
