@@ -67,7 +67,7 @@ class AccessToken{
 	}
 
 	public static function parse($accessToken){
-		$temp = explode('|', Crypto::decrypt($accessToken));
+		$temp = explode('|', Crypto::decrypt($accessToken, false, false, true));
 		if(count($temp) !== 4){
 			self::$error = 'invalid';
 			return false;
@@ -135,7 +135,7 @@ class AccessToken{
 			self::$data['tokenID'],
 			self::$data['userID'],
 			self::$data['expiration']
-		]));
+		]), false, false, true);
 	}
 
 	// Access token will valid for one day
@@ -161,7 +161,7 @@ class AccessToken{
 			'user_id'=>$userData['userID'],
 			'expiration'=>self::$data['expiration'],
 			'permissions'=>$userData['permissions']
-		]);
+		], true);
 
 		// Simplify structure
 		return Crypto::encrypt(implode('|', [
@@ -169,7 +169,7 @@ class AccessToken{
 			self::$data['tokenID'],
 			self::$data['userID'],
 			self::$data['expiration']
-		]));
+		]), false, false, true);
 	}
 
 	// Delete access token from database

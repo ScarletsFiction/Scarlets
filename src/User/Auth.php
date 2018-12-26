@@ -47,59 +47,73 @@ class Auth{
 		Session::saveSifyData();
 	}
 
-	// $where = ['where' => 'true']
-	// $middleware = [['extra', 'column'], CallbackFunction($row)]
-	// if CallbackFunction return false, then the login will failed
-	// Return true if success
-	public static function login($username, $password, $where = false, $middleware = false)
-	{
+	// $where = ['blocked' => false]
+	// $beforeVerify, $onSuccess = function($row){}
+	// if beforeVerify return true, then the login will failed
+	// Return true if success, false if the login was failed, or a message if something invalid
+	public static function login($username, $password, $where = false, $beforeVerify = false, $onSuccess = false){
 		$username = strtolower($username);
-		$column = ['user_id', 'password'];
-		$where_ = ['username'=>$username];
+		$column = ['user_id', 'password', 'username'];
+		$where_ = [];
 
 		// Email
-		if(filter_var($username, FILTER_VALIDATE_EMAIL)){
+		if(strpos($username, '@') > 3){
+			if(filter_var($username, FILTER_VALIDATE_EMAIL))
+				return 'Email not valid';
+
 			$where_ = ['email[~]'=>';'.$username];
-			$column[] = 'username';
 		}
 
-		// Merge extra SQL statement
+		// Username
+		else{
+			if(preg_match('/[^a-zA-Z0-9]/', $username))
+				return 'Username not valid';
+
+			$where_ = ['username'=>$username];
+		}
+
+		// Add extra where condition
 		if($where)
 			$where_ = array_merge($where_, $where);
-		if(is_array($middleware) && is_array($middleware[0]))
-			$column = array_merge($column, $middleware[0]);
 
+		// Get data from database
 		$row = self::$database->get(self::$table, $column, $where_);
+		if($row === false)
+			return 'Failed to verify account condition';
 
-		// Call middleware if exist
-		if(is_array($middleware) && is_callable($middleware[1]) && !$middleware[1]($row))
-			return false;
-		elseif(is_callable($middleware) && !$middleware($row))
-			return false;
+		$passwordHash = &$row['password'];
+		unset($row['password']);
+
+		// Call $beforeVerify (Useful for checking if user login was blocked)
+		if(is_callable($beforeVerify)){
+			$status = $beforeVerify($row);
+			if($status) return $status;
+		}
 
 		// Verify user password then save it to user sessions
-		if($row !== false && password_verify($password, $row['password']))
-		{
-			if(isset($row['username']))
-				$username = $row['username'];
+		if(password_verify($password, $passwordHash)){
+			// Call $onSuccess (Useful for update login time, counter, add sifyData before saved, or revoke current login state)
+			// if onSuccess return true, the login data will not saved but this function will still return true
+			if(is_callable($onSuccess) && $onSuccess($row))
+				return true;
+
 			$sify = &Session::$sify;
 			$data = &Session::$data;
 
-			$data['username'] = &$username;
+			$data['username'] = &$row['username'];
 			$data['userID'] = &$row['user_id'];
 
-			$sify['username'] = &$username;
+			$sify['username'] = &$row['username'];
 			$sify['userID'] = &$row['user_id'];
-			Session::saveSifyData();
 
+			Session::saveSifyData();
 			return true;
 		}
 		return false;
 	}
 
 	// Return {userID, username} if logged in
-	public static function getLoginData($returnBool = false)
-	{
+	public static function getLoginData($returnBool = false){
 		$sify = &Session::$sify;
 		$data = &Session::$data;
 
@@ -133,18 +147,17 @@ class Auth{
 	// the rows with user_id after this return true
 	// return [true, user_id]
 	// return [false, 'error message']
-	public static function register($data)
-	{
+	public static function register($data){
 		// Validate email
 		if(!filter_var($data['email'], FILTER_VALIDATE_EMAIL))
-			return [false, 'Email not valid'];
+			return 'Email not valid';
 
 		// Validate username
 		if(strlen(preg_replace('/[^a-zA-Z0-9]/', '', $data['username'])) < strlen($data['username']))
-			return [false, 'Username not valid'];
+			return 'Username not valid';
 
 		// Check for existance
-		$temp = self::$database->get(self::$table, ['user_id'], [
+		$temp = self::$database->get(self::$table, ['user_id', 'username'], [
 			'OR'=>[
 				'username'=>$data['username'],
 				'email[~]'=>';'.$data['email']
@@ -153,8 +166,8 @@ class Auth{
 
 		if($temp !== false){
 			if($temp['username'] === $data['username'])
-				return [false, 'Username already used'];
-			return [false, 'Email already used'];
+				return 'Username already used';
+			return 'Email already used';
 		}
 
 		// Add email separator for preserving multiple email
@@ -164,22 +177,8 @@ class Auth{
 		$data['password'] = password_hash($data['password'], PASSWORD_BCRYPT, ['cost'=>10]);
 		if(!$data['password']) trigger_error("Failed to hash password");
 
-		$userID = self::$database->insert(self::$table, $data, 'user_id');
-		return [true, $userID];
-	}
-
-	public static function isUsernameExist($username)
-	{
-		if(self::$database->get(self::$table, ['user_id'], ['username'=>$username]) !== false)
-			return true;
-		return false;
-	}
-
-	public static function isEmailExist($email)
-	{
-		if(self::$database->get(self::$table, ['user_id'], ['email[~]'=>$email]) !== false)
-			return true;
-		return false;
+		$userID = self::$database->insert(self::$table, $data, true);
+		return $userID;
 	}
 }
 Auth::init();
