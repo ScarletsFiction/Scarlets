@@ -1,6 +1,6 @@
 <?php
 if(file_exists('scarlets')){
-	if(is_dir('vendor/scarletsfiction/scarlets/')){
+	if(file_exists('vendor/scarletsfiction/scarlets/')){
 		echo("Looks like Scarlets Framework already installed\n");
 		die("Use `php scarlets upgrade` if you want to update\n");
 	}
@@ -36,13 +36,23 @@ echo(" - Extracting files\n");
 $zip = new ZipArchive;
 $res = $zip->open('master.zip');
 
-mkdir($root.'/vendor/scarletsfiction/', 0777, true);
+if(!file_exists($root.'/vendor/scarletsfiction/'))
+	mkdir($root.'/vendor/scarletsfiction/', 0777, true);
+
+deleteContent($root.'/vendor/scarletsfiction/scarlets_backup/');
+if(file_exists($root.'/vendor/scarletsfiction/scarlets_backup/'))
+	rmdir($root.'/vendor/scarletsfiction/scarlets_backup/');
+
+if(file_exists($root.'/vendor/scarletsfiction/scarlets'))
+	rename($root.'/vendor/scarletsfiction/scarlets', $root.'/vendor/scarletsfiction/scarlets_backup');
+
 $zip->extractTo($root.'/vendor/scarletsfiction/');
 $zip->close();
+
 rename($root.'/vendor/scarletsfiction/Scarlets-master', $root.'/vendor/scarletsfiction/scarlets');
 
 // Check if project already exist
-if(is_dir($root.'/app') && is_dir($root.'/config') && is_dir($root.'/routes') && file_exists($root.'/scarlets'))
+if(file_exists($root.'/app') && file_exists($root.'/config') && file_exists($root.'/routes') && file_exists($root.'/scarlets'))
 	echo " + Project already exist\n";
 
 // Create new project
@@ -53,27 +63,20 @@ else {
 	if(trim($line) != 'y'){
 	    echo "Please type your directory:\n";
 		$root = trim(fgets($handle));
-		if(!is_dir($root))
+		if(!file_exists($root))
 			mkdir($root, 0777, true);
 	}
 	fclose($handle);
 
 	echo(" - Moving files\n");
-	$list = new RecursiveDirectoryIterator($root.'/vendor/scarletsfiction/scarlets/example/');
-	$list = new RecursiveIteratorIterator($list);
-	$list = new RegexIterator($list, '/example.(.*[^\.])$/', RegexIterator::GET_MATCH);
+	$list = array_slice(scandir($root.'/vendor/scarletsfiction/scarlets/example/'), 2);
 	foreach($list as $path){
-		$dir = $root.'/'.dirname($path[1]);
-
-		// Create new directory
-		if(!is_dir($dir))
-			mkdir($dir, 0777, true);
-
 		// Skip if already exist
-		else continue;
+		if(file_exists($root.'/'.$path))
+			continue;
 
 		// Move files
-		rename($root.'/vendor/scarletsfiction/scarlets/'.$path[0], $root.'/'.$path[1]);
+		rename($root.'/vendor/scarletsfiction/scarlets/example/'.$path, $root.'/'.$path);
 	}
 
 	echo(" - Changing root folder (root.php)\n");
@@ -105,6 +108,7 @@ foreach ($list as &$value) {
 echo("\n - Task finished\n");
 
 function deleteContent($path){
+	if(!file_exists($path)) return;
 	$iterator = new DirectoryIterator($path);
 	foreach($iterator as $fileinfo){
 		if($fileinfo->isDot()) continue;
