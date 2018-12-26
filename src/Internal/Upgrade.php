@@ -1,7 +1,19 @@
 <?php
 
-use Scarlets\Library\FileSystem;
 $root = realpath(__DIR__."/../..");
+$parent = realpath($root.'/..');
+
+if($options === 'rollback'){
+	if(!is_dir($parent.'/scarlets_backup')){
+		echo("- Can't find old framework");
+		return;
+	}
+
+	deleteContent($parent.'/scarlets', true);
+	rename($parent.'/scarlets_backup', $parent.'/scarlets');
+	echo(" - Rollback finished");
+	return;
+}
 
 $opts = [
   'http'=>[
@@ -33,14 +45,14 @@ if($status <= $last){
 }
 
 echo(" - Determining archive size\n");
-$headers = get_headers('https://github.com/ScarletsFiction/Scarlets/archive/master.zip', true);
+$headers = get_headers('https://codeload.github.com/ScarletsFiction/Scarlets/zip/master', true);
 if(isset($headers['Content-Length']))
 	$filesize = round(intval($headers['Content-Length'])/1024);
 else 
 	$filesize = '?';
 
 echo(" - Downloading repository ($filesize KB)\n");
-file_put_contents('master.zip', file_get_contents('https://github.com/ScarletsFiction/Scarlets/archive/master.zip'));
+file_put_contents('master.zip', file_get_contents('https://codeload.github.com/ScarletsFiction/Scarlets/zip/master'));
 
 echo(" - Extracting files\n");
 $zip = new ZipArchive;
@@ -48,11 +60,10 @@ $res = $zip->open('master.zip');
 
 echo(" - Making backup\n");
 try{
-	rename($root.'/src', $root.'/src_backup');
-	rename($root.'/composer.json', $root.'/composer.json_backup');
-	rename($root.'/LICENSE', $root.'/LICENSE_backup');
-	rename($root.'/README.md', $root.'/README.md_backup');
-	rename($root.'/require.php', $root.'/require.php_backup');
+	deleteContent($parent.'/scarlets_backup', true);
+
+	if(file_exists($parent.'/scarlets'))
+		rename($parent.'/scarlets', $parent.'/scarlets_backup');
 } catch(\Exception $e){
 	echo("Access denied to the framework folder\n");
 	echo("Make sure there are no application that using the folder\n");
@@ -72,11 +83,6 @@ rename($root.'/temp/Scarlets-master/src', $root.'/src');
 echo(" - Delete temporary file\n");
 try{
 	deleteContent($root.'/temp', true);
-	unlink($root.'/composer.json_backup');
-	unlink($root.'/LICENSE_backup');
-	unlink($root.'/README.md_backup');
-	unlink($root.'/require.php_backup');
-	deleteContent($root.'/src_backup', true);
 	unlink('master.zip');
 } catch(\Exception $e) {
 	echo(" - Some temporary files couldn't be deleted\n ");
@@ -85,6 +91,7 @@ try{
 echo(" - Task finished\n");
 
 function deleteContent($path, $pathAlso = true){
+	if(!file_exists($path)) return;
 	$iterator = new DirectoryIterator($path);
 	foreach($iterator as $fileinfo){
 		if($fileinfo->isDot()) continue;

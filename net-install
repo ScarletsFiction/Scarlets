@@ -39,9 +39,7 @@ $res = $zip->open('master.zip');
 if(!file_exists($root.'/vendor/scarletsfiction/'))
 	mkdir($root.'/vendor/scarletsfiction/', 0777, true);
 
-deleteContent($root.'/vendor/scarletsfiction/scarlets_backup/');
-if(file_exists($root.'/vendor/scarletsfiction/scarlets_backup/'))
-	rmdir($root.'/vendor/scarletsfiction/scarlets_backup/');
+deleteContent($root.'/vendor/scarletsfiction/scarlets_backup/', true);
 
 if(file_exists($root.'/vendor/scarletsfiction/scarlets'))
 	rename($root.'/vendor/scarletsfiction/scarlets', $root.'/vendor/scarletsfiction/scarlets_backup');
@@ -85,17 +83,10 @@ else {
 
 echo(" - Delete temporary file\n");
 try{
-	deleteContent($root.'/vendor/scarletsfiction/scarlets/example/');
-	rmdir($root.'/vendor/scarletsfiction/scarlets/example/');
-
-	deleteContent($root.'/vendor/scarletsfiction/scarlets/evaluate/');
-	rmdir($root.'/vendor/scarletsfiction/scarlets/evaluate/');
-
-	deleteContent($root.'/vendor/scarletsfiction/scarlets/images/');
-	rmdir($root.'/vendor/scarletsfiction/scarlets/images/');
-
-	deleteContent($root.'/vendor/scarletsfiction/scarlets/tests/');
-	rmdir($root.'/vendor/scarletsfiction/scarlets/tests/');
+	deleteContent($root.'/vendor/scarletsfiction/scarlets/example/', true);
+	deleteContent($root.'/vendor/scarletsfiction/scarlets/evaluate/', true);
+	deleteContent($root.'/vendor/scarletsfiction/scarlets/images/', true);
+	deleteContent($root.'/vendor/scarletsfiction/scarlets/tests/', true);
 	unlink('master.zip');
 } catch(\Exception $e) {
 	echo(" - Some temporary files was not found");
@@ -107,15 +98,15 @@ foreach ($list as &$value) {
 }
 echo("\n - Task finished\n");
 
-function deleteContent($path){
-	if(!file_exists($path)) return;
+function deleteContent($path, $pathAlso = true){
 	$iterator = new DirectoryIterator($path);
 	foreach($iterator as $fileinfo){
 		if($fileinfo->isDot()) continue;
-		if($fileinfo->isDir() && deleteContent($fileinfo->getPathname()))
+		if($fileinfo->isDir() && deleteContent($fileinfo->getPathname(), true))
 			@rmdir($fileinfo->getPathname());
 		if($fileinfo->isFile())
 			@unlink($fileinfo->getPathname());
 	}
+	if($pathAlso) rmdir($path);
 	return true;
 }
