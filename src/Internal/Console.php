@@ -20,13 +20,13 @@ Console::command('cls', function(){
 }, 'Clear console');
 
 Console::command(['upgrade {0}', 'upgrade'], function($options=0){
-	include "Upgrade.php";
+	include 'Upgrade.php';
 }, 'ScarletsFramework upgrade');
 
 Console::command('help', function(){
 	echo("\nType [command /?] to see help section if provided\n\n");
 	$list = Console::collection();
-	$table = [["Command List", "Description"]];
+	$table = [['Command List', 'Description']];
 	foreach ($list as $key => $value) {
 		$table[] = [$key, $value];
 	}

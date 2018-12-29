@@ -1,31 +1,31 @@
 <?php
 
-set_error_handler("warning_handler", E_WARNING);
+set_error_handler('warning_handler', E_WARNING);
 function warning_handler($errno, $errstr){
-	echo('  - '.$errstr."\n\n");
+	echo("  - $errstr\n\n");
 	echo("  - Upgrade failed\n");
 	exit;
 }
 
 $root = realpath(__DIR__."/../..");
-$parent = realpath($root.'/..');
+$parent = realpath($root."/..");
 $projectFolder = getcwd();
 
 if($options === 'rollback'){
-	if(!is_dir($parent.'/scarlets_backup')){
-		echo("- Can't find old framework");
+	if(!is_dir("$parent/scarlets_backup")){
+		echo('- Can\'t find old framework');
 		return;
 	}
 
-	deleteContent($parent.'/scarlets', true);
-	rename($parent.'/scarlets_backup', $parent.'/scarlets');
-	echo(" - Rollback finished");
+	deleteContent("$parent/scarlets", true);
+	rename("$parent/scarlets_backup", "$parent/scarlets");
+	echo(' - Rollback finished');
 	return;
 }
 
 $opts = [
   'http'=>[
-    'method'=>"GET",
+    'method'=>'GET',
     'header'=>"User-Agent: ScarletsFramework\n"
   ]
 ];
@@ -35,7 +35,7 @@ $context = stream_context_create($opts);
 echo(" - Checking build status\n");
 $status = file_get_contents('https://api.travis-ci.org/ScarletsFiction/Scarlets.svg?branch=master', 0, $context);
 if(strpos($status, 'fail')!==false){
-	echo("   Currently the framework is unstable");
+	echo('   Currently the framework is unstable');
 	if($options !== 'force') return;
 	echo("\n");
 }
@@ -44,7 +44,7 @@ echo(" - Checking latest commit date\n");
 $status = file_get_contents('https://api.github.com/repos/ScarletsFiction/Scarlets/branches/master', 0, $context);
 $status = strtotime(json_decode($status, true)['commit']['commit']['committer']['date']);
 
-$last = 0;//filemtime(__DIR__."/Console.php");
+$last = filemtime(__DIR__.'/Console.php');
 
 if($status <= $last){
 	echo("   Looks like the framework already up to date");
@@ -68,33 +68,33 @@ $res = $zip->open('master.zip');
 
 echo(" - Making backup\n");
 try{
-	deleteContent($parent.'/scarlets_backup', true);
+	deleteContent("$parent/scarlets_backup", true);
 
-	if(file_exists($parent.'/scarlets'))
-		rename($parent.'/scarlets', $parent.'/scarlets_backup');
+	if(file_exists("$parent/scarlets"))
+		rename("$parent/scarlets", "$parent/scarlets_backup");
 } catch(\Exception $e){
 	echo("Access denied to the framework folder\n");
 	echo("Make sure there are no application that using the folder\n");
 	return;
 }
 
-$zip->extractTo($root.'/temp/');
+$zip->extractTo("$root/temp/");
 $zip->close();
 
 echo(" - Moving files\n");
-rename($root.'/temp/Scarlets-master/composer.json', $root.'/composer.json');
-rename($root.'/temp/Scarlets-master/LICENSE', $root.'/LICENSE');
-rename($root.'/temp/Scarlets-master/README.md', $root.'/README.md');
-rename($root.'/temp/Scarlets-master/require.php', $root.'/require.php');
-rename($root.'/temp/Scarlets-master/src', $root.'/src');
-rename($root.'/temp/Scarlets-master/net-install', $projectFolder.'/net-install');
+rename("$root/temp/Scarlets-master/composer.json", "$root/composer.json");
+rename("$root/temp/Scarlets-master/LICENSE", "$root/LICENSE");
+rename("$root/temp/Scarlets-master/README.md", "$root/README.md");
+rename("$root/temp/Scarlets-master/require.php", "$root/require.php");
+rename("$root/temp/Scarlets-master/src", "$root/src");
+rename("$root/temp/Scarlets-master/net-install", "$projectFolder/net-install");
 
 echo(" - Delete temporary file\n");
 try{
-	deleteContent($root.'/temp', true);
+	deleteContent("$root/temp", true);
 	unlink('master.zip');
 } catch(\Exception $e) {
-	echo(" - Some temporary files couldn't be deleted\n ");
+	echo(" - Some temporary files couldn't be deleted\n");
 }
 
 echo(" - Task finished\n");

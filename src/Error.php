@@ -111,12 +111,12 @@ class Error{
 	    $url = 'Scarlets Console';
 	    if(!isset($_SERVER['SERVER_NAME']) && Scarlets::$isConsole){
 	    	$breakline = '';
-	    	$url = "Startup Handler";
+	    	$url = 'Startup Handler';
 	    }
 	    else if(isset($_SERVER['REQUEST_URI']))
-	    	$url = "http".(isset($_SERVER['HTTPS'])?'s':'').'://'.$_SERVER['SERVER_NAME'].$_SERVER['REQUEST_URI'];
+	    	$url = 'http'.(isset($_SERVER['HTTPS'])?'s':'').'://'.$_SERVER['SERVER_NAME'].$_SERVER['REQUEST_URI'];
 
-		$message = "Exception type: ".self::ErrorType($severity).";\n".
+		$message = 'Exception type: '.self::ErrorType($severity).";\n".
 		"Message: $message;\n".
 		"File: $file;\n".
 		"Line: $line;\n".
@@ -169,7 +169,7 @@ class Error{
 	    elseif($type === E_RECOVERABLE_ERROR) return 'E_RECOVERABLE_ERROR';
 	    elseif($type === E_DEPRECATED) return 'E_DEPRECATED';
 	    elseif($type === E_USER_DEPRECATED) return 'E_USER_DEPRECATED';
-	    return "E_UNDEFINED";
+	    return 'E_UNDEFINED';
 	}
 
 	public static function checkUncaughtError(){

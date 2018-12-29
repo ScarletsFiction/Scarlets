@@ -35,13 +35,13 @@ class SQL{
 		if(!isset($options['driver'])) $options['driver'] = 'mysql';
 		if(!isset($options['charset'])) $options['charset'] = 'utf8';
 		if(!isset($options['debug'])) $options['debug'] = false;
-		if(!isset($options['database'])) trigger_error("Database name was not specified");
+		if(!isset($options['database'])) trigger_error('Database name was not specified');
 		$this->database = $options['database'];
 
 		$this->debug = &$options['debug'];
 		$this->table_prefix = $options['database'];
 		if(isset($options['table_prefix']) && $options['table_prefix'] !== '')
-			$this->table_prefix .= '.'.$options['table_prefix'];
+			$this->table_prefix .= ".$options[table_prefix]";
 
 		// Try to connect
 		try{
@@ -59,7 +59,7 @@ class SQL{
 		$this->table_prefix = $options['database'];
 		$this->database = $options['database'];
 		if(isset($options['table_prefix']) && $options['table_prefix'] !== '')
-			$this->table_prefix .= '.'.$options['table_prefix'];
+			$this->table_prefix .= ".$options[table_prefix]";
 	}
 
 	// SQLQuery
@@ -74,9 +74,9 @@ class SQL{
 		} catch(PDOException $e){
 			$msg = $e->getMessage();
 			if($msg){
-				if(strpos($msg, "Table") !== false && strpos($msg, "doesn't exist") !== false){
-					$tableName = explode($this->table_prefix.'.', $msg)[1];
-					$tableName = $this->table_prefix.'.'.explode("'", $tableName)[0];
+				if(strpos($msg, 'Table') !== false && strpos($msg, 'doesn\'t exist') !== false){
+					$tableName = explode("$this->table_prefix.", $msg)[1];
+					$tableName = "$this->table_prefix.".explode('\'', $tableName)[0];
 
 					$ref = &$this->whenTableMissing;
 					if(!$this->queryRetry && isset($ref[$tableName]) && is_callable($ref[$tableName])){
@@ -97,10 +97,10 @@ class SQL{
     public function transaction($func)
     {
         $this->transactionCounter++;
-        $this->connection->exec('SAVEPOINT trans'.$this->transactionCounter);
+        $this->connection->exec("SAVEPOINT trans$this->transactionCounter");
         $rollback = $func($this);
         if($rollback)
-            $this->connection->exec('ROLLBACK TO trans'.$this->transactionCounter);
+            $this->connection->exec("ROLLBACK TO trans$this->transactionCounter");
         else $this->connection->commit();
         $this->transactionCounter--;
     }
@@ -118,7 +118,7 @@ class SQL{
 	private function extractSpecial($field){
 		$field = explode('#', $field)[0];
 		if(strpos($field, '[') === false) return [$field];
-		return explode('[', str_replace([']', '"', "'", '`'], '', $field));
+		return explode('[', str_replace([']', '"', '\'', '`'], '', $field));
 	}
 	
 	/* columnName[operator]
@@ -130,8 +130,8 @@ class SQL{
 	*/
 	// {('AND', 'OR'), 'ORDER':{columnName:'ASC', 'DESC'}, 'LIMIT':[startIndex, rowsLimit]}
 
-	// ex: ["AND"=>["id"=>12, "OR"=>["name"=>"myself", "name"=>"himself"]], "LIMIT"=>1]
-		// Select one where (id == 12 && (name == "myself" || name == "himself"))
+	// ex: ['AND'=>['id'=>12, 'OR'=>['name'=>'myself', 'name'=>'himself']], 'LIMIT'=>1]
+		// Select one where (id == 12 && (name == 'myself' || name == 'himself'))
 	private function makeWhere($object, $comparator=false, $children=false){
 		if(!$object) return ['', []];
 		$wheres = [];
@@ -198,7 +198,7 @@ class SQL{
 					$likes = [];
 					for ($a = 0; $a < count($value); $a++) {
 						$likes[] = $this->validateText($matches[0]) . ($matches[1] === '!~' ? ' NOT' : '') . ' LIKE ?';
-						if(strpos($value[$a], '%') === false) $value[$a] = '%'.$value[$a].'%';
+						if(strpos($value[$a], '%') === false) $value[$a] = "%$value[$a]%";
 						$objectData[] = $value[$a];
 					}
 
@@ -251,7 +251,7 @@ class SQL{
 			
 			if($haveRelation){
 				$childs = $this->makeWhere($object[$columns[$i]], $defaultConditional, true);
-				$wheres[] = '('.$childs[0].')';
+				$wheres[] = "($childs[0])";
 				$objectData = array_merge($objectData, $childs[1]);
 			}
 		}
@@ -269,20 +269,20 @@ class SQL{
 				$stack[] = $this->validateText($columns[$i]) . ' ' . $order;
 			}
 
-			$options = $options . ' ORDER BY ' . implode(', ', $stack);
+			$options = "$options ORDER BY " . implode(', ', $stack);
 		}
 		if(isset($object['LIMIT'])){
 			if(!is_array($object['LIMIT']) && !is_nan($object['LIMIT']))
-				$options = $options . ' LIMIT '. $object['LIMIT'];
+				$options = "$options LIMIT $object[LIMIT]";
 
 			else if(!is_nan($object['LIMIT'][0]) && !is_nan($object['LIMIT'][1]))
-				$options = $options . ' LIMIT ' . $object['LIMIT'][1] . ' OFFSET ' . $object['LIMIT'][0];
+				$options = "$options LIMIT " . $object['LIMIT'][1] . ' OFFSET ' . $object['LIMIT'][0];
 		}
 		
 		$where_ = '';
 		if(count($wheres)!==0){
 			if(!$children)
-				$where_ = " WHERE ";
+				$where_ = ' WHERE ';
 			$where_ = $where_ . implode($comparator ? $comparator : $defaultConditional, $wheres);
 		}
 
@@ -291,7 +291,7 @@ class SQL{
 
 	private $whenTableMissing = [];
 	public function onTableMissing($table, $func){
-		$this->whenTableMissing[$this->database.'.'.$table] = $func;
+		$this->whenTableMissing["$this->database.$table"] = $func;
 	}
 
 	/**
@@ -304,10 +304,10 @@ class SQL{
 	 * @return array              [description]
 	 */
 	public function &holes($tableName, $column, $scan = 1000, $jumps = 0){
-		if($this->table_prefix !== '') $tableName = $this->table_prefix.'.'.$tableName;
+		if($this->table_prefix !== '') $tableName = "$this->table_prefix.$tableName";
 
 		if(!is_numeric($scan) || !is_numeric($jumps))
-			trigger_error("`Limit` or `Jumps` must be numeric value");
+			trigger_error('`Limit` or `Jumps` must be numeric value');
 
 		$ids = $this->query('SELECT '.$this->validateText($column).' FROM '.$this->validateTable($tableName).' ORDER BY '.$this->validateText($column)." DESC LIMIT $jumps,$scan", [])->fetchAll(\PDO::FETCH_COLUMN);
 		
@@ -331,7 +331,7 @@ class SQL{
 
 	public function createTable($tableName, $columns)
 	{
-		if($this->table_prefix !== '') $tableName = $this->table_prefix.'.'.$tableName;
+		if($this->table_prefix !== '') $tableName = "$this->table_prefix.$tableName";
 
 		$columns_ = array_keys($columns);
 		for($i = 0; $i < count($columns_); $i++){
@@ -346,16 +346,16 @@ class SQL{
 	}
 
 	public function count($tableName, $where=false){
-		if($this->table_prefix !== '') $tableName = $this->table_prefix.'.'.$tableName;
+		if($this->table_prefix !== '') $tableName = "$this->table_prefix.$tableName";
 
 		$wheres = $this->makeWhere($where);
-		$query = "SELECT COUNT(1) FROM " . $this->validateTable($tableName) . $wheres[0];
+		$query = 'SELECT COUNT(1) FROM ' . $this->validateTable($tableName) . $wheres[0];
 		
 		return $this->query($query, $wheres[1])->fetchColumn(0);
 	}
 
 	public function select($tableName, $select = '*', $where = false, $fetchUnique = false){
-		if($this->table_prefix !== '') $tableName = $this->table_prefix.'.'.$tableName;
+		if($this->table_prefix !== '') $tableName = "$this->table_prefix.$tableName";
 		$wheres = $this->makeWhere($where);
 
 		if(is_array($select)){
@@ -379,7 +379,7 @@ class SQL{
 	}
 
 	public function get($tableName, $select = '*', $where = false){
-		if($this->table_prefix !== '') $tableName = $this->table_prefix.'.'.$tableName;
+		if($this->table_prefix !== '') $tableName = "$this->table_prefix.$tableName";
 
 		$where['LIMIT'] = 1;
 		$wheres = $this->makeWhere($where);
@@ -402,17 +402,17 @@ class SQL{
 	}
 
 	public function has($tableName, $where){
-		if($this->table_prefix !== '') $tableName = $this->table_prefix.'.'.$tableName;
+		if($this->table_prefix !== '') $tableName = "$this->table_prefix.$tableName";
 
 		$where['LIMIT'] = 1;
 		$wheres = $this->makeWhere($where);
-		$query = "SELECT 1 FROM " . $this->validateTable($tableName) . $wheres[0];
+		$query = 'SELECT 1 FROM ' . $this->validateTable($tableName) . $wheres[0];
 		return $this->query($query, $wheres[1])->fetchColumn(0) === 1;
 	}
 
 	// Only avaiable for string columns
 	public function &isEmpty($tableName, $columns, $where){
-		if($this->table_prefix !== '') $tableName = $this->table_prefix.'.'.$tableName;
+		if($this->table_prefix !== '') $tableName = "$this->table_prefix.$tableName";
 
 		$where['LIMIT'] = 1;
 		$wheres = $this->makeWhere($where);
@@ -422,7 +422,7 @@ class SQL{
 			$selectQuery .= ','.$this->validateText($columns[$i])." = '' AS '$i'";
 		}
 
-		$query = "SELECT ".substr($selectQuery, 1)." FROM " . $this->validateTable($tableName) . $wheres[0];
+		$query = 'SELECT '.substr($selectQuery, 1).' FROM ' . $this->validateTable($tableName) . $wheres[0];
 		$obtained = $this->query($query, $wheres[1])->fetchColumn();
 
 		if($obtained === false) return $obtained;
@@ -436,26 +436,28 @@ class SQL{
 	}
 
 	public function delete($tableName, $where){
-		if($this->table_prefix !== '') $tableName = $this->table_prefix.'.'.$tableName;
+		if($this->table_prefix !== '') $tableName = "$this->table_prefix.$tableName";
 
 		if($where){
 			$wheres = $this->makeWhere($where);
-			$query = "DELETE FROM " . $this->validateTable($tableName) . $wheres[0];
+			$query = 'DELETE FROM ' . $this->validateTable($tableName) . $wheres[0];
 			return $this->query($query, $wheres[1])->rowCount();
 		}
 		else{
-			$query = "TRUNCATE TABLE " . $this->validateTable($tableName);
+			$query = 'TRUNCATE TABLE ' . $this->validateTable($tableName);
 			return $this->query($query, [])->rowCount();
 		}
 	}
 
 	public function insert($tableName, $object, $getInsertID = false){
-		if($this->table_prefix !== '') $tableName = $this->table_prefix.'.'.$tableName;
+		if($this->table_prefix !== '') $tableName = "$this->table_prefix.$tableName";
 
 		// Multiple insert
 		$multiple = false;
 		if(isset($object[0]) && is_array($object[0])){
-			$multiple = &$object;
+			$multiple = $object;
+
+			// Take a sample
 			$object = array_shift($multiple);
 		}
 
@@ -469,19 +471,16 @@ class SQL{
 
 			$objectData[] = $object[$columns[$i]];
 		}
-		$query = "INSERT INTO " . $this->validateTable($tableName) . " (" . implode(', ', $objectName) . ") VALUES (" . implode(', ', $objectName_) . ")";
+		$query = 'INSERT INTO ' . $this->validateTable($tableName) . ' (' . implode(', ', $objectName) . ') VALUES (' . implode(', ', $objectName_) . ')';
 
 		if($getInsertID === false){
 			if($multiple != false){ // Check if not false or not empty
-				$mask = "(".implode(', ', $objectName_).")";
+				$mask = '('.implode(', ', $objectName_).')';
 				foreach($multiple as $row){
-					for($i = 0; $i < count($columns); $i++){
-						$objectData[] = $row[$columns[$i]];
-					}
-					$query .= ','.$mask;
+					$objectData[] = &$row;
+					$query .= ",$mask";
 				}
 			}
-
 			return $this->query($query, $objectData);
 		}
 
@@ -490,15 +489,10 @@ class SQL{
 		$lastInsertId = $this->connection->lastInsertId();
 
 		// Multiple insert
-		if($multiple !== false){
+		if($multiple !== false){ // Check if not false
 			$lastInsertId = [$lastInsertId];
 			foreach($multiple as $row){
-				$objectData = [];
-				for($i = 0; $i < count($columns); $i++){
-					$objectData[] = $row[$columns[$i]];
-				}
-
-				$statement->execute($objectData);
+				$statement->execute($row);
 				$lastInsertId[] = $this->connection->lastInsertId();
 			}
 		}
@@ -507,7 +501,7 @@ class SQL{
 	}
 
 	public function update($tableName, $object, $where=false){
-		if($this->table_prefix !== '') $tableName = $this->table_prefix.'.'.$tableName;
+		if($this->table_prefix !== '') $tableName = "$this->table_prefix.$tableName";
 		$wheres = $this->makeWhere($where);
 
 		$objectName = [];
@@ -557,14 +551,14 @@ class SQL{
 
 			$objectData[] = $object[$columns[$i]];
 		}
-		$query = "UPDATE " . $this->validateTable($tableName) . " SET " . implode(', ', $objectName) . $wheres[0];
+		$query = 'UPDATE ' . $this->validateTable($tableName) . ' SET ' . implode(', ', $objectName) . $wheres[0];
 
 		return $this->query($query, array_merge($objectData, $wheres[1]))->rowCount();
 	}
 
 	public function drop($tableName){
-		if($this->table_prefix !== '') $tableName = $this->table_prefix.'.'.$tableName;
+		if($this->table_prefix !== '') $tableName = "$this->table_prefix.$tableName";
 		
-		return $this->query("DROP TABLE " . $this->validateTable($tableName), []);
+		return $this->query('DROP TABLE ' . $this->validateTable($tableName), []);
 	}
 }

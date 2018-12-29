@@ -47,19 +47,19 @@ class Console{
 	public static function interactiveShell(){
 		// self::clear();
 		echo("Welcome to ScarletsFramework!\n\n");
-		$fp = fopen("php://stdin","r");
+		$fp = fopen('php://stdin','r');
 		$lastInput = microtime();
 
 		$config = &\Scarlets\Config::$data;
 		while(1){
-			echo($config['app.console_user']."> ");
+			echo($config['app.console_user'].'> ');
 			if(self::interpreter(rtrim(fgets($fp, 1024))))
 		    	break;
 
  			// Too fast or caused by CTRL+Z then enter
  			$time = microtime();
 		    if($lastInput === $time){
-		    	echo("Shutting down Scarlets Console...");
+		    	echo('Shutting down Scarlets Console...');
 		    	break;
 		    }
 
@@ -71,7 +71,7 @@ class Console{
 	}
 
 	public static function &waitInput(){
-		$fp = fopen("php://stdin","r");
+		$fp = fopen('php://stdin','r');
 		$temp = rtrim(fgets($fp, 1024));
 		fclose($fp);
 		return $temp;
@@ -103,9 +103,9 @@ class Console{
 		$argsLen = count($pattern);
 
 		if($argsLen === 1 && in_array($pattern[0], ['/h', '/?', '-h', '--help'])){
-			if(isset(self::$commands[$firstword.'.h'])){
+			if(isset(self::$commands["$firstword.h"])){
 				echo("\n");
-				$commands = &self::$commands[$firstword.'.h'];
+				$commands = &self::$commands["$firstword.h"];
 				if(is_callable($commands)) $commands();
 				else print_r($commands);
 				echo("\n");
@@ -113,7 +113,7 @@ class Console{
 			}
 		}
 
-		$key = $firstword.'.'.$argsLen;
+		$key = "$firstword.$argsLen";
 		$commands = false;
 		if(isset(self::$commands[$key])){
 			$commands = &self::$commands[$key];
@@ -121,13 +121,13 @@ class Console{
 			// Check if zero argument
 			if($argsLen === 0){
 				$return = call_user_func($commands);
-				if($return) echo("\n".$return);
+				if($return) echo("\n$return");
 				echo("\n");
 				return $return;
 			}
 		} else {
 			// Check for registered special args
-			$key = $firstword.'.s';
+			$key = "$firstword.s";
 			if(isset(self::$commands[$key])){
 				$commands = &self::$commands[$key];
 			}
@@ -194,15 +194,15 @@ class Console{
 			}
 		}
 
-		if(isset(self::$commands[$firstword.'.h'])){
-			$commands = &self::$commands[$firstword.'.h'];
+		if(isset(self::$commands["$firstword.h"])){
+			$commands = &self::$commands["$firstword.h"];
 			if(is_callable($commands)) $commands();
 			else print_r($commands);
 			echo("\n");
 			return;
 		}
 
-		echo("$firstword command with ".$argsLen." argument was not registered\n");
+		echo("$firstword command with $argsLen argument was not registered\n");
 		return;
 	}
 
@@ -285,9 +285,9 @@ class Console{
 			self::$commandsDescription[$key] = $description;
 
 		if($special)
-			$key = $key.'.s';
+			$key = "$key.s";
 		else
-			$key = $key.'.'.$patternLen;
+			$key = "$key.$patternLen";
 
 		$uniqueIndex = [];
 		for ($i=0; $i < $patternLen; $i++) {
@@ -319,7 +319,7 @@ class Console{
 		if(strpos($pattern, ' ') !== false)
 			trigger_error("Console help's pattern can't have a space ($pattern)");
 
-		self::$commands[$pattern.'.h'] = &$callback;
+		self::$commands["$pattern.h"] = &$callback;
 	}
 
 	public static function isConsole(){
@@ -370,21 +370,21 @@ class Console{
 	}
 
 	public static function chalk($text, $color = 'green'){
-		$color_ = "37m";
-		if($color === "black")
-			$color_ = "30m";
-		else if($color === "red")
-			$color_ = "31m";
-		else if($color === "green")
-			$color_ = "32m";
-		else if($color === "yellow")
-			$color_ = "33m";
-		else if($color === "blue")
-			$color_ = "34m";
-		else if($color === "magenta")
-			$color_ = "35m";
-		else if($color === "cyan")
-			$color_ = "36m";
+		$color_ = '37m';
+		if($color === 'black')
+			$color_ = '30m';
+		else if($color === 'red')
+			$color_ = '31m';
+		else if($color === 'green')
+			$color_ = '32m';
+		else if($color === 'yellow')
+			$color_ = '33m';
+		else if($color === 'blue')
+			$color_ = '34m';
+		else if($color === 'magenta')
+			$color_ = '35m';
+		else if($color === 'cyan')
+			$color_ = '36m';
 
 		return sprintf("\x1b[%s%s\x1b[0m", $color_, $text);
 	}

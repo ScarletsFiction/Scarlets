@@ -29,7 +29,7 @@ class LocalFile{
 
 		return file_get_contents($path);
 		/*
-	    	$fhandle = fopen($path, "r");
+	    	$fhandle = fopen($path, 'r');
 	    	$fcontents = fread($fhandle, filesize($path));
 	    	fclose($fhandle);
 		*/
@@ -61,8 +61,8 @@ class LocalFile{
 	public static function prepend($path, $value){
 		if($path[0]==='{') self::realpath($path);
 		
-		file_put_contents($path.'._temp', '');
-		$fhandle = fopen($path.'._temp', 'w');
+		file_put_contents("$path._temp", '');
+		$fhandle = fopen("$path._temp", 'w');
 		fwrite($fhandle, $value);
 
 		$oldFhandle = fopen($path, 'r');
@@ -73,7 +73,7 @@ class LocalFile{
 		fclose($fhandle);
 		fclose($oldFhandle);
 
-		rename($path.'._temp', $path);
+		rename("$path._temp", $path);
 	}
 
 	public static function createDir($path){
@@ -206,7 +206,7 @@ class LocalFile{
 	public static function &tail($path, $lines = 1) {
 		if($path[0]==='{') self::realpath($path);
 		
-		$f = @fopen($path, "rb");
+		$f = @fopen($path, 'rb');
 		if ($f === false) return false;
 
 		// This gives a performance boost when reading a few lines from the file.
@@ -308,11 +308,11 @@ class LocalFile{
 		$res = $zip->open(realpath($path), ZipArchive::CHECKCONS);
 		if ($res !== true) {
 			if($res === ZipArchive::ER_NOZIP)
-				return [false, "Not a zip file"];
+				return [false, 'Not a zip file'];
 			if($res === ZipArchive::ER_INCONS )
-				return [false, "Consistency check failed"];
+				return [false, 'Consistency check failed'];
 			if($res === ZipArchive::ER_CRC )
-				return [false, "Checksum failed"];
+				return [false, 'Checksum failed'];
 			else
 				return [false, $res];
 		}

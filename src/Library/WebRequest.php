@@ -86,7 +86,7 @@ class WebRequest{
 		}
 
         curl_setopt($ch, CURLOPT_URL, $url);
-		curl_setopt($ch, CURLOPT_ENCODING, "gzip");
+		curl_setopt($ch, CURLOPT_ENCODING, 'gzip');
 		curl_setopt($ch, CURLOPT_USERAGENT, $userAgent);
 		curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
 
@@ -96,7 +96,7 @@ class WebRequest{
 
 		$header = [];
 		foreach ($headers as $key => $value) {
-			$header[] = $key.': '.$value;
+			$header[] = "$key: $value";
 		}
 		curl_setopt($ch, CURLOPT_HTTPHEADER, $header);
 
@@ -117,7 +117,7 @@ class WebRequest{
 
 				if(isset($header['Set-Cookie'])){
 					if(is_array($header['Set-Cookie']))
-						$cookies = implode("; ", $header['Set-Cookie']);
+						$cookies = implode('; ', $header['Set-Cookie']);
 					else $cookies = $header['Set-Cookie'];
 				}
 				else $cookies = false;
@@ -170,14 +170,13 @@ class WebRequest{
 
 	// From this server to client browser
 	public static function giveFiles($filePath, $fileName = null){
-		if(is_file($filePath))
-		{
+		if(is_file($filePath)){
 			$fileTime = filemtime($filePath);
   			$time = date('r', $fileTime);
 
 			session_cache_limiter('none');
-			header("Pragma: public");
-			header("Cache-Control: public");
+			header('Pragma: public');
+			header('Cache-Control: public');
 			header("Last-Modified: $time");
 
 			if(@strtotime($_SERVER['HTTP_IF_MODIFIED_SINCE']) == $fileTime){
@@ -208,7 +207,7 @@ class WebRequest{
 			else
 			    header("Content-Disposition: attachment; filename=\"$file_name\"");
 
-		    header("Content-Type: " . $ctype);
+		    header("Content-Type: $ctype");
 			header('Accept-Ranges: bytes');
 
 			if(isset($_SERVER['HTTP_RANGE'])){
@@ -226,7 +225,7 @@ class WebRequest{
 				$seek_start = ($seek_end < abs(intval($seek_start))) ? 0 : max(abs(intval($seek_start)),0);
 
 				header('HTTP/1.1 206 Partial Content');
-				header('Content-Range: bytes '.$seek_start.'-'.$seek_end.'/'.$file_size);
+				header("Content-Range: bytes $seek_start-$seek_end/$file_size");
 				header('Content-Length: '.($seek_end - $seek_start + 1));
 			}
 			else{
@@ -235,7 +234,7 @@ class WebRequest{
 				exit;
 			}
 		    
-			$file = @fopen($filePath,"rb");
+			$file = @fopen($filePath, 'rb');
 			if($file){
 				fseek($file, $seek_start);
 
@@ -254,23 +253,23 @@ class WebRequest{
 				exit;
 			}
 		}
-		header("HTTP/1.0 500 Internal Server Error");
+		header('HTTP/1.0 500 Internal Server Error');
 		exit;
 	}
 	
 	// From other server to local file
-	public static function download($from, $to, $type = "default"){
-		if($type === "default"){
+	public static function download($from, $to, $type = 'default'){
+		if($type === 'default'){
 			$file = file_get_contents($from, false, stream_context_create([
-    			"ssl"=>[
-    			    "verify_peer"=>false,
-    			    "verify_peer_name"=>false,
+    			'ssl'=>[
+    			    'verify_peer'=>false,
+    			    'verify_peer_name'=>false,
     			],
 			]));
 			file_put_contents($to, $file);
 		}
 		
-		elseif($type === "socket"){
+		elseif($type ==='socket'){
 			#chunk = 10MB
 			$chunksize = 10 * (1024 * 1024);
 			
@@ -343,7 +342,7 @@ class WebRequest{
 			return $cnt;
 		}
 		
-		elseif($type === "direct"){
+		elseif($type === 'direct'){
 			$rh = fopen($from, 'rb');
 			$wh = fopen($to, 'wb');
 			if (!$rh || !$wh)
@@ -358,7 +357,7 @@ class WebRequest{
 			fclose($wh);
 		}
 
-		elseif($type === "curl"){
+		elseif($type === 'curl'){
 			if(is_file($from))
 		        copy($from, $to); 
 		    else {

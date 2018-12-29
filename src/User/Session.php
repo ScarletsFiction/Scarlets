@@ -60,10 +60,10 @@ class Session{
 			else {
 				$headers = '';
 		        if(isset($_SERVER['HTTP_SFSESSIONS'])) // Nginx or FastCGI
-		            $headers = $_SERVER["HTTP_SFSESSIONS"];
+		            $headers = $_SERVER['HTTP_SFSESSIONS'];
 
 				elseif(isset($_SERVER['SFSessions']))
-		            $headers = $_SERVER["SFSessions"];
+		            $headers = $_SERVER['SFSessions'];
 
 		        elseif(function_exists('apache_request_headers')){
 		            $requestHeaders = apache_request_headers();
@@ -357,7 +357,7 @@ class Session{
 
 	public static function compileSifyData($textID, $sify){
 		$data = Crypto::encrypt(json_encode($sify), false, false, true);
-		return $textID.'XpDW2bZ'.$data;
+		return $textID."XpDW2bZ$data";
 	}
 }
 Session::init();

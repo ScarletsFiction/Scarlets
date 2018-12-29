@@ -24,7 +24,7 @@ class Redis extends \Redis{
 		if(!isset($options['username'])) $options['username'] = 'root';
 		if(!isset($options['password'])) $options['password'] = '';
 		if(!isset($options['port'])) $options['port'] = 6379;
-		if(!isset($options['database'])) trigger_error("Redis database index was not specified");
+		if(!isset($options['database'])) trigger_error('Redis database index was not specified');
 		$this->database = $options['database'];
 
 		$this->connection = $this;

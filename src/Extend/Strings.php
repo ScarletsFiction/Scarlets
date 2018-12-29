@@ -34,7 +34,7 @@ class Strings{
 	}
 
 	public static function &random($length=6, $withSymbol=false){
-		$str = "";
+		$str = '';
 		$characters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J',
 		'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W',
 		'X', 'Y', 'Z', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j',

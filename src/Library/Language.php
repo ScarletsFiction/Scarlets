@@ -16,7 +16,7 @@ class Language{
 		(id) Storage ID that configured on the application
 	*/
 	public static function load($languageID, $file=0){
-		$path = Scarlets::$registry['path.lang'].'/'.$languageID.'/';
+		$path = Scarlets::$registry['path.lang']."/$languageID/";
 		if(file_exists($path)){
 			$loaded = &self::$loaded;
 			$loaded[$languageID] = [];
@@ -24,18 +24,18 @@ class Language{
 
 			// Single load
 			if($file !== 0 && !Scarlets::$isConsole){
-				$keys = include $path.$file.'.php';
+				$keys = include "$path.$file.php";
 				foreach ($keys as $key => $value) {
 
 					// Sub key 1
 					if(is_array($value)){
 						foreach ($value as $key2 => $value2) {
-							$ref[$file.'.'.$key.'.'.$key2] = $value2;
+							$ref["$file.$key.$key2"] = $value2;
 						}
 						continue;
 					}
 
-					$ref[$file.'.'.$key] = $value;
+					$ref["$file.$key"] = $value;
 				}
 				return;
 			}
@@ -52,17 +52,17 @@ class Language{
 					// Sub key 1
 					if(is_array($value)){
 						foreach ($value as $key2 => $value2) {
-							$ref[$file.'.'.$key.'.'.$key2] = $value2;
+							$ref["$file.$key.$key2"] = $value2;
 						}
 						continue;
 					}
 
-					$ref[$file.'.'.$key] = $value;
+					$ref["$file.$key"] = $value;
 				}
 			}
 			return;
 		}
-		trigger_error("LanguageID not exist: ".$languageID, 1);
+		trigger_error("LanguageID not exist: $languageID", 1);
 	}
 
 	public static function &get($key, $values = [], $languageID=0){
@@ -75,7 +75,7 @@ class Language{
 
 		$value = $loaded[$languageID][$key];
 		for ($i=0; $i < count($values); $i++) { 
-			$value = str_replace('(:'.$i.')', $values[$i], $value);
+			$value = str_replace("(:$i)", $values[$i], $value);
 		}
 
 		return $value;

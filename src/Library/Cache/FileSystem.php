@@ -8,7 +8,7 @@ class FileSystem{
 	public $lastCheck = 0;
 
 	public function __construct($settings){
-		self::$path = $settings['path'].'/cache';
+		self::$path = "$settings[path]/cache";
 		self::$expirationPath = self::$path.'/__expiration.srz';
 
 		if(!file_exists(self::$path))

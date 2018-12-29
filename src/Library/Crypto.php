@@ -22,7 +22,7 @@ class Crypto{
 		// An initialization vector has different security requirements than a key, so the IV usually does not need to be secret.
 		// However, in most cases, it is important that an initialization vector is never reused under the same key.
 		// https://en.wikipedia.org/wiki/Block_cipher_mode_of_operation#Initialization_vector_.28IV.29
-		$str = base64_encode($iv.':~:'.$ciphertext);
+		$str = base64_encode("$iv:~:$ciphertext");
 
 		if($mask && self::$crypto_mask){
 			$ref = &self::$crypto_mask;

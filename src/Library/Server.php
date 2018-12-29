@@ -49,10 +49,10 @@ class Server {
 
 		$domain = explode(':', implode('.', $domain))[0];
 
-    	$date = date("D, d M Y H:i:s", $time) . ' GMT';
+    	$date = date('D, d M Y H:i:s', $time) . ' GMT';
     	$cookie = "Set-Cookie: $name=".rawurlencode($value)."; Expires=$date; Max-Age=".($time - time())."; Path=$path";
     	if($domain)
-    		$cookie .= '; Domain='.$domain;
+    		$cookie .= "; Domain=$domain";
     	if($secure)
     		$cookie .= '; Secure';
     	if($http_only)
@@ -72,13 +72,13 @@ class Server {
 
 	    echo Scarlets\Console::chalk("\nScarlets server started on ", 'green');
 	    if($address !== 'public')
-	   		echo "http://$address".($port !== 80 ? ":$port" : '');
+	   		echo 'http://'.$address.($port !== 80 ? ':'.$port : '');
 	   	else {
 	   		$IPs = Scarlets\Library\Socket::getIPAddress();
 
 	   		if(count($IPs) > 1) echo ":\n";
 	   		foreach ($IPs as $value) {
-	   			echo "http://$value".($port !== 80 ? ":$port" : '');
+	   			echo 'http://'.$value.($port !== 80 ? ':'.$port : '');
 	   		}
 	   	}
 	    echo "\nUse CTRL+C 2 times to exit\n\n";
@@ -98,7 +98,7 @@ class Server {
 
 		    // Process header
 		    $headers = explode("\r\n", $data);
-		    $headers[0] = explode(" ", $headers[0]);
+		    $headers[0] = explode(' ', $headers[0]);
 		    $headers['METHOD'] = $headers[0][0];
 		    $headers['URI'] = $headers[0][1];
 
@@ -110,20 +110,20 @@ class Server {
 					$headers['URI'] = substr($requestURI[0], 0, -1);
 
 					if(isset($requestURI[1]))
-						$headers['URI'] .= '?'.$requestURI[1];
+						$headers['URI'] .= "?$requestURI[1]";
 				}
 			}
 
 		    // Check if it requested a file
 			$path = Scarlets::$registry['path.public'].explode('?', $headers['URI'], 2)[0];
-		    $file = @fopen($path, "rb");
+		    $file = @fopen($path, 'rb');
 			if($file){
 				$info = pathinfo($path);
 				if(isset($info['extension'])){
-					socket_write($socket, "HTTP/1.1 200 OK");
+					socket_write($socket, 'HTTP/1.1 200 OK');
 					
 				    // Get requested content type
-				    $accept = explode("Accept: ", $data);
+				    $accept = explode('Accept: ', $data);
 				    if(isset($accept[1])){
 					    $contentType = explode('/', explode(',', $accept[1])[0])[0];
 					    $contentType .= '/'.pathinfo($path)['extension'];
@@ -278,7 +278,7 @@ class Server {
 					else if(is_file($path.'index.html'))
 						include $path.'index.html';
 				} else {
-					socket_write($socket, "HTTP/1.1 302 Moved Temporary");
+					socket_write($socket, 'HTTP/1.1 302 Moved Temporary');
 					socket_write($socket, "\nLocation: $headers[URI]/".$output);
 					$httpstatuscode = 302;
 				}
@@ -286,7 +286,7 @@ class Server {
 
 			// Check if there are 404 http handler
 			elseif(isset($router['404'])){
-				$output = "HTTP/1.1 404 Not Found".$output;
+				$output = "HTTP/1.1 404 Not Found$output";
 				try{
 					$router['404']();
 					socket_write($socket, $output.ob_get_contents());
@@ -300,7 +300,7 @@ class Server {
 		// Make sure there are no error before output
 		if(!Scarlets\Error::$hasError){
 			if($httpstatuscode === 0){
-				$output = "HTTP/1.1 200 OK".$output;
+				$output = "HTTP/1.1 200 OK$output";
 				socket_write($socket, $output.ob_get_contents());
 				$httpstatuscode = 200;
 			}
@@ -308,7 +308,7 @@ class Server {
 			$router = &Scarlets::$registry['Route']['STATUS'];
 			if(isset($router['500'])){
 				if(ob_get_contents()) ob_end_clean();
-				$output = "HTTP/1.1 500 Internal Server Error".$output;
+				$output = "HTTP/1.1 500 Internal Server Error$output";
 				$httpstatuscode = 500;
 				try{
 					$router['500']();
@@ -434,8 +434,8 @@ class Server {
 			$time = date('r', $filetime);
 
 			session_cache_limiter('none');
-			header("Pragma: public");
-			header("Cache-Control: public");
+			header('Pragma: public');
+			header('Cache-Control: public');
 			header("Last-Modified: $time");
 
 			if(@strtotime($_SERVER['HTTP_IF_MODIFIED_SINCE']) == $filetime){
@@ -468,7 +468,7 @@ class Server {
 			else{
 			    header("Content-Disposition: attachment; filename=\"$file_name\"");
 			}
-		    header("Content-Type: " . $ctype);
+		    header('Content-Type: ' . $ctype);
 			header('Accept-Ranges: bytes');
 
 			if(isset($_SERVER['HTTP_RANGE'])){
@@ -487,7 +487,7 @@ class Server {
 				$seek_start = ($seek_end < abs(intval($seek_start))) ? 0 : max(abs(intval($seek_start)),0);
 
 				header('HTTP/1.1 206 Partial Content');
-				header('Content-Range: bytes '.$seek_start.'-'.$seek_end.'/'.$file_size);
+				header("Content-Range: bytes $seek_start-$seek_end/$file_size");
 				header('Content-Length: '.($seek_end - $seek_start + 1));
 			}
 			else{
@@ -496,7 +496,7 @@ class Server {
 				exit;
 			}
 
-			$file = @fopen($file_path,"rb");
+			$file = @fopen($file_path, 'rb');
 			if($file){
 				fseek($file, $seek_start);
 
@@ -514,7 +514,7 @@ class Server {
 				@fclose($file);
 			}
 		}
-		header("HTTP/1.0 500 Internal Server Error");
+		header('HTTP/1.0 500 Internal Server Error');
 		exit;
 	}
 }

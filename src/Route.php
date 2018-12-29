@@ -2,7 +2,7 @@
 namespace Scarlets;
 use Scarlets;
 use Scarlets\Route\Middleware;
-include_once __DIR__."/Internal/Route.php";
+include_once __DIR__.'/Internal/Route.php';
 
 /*
 ---------------------------------------------------------------------------
@@ -30,7 +30,7 @@ class Route{
 
 		if(self::$prefix){
 			if(substr($url, 0, 1) !== '/')
-				$url = '/'.$url;
+				$url = "/$url";
 
 			$url = '/'.implode('/', self::$prefix).$url;
 
@@ -59,7 +59,7 @@ class Route{
 						}
 					}
 
-					$value = 'name:'.$name;
+					$value = "name:$name";
 				}
 			}
 		}
@@ -324,7 +324,7 @@ class Route{
 		$requestURI = explode('?', $_SERVER['REQUEST_URI'], 2)[0];
 
 		if(substr($url, 0, 1) !== '/')
-			$url = '/'.$url;
+			$url = "/$url";
 
 		if($url === $requestURI){
 			$matched = true;
@@ -392,7 +392,7 @@ class Route{
 					$matches = substr($matches, 1);
 
 					if(strpos($current, '/') !== false) return false; // Strict
-					if(preg_match('/'.$matches.'/', $current, $match)){
+					if(preg_match("/$matches/", $current, $match)){
 						$argData = $match;
 					} else return false;
 				}
@@ -514,9 +514,9 @@ class Route{
 			return;
 		}
 		
-		if(empty($_SERVER['HTTPS']) || $_SERVER['HTTPS'] == "off"){
+		if(empty($_SERVER['HTTPS']) || $_SERVER['HTTPS'] == 'off'){
 		    $redirect = 'https://' . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'];
-		    header('Location: '.$redirect, true);
+		    header("Location: $redirect", true);
 		    exit;
 		}
 	}

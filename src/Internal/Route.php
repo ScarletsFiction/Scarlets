@@ -44,7 +44,7 @@ class Handler{
 			Scarlets::$registry['Route'][$method][$path] = $function;
 		else{
 			if(substr($path, 0, 1) !== '/')
-				$path = '/'.$path;
+				$path = "/$path";
 			Scarlets::$registry['Route'][$method][$path] = [$function, $opts];
 		}
 
@@ -116,7 +116,7 @@ class Serve{
 				$ref = &self::$pending[$level][2];
 
 			if($ref === false)
-				trigger_error("Pending serves was not found (index: ".$level." | total: ".(count(self::$pendingLevel) - 1).")");
+				trigger_error("Pending serves was not found (index: $level | total: ".(count(self::$pendingLevel) - 1).')');
 				
 			$ref = array_merge($ref, $func);
 			return;
@@ -239,7 +239,7 @@ class Middleware{
 			return call_user_func_array(self::$register[$name], $data);
 
 		else {
-			Scarlets\Error::warning('Middleware for "'.$name.'" was not defined');
+			Scarlets\Error::warning("Middleware for '$name' was not defined");
 			return true;
 		}
 	}
