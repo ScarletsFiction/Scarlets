@@ -47,12 +47,14 @@ class Auth{
 		Session::saveSifyData();
 	}
 
+	// $data = [username=>'', password=>'']
 	// $where = ['blocked' => false]
 	// $beforeVerify, $onSuccess = function($row){}
 	// if beforeVerify return true, then the login will failed
 	// Return true if success, false if the login was failed, or a message if something invalid
-	public static function login($username, $password, $where = false, $beforeVerify = false, $onSuccess = false){
-		$username = strtolower($username);
+	public static function login($data, $where = false, $beforeVerify = false, $onSuccess = false){
+
+		$username = strtolower($data['email']);
 		$column = ['user_id', 'password', 'username'];
 		$where_ = [];
 
@@ -61,7 +63,7 @@ class Auth{
 			if(filter_var($username, FILTER_VALIDATE_EMAIL))
 				return 'Email not valid';
 
-			$where_ = ['email[~]'=>';'.$username];
+			$where_ = ['email[~]'=>";$username"];
 		}
 
 		// Username
@@ -91,7 +93,7 @@ class Auth{
 		}
 
 		// Verify user password then save it to user sessions
-		if(password_verify($password, $passwordHash)){
+		if(password_verify($data['password'], $passwordHash)){
 			// Call $onSuccess (Useful for update login time, counter, add sifyData before saved, or revoke current login state)
 			// if onSuccess return true, the login data will not saved but this function will still return true
 			if(is_callable($onSuccess) && $onSuccess($row))
@@ -160,7 +162,7 @@ class Auth{
 		$temp = self::$database->get(self::$table, ['user_id', 'username'], [
 			'OR'=>[
 				'username'=>$data['username'],
-				'email[~]'=>';'.$data['email']
+				'email[~]'=>";$data[email]"
 			]
 		]);
 
@@ -171,11 +173,11 @@ class Auth{
 		}
 
 		// Add email separator for preserving multiple email
-		$data['email'] = ';'.$data['email'];
+		$data['email'] = ";$data[email]";
 
 		// Hash password
 		$data['password'] = password_hash($data['password'], PASSWORD_BCRYPT, ['cost'=>10]);
-		if(!$data['password']) trigger_error("Failed to hash password");
+		if(!$data['password']) trigger_error('Failed to hash password');
 
 		$userID = self::$database->insert(self::$table, $data, true);
 		return $userID;
