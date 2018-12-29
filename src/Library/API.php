@@ -3,38 +3,20 @@ namespace Scarlets\Library;
 use \Scarlets\Route\Serve;
 
 class API{
-	public static function fields($array){
-		if(!isset($_REQUEST['fields'])) return $array;
-		$requested = explode(',', str_replace(' ', '', $_REQUEST['fields']));
-
-		for ($i=0; $i < count($requested); $i++) {
-			if(!in_array($requested[$i], $array))
-				array_splice($requested, $i, 1);
-		}
-		
-		return $requested;
-	}
-
-	// ['required', 'optional' => 'default']
-	public static function missing($array){
-		foreach ($array as $key => $value) {
-			if(is_numeric($key)){
-				$value = explode('=', str_replace(' ', '', $value), 2);
-				if(isset($_REQUEST[$value[0]])){
-					if(isset($value[1])){
-						if($value[1] === 'int' && !is_numeric($_REQUEST[$value[0]]))
-							return $value[0];
-						elseif(substr($value[1], 0, 1) === 'r' && !preg_match(substr($value[1], 1), $_REQUEST[$value[0]]))
-							return $value[0];
-					}
-					continue;
-				}
-				return $value[0];
+	public static function fields(&$from, $array){
+		if(isset($_REQUEST['fields'])){
+			$requested = explode(',', str_replace(' ', '', $_REQUEST['fields']));
+			for ($i=0; $i < count($requested); $i++) {
+				if(!in_array($requested[$i], $array))
+					array_splice($requested, $i, 1);
 			}
 
-			$_REQUEST[$key] = $value;
+			$array = &$requested;
 		}
-		return false;
+
+		if(!$from)
+			$from = $array;
+		else $from = array_flip(array_flip(array_merge($from, $array)));
 	}
 
 	public static function request($field, $default = null){
@@ -45,5 +27,31 @@ class API{
 			return $default;
 
 		Serve::end('{"error":"\''.$field.'\' are required"}');
+	}
+
+	public static function alias(&$store, $fields, $sanitizer = false){
+		if(!$store)
+			$store = [];
+
+		foreach ($fields as $key => $value) {
+			if(isset($_REQUEST[$key])){
+				if($sanitizer === false)
+					$store[$value] = &$_REQUEST[$key];
+				else $store[$value] = $sanitizer($_REQUEST[$key]);
+			}
+		}
+	}
+
+	public static function obtain(&$store, $fields, $sanitizer = false){
+		if(!$store)
+			$store = [];
+
+		foreach ($fields as &$key) {
+			if(isset($_REQUEST[$key])){
+				if($sanitizer === false)
+					$store[$key] = &$_REQUEST[$key];
+				else $store[$key] = $sanitizer($_REQUEST[$key]);
+			}
+		}
 	}
 }
