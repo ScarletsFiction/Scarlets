@@ -51,14 +51,14 @@ class Scarlets{
 					$_SERVER['REQUEST_URI'] = substr($requestURI[0], 0, -1);
 					
 					if(isset($requestURI[1]))
-						$_SERVER['REQUEST_URI'] .= '?'.$requestURI[1];
+						$_SERVER['REQUEST_URI'] .= "?$requestURI[1]";
 				}
 			}
 
 			// Apply custom request method
-			if(isset($_SERVER['HTTP_X_REQ_METHOD'])){
+			if(isset($_REQUEST['_method'])){
 				$_REQUEST = $_POST;
-				$_SERVER['REQUEST_METHOD'] = $_SERVER['HTTP_X_REQ_METHOD'];
+				$_SERVER['REQUEST_METHOD'] = $_REQUEST['_method'];
 
 				// Copy to $_GET variable
 				if($_SERVER['REQUEST_METHOD'] === 'GET')
@@ -177,16 +177,16 @@ class Scarlets{
 
 		$reg = &self::$registry;
 		$reg['path.app'] = $path;
-		$reg['path.public'] = $path.'/public';
-		$reg['path.app_controller'] = $path.'/app';
-		$reg['path.views'] = $path.'/resources/views';
-		$reg['path.lang'] = $path.'/resources/lang';
-		$reg['path.plate'] = $path.'/resources/plate';
-		$reg['path.app.storage'] = $path.'/storage/app';
-		$reg['path.cache'] = $path.'/storage/framework/cache';
-		$reg['path.sessions'] = $path.'/storage/framework/sessions';
-		$reg['path.view_cache'] = $path.'/storage/framework/views';
-		$reg['path.logs'] = $path.'/storage/logs';
+		$reg['path.public'] = "$path/public";
+		$reg['path.app_controller'] = "$path/app";
+		$reg['path.views'] = "$path/resources/views";
+		$reg['path.lang'] = "$path/resources/lang";
+		$reg['path.plate'] = "$path/resources/plate";
+		$reg['path.app.storage'] = "$path/storage/app";
+		$reg['path.cache'] = "$path/storage/framework/cache";
+		$reg['path.sessions'] = "$path/storage/framework/sessions";
+		$reg['path.view_cache'] = "$path/storage/framework/views";
+		$reg['path.logs'] = "$path/storage/logs";
 
 		$reg['path.framework.src'] = __DIR__.'/src';
 		$reg['path.framework.library'] = __DIR__.'/src/Library';
