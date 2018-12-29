@@ -23,23 +23,26 @@ class AccessToken{
 			expiration (UTC timestamp)
 		}
 	*/
-	public static $data = [];
+	public static $appID = 0;
+	public static $tokenID = 0;
+	public static $userID = 0;
+	public static $expiration = 0;
+	public static $permissions = '';
+
+	public static $error = false;
 
 	// Database config reference
 	public static $db = false;
-	public static $token_table = false;
-	public static $app_table = false;
-
-	// permissions: '|0|12|2|5|' // Must be started and closed with '|'
-	public static $permissions = false;
-	public static $error = false;
+	public static $config = false;
 
 	public static function init(){
 		$config = &Config::load('auth')['auth.access_token'];
 		self::$db = Database::connect($config['database']);
-		self::$permissions = $config['permissions'];
-		self::$token_table = $config['token_table'];
-		self::$app_table = $config['app_table'];
+
+		// permissions: '|0|12|2|5|' - Must be started and closed with '|'
+		self::$config['permissions'] = &$config['permissions'];
+		self::$config['token_table'] = &$config['token_table'];
+		self::$config['app_table'] = &$config['app_table'];
 	}
 
 	public static function parseAvailableToken(){
@@ -48,10 +51,10 @@ class AccessToken{
 
 		$headers = '';
         if(isset($_SERVER['HTTP_AUTHORIZATION'])) // Nginx or FastCGI
-            $headers = $_SERVER["HTTP_AUTHORIZATION"];
+            $headers = $_SERVER['HTTP_AUTHORIZATION'];
 
 		elseif(isset($_SERVER['Authorization']))
-            $headers = $_SERVER["Authorization"];
+            $headers = $_SERVER['Authorization'];
 
         elseif(function_exists('apache_request_headers')){
             $requestHeaders = apache_request_headers();
@@ -74,31 +77,28 @@ class AccessToken{
 		}
 
 		// Expand structure
-		$temp = [
-			'appID'=>$temp[0],
-			'tokenID'=>$temp[1],
-			'userID'=>$temp[2],
-			'expiration'=>$temp[3]
-		];
+		self::$appID = &$temp[0];
+		self::$tokenID = &$temp[1];
+		self::$userID = &$temp[2];
+		self::$expiration = &$temp[3];
 
-		$expiration = self::$db->get(self::$token_table, ['user_id', 'expiration', 'permissions'], ['token_id'=>$temp['tokenID']]);
-		if(!$expiration || $expiration['expiration'] <= time() || $temp['userID'] != $expiration['user_id']){
+		$expiration = self::$db->get(self::$config['token_table'], ['user_id', 'expiration', 'permissions'], ['token_id'=>self::$tokenID]);
+		if(!$expiration || $expiration['expiration'] <= time() || self::$userID != $expiration['user_id']){
 			self::$error = 'expired';
 			return false;
 		}
 
-		self::$data = &$temp;
-		self::$data['permissions'] = &$expiration['permissions'];
+		self::$permissions = &$expiration['permissions'];
 		return true;
 	}
 
 	public static function isAllowed($action){
-		$permissions = &self::$data['permissions'];
-		if($permissions === '|*|') return true;
+		self::$config['permissions'] = &self::$permissions;
+		if(self::$config['permissions'] === '|*|') return true;
 
-		for($i=0; $i < count($permissions); $i++){
-			if($permissions[$i] === $action){
-				return strpos($permissions, "|$i|") !== false; // Permissions -> |0|12|
+		for($i=0; $i < count(self::$config['permissions']); $i++){
+			if(self::$config['permissions'][$i] === $action){
+				return strpos(self::$config['permissions'], "|$i|") !== false; // Permissions -> |0|12|
 			}
 		}
 
@@ -106,35 +106,35 @@ class AccessToken{
 	}
 
 	public static function allowedPermission(){
-		if(AccessToken::$data['permissions'] === '|*|')
+		if(self::$permissions === '|*|')
 			return ['all'];
 		
-		$permissions = array_filter(explode('|', AccessToken::$data['permissions']));
-		foreach ($permissions as &$value) {
-			$value = AccessToken::$permissions[$value];
+		self::$config['permissions'] = array_filter(explode('|', self::$permissions));
+		foreach (self::$config['permissions'] as &$value) {
+			$value = self::$config['permissions'][$value];
 		}
 
-		return $permissions;
+		return self::$config['permissions'];
 	}
 
 	// 'expires_in' in seconds
 	public static function refresh($expires_in = 2592000){
-		if(!isset(self::$data['tokenID']))
+		if(!isset(self::$tokenID))
 			return ['error'=>'Access token was not found'];
 
-		self::$data['expiration'] = time() + $expires_in;
+		self::$expiration = time() + $expires_in;
 
-		self::$db->update(self::$token_table, [
-			'expiration'=>self::$data['expiration'],
-			'permissions'=>self::$data['permissions']
-		], ['token_id'=>self::$data['tokenID']]);
+		self::$db->update(self::$config['token_table'], [
+			'expiration'=>self::$expiration,
+			'permissions'=>self::$permissions
+		], ['token_id'=>self::$tokenID]);
 
 		// Simplify structure
 		return Crypto::encrypt(implode('|', [
-			self::$data['appID'],
-			self::$data['tokenID'],
-			self::$data['userID'],
-			self::$data['expiration']
+			self::$appID,
+			self::$tokenID,
+			self::$userID,
+			self::$expiration
 		]), false, false, true);
 	}
 
@@ -142,39 +142,37 @@ class AccessToken{
 	// $userData = {userID, username, permissions}
 	public static function create($appID, $appSecret, $userData){
 		// Verify AppID and Secret Token
-		$app = self::$db->get(self::$app_table, ['app_id'], ['app_id'=>$appID, 'app_secret'=>$appSecret]);
+		$app = self::$db->get(self::$config['app_table'], ['app_id'], ['app_id'=>$appID, 'app_secret'=>$appSecret]);
 		if(!$app) return false;
 
 		// Clean old access token
-		self::$db->delete(self::$token_table, ['app_id'=>$appID, 'user_id'=>$userData['userID']]);
+		self::$db->delete(self::$config['token_table'], ['app_id'=>$appID, 'user_id'=>$userData['userID']]);
 
-		self::$data = [
-			'appID'=>$appID,
-			'tokenID'=>0,
-			'userID'=>$userData['userID'],
-			'expiration'=>time() + 86400,
-			'permissions'=>$userData['permissions']
-		];
+		self::$appID = &$appID;
+		self::$tokenID = 0;
+		self::$userID = &$userData['userID'];
+		self::$expiration = time() + 86400;
+		self::$permissions = &$userData['permissions'];
 
-		self::$data['tokenID'] = self::$db->insert(self::$token_table, [
-			'app_id'=>$appID,
-			'user_id'=>$userData['userID'],
-			'expiration'=>self::$data['expiration'],
-			'permissions'=>$userData['permissions']
+		self::$tokenID = self::$db->insert(self::$config['token_table'], [
+			'app_id'=>self::$appID,
+			'user_id'=>self::$userID,
+			'expiration'=>self::$expiration,
+			'permissions'=>self::$permissions
 		], true);
 
 		// Simplify structure
 		return Crypto::encrypt(implode('|', [
-			self::$data['appID'],
-			self::$data['tokenID'],
-			self::$data['userID'],
-			self::$data['expiration']
+			self::$appID,
+			self::$tokenID,
+			self::$userID,
+			self::$expiration
 		]), false, false, true);
 	}
 
 	// Delete access token from database
 	public static function revoke($tokenID){
-		self::$db->delete(self::$token_table, ['token_id'=>$tokenID]);
+		self::$db->delete(self::$config['token_table'], ['token_id'=>$tokenID]);
 	}
 }
 
