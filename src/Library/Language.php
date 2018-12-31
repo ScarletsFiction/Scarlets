@@ -24,7 +24,7 @@ class Language{
 
 			// Single load
 			if($file !== 0 && !Scarlets::$isConsole){
-				$keys = include "$path.$file.php";
+				$keys = include "$path$file.php";
 				foreach ($keys as $key => $value) {
 
 					// Sub key 1
