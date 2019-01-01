@@ -41,11 +41,11 @@ class SQL{
 		$this->debug = &$options['debug'];
 		$this->table_prefix = $options['database'];
 		if(isset($options['table_prefix']) && $options['table_prefix'] !== '')
-			$this->table_prefix .= ".$options[table_prefix]";
+			$this->table_prefix .= ".$options[table_prefix].";
 
 		// Try to connect
 		try{
-			$this->connection = new PDO("$options[driver]:dbname=$options[database];host=$options[host];port=$options[port];charset=$options[charset]", $options['user'], $options['password']);
+			$this->connection = new PDO("$options[driver]:dbname=$options[database];host=$options[host];port=$options[port]", $options['user'], $options['password']);
 			$this->connection->setAttribute(PDO::ATTR_STRINGIFY_FETCHES, false);
 			$this->connection->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);
 			$this->connection->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
@@ -53,13 +53,24 @@ class SQL{
 		catch(PDOException $e) {
 			trigger_error($e->getMessage());
 		}
+
+		$query = "SET NAMES '$options[charset]'";
+		if($this->type === 'mysql' && isset($options[ 'collation' ]))
+			$query .= " COLLATE '$options[collation]}'";
+
+		$this->query($query, []);
 	}
 
-	public function change($options){
+	public function change($options = false){
+		if($options === false){
+			$this->table_prefix = '';
+			return;
+		}
+
 		$this->table_prefix = $options['database'];
 		$this->database = $options['database'];
 		if(isset($options['table_prefix']) && $options['table_prefix'] !== '')
-			$this->table_prefix .= ".$options[table_prefix]";
+			$this->table_prefix .= ".$options[table_prefix].";
 	}
 
 	// SQLQuery
@@ -74,9 +85,9 @@ class SQL{
 		} catch(PDOException $e){
 			$msg = $e->getMessage();
 			if($msg){
-				if(strpos($msg, 'Table') !== false && strpos($msg, 'doesn\'t exist') !== false){
-					$tableName = explode("$this->table_prefix.", $msg)[1];
-					$tableName = "$this->table_prefix.".explode('\'', $tableName)[0];
+				if(strpos($msg, 'Table') !== false && strpos($msg, 'doesn\'t exist') !== false && $this->table_prefix !== ''){
+					$tableName = explode($this->table_prefix, $msg)[1];
+					$tableName = $this->table_prefix.explode('\'', $tableName)[0];
 
 					$ref = &$this->whenTableMissing;
 					if(!$this->queryRetry && isset($ref[$tableName]) && is_callable($ref[$tableName])){
@@ -107,12 +118,13 @@ class SQL{
 
 	// The code below could be similar with Javascript version
 	// But the PHP version doesn't include preprocessData
+	private $escapes = '`';
 	private function validateText($text){
-		return '`'.preg_replace('/[^a-zA-Z0-9_\.]+/m', '', $text).'`';
+		return $this->connection->quote(preg_replace('/[^a-zA-Z0-9_\.]+/m', '', $text));
 	}
 
 	private function validateTable($table){
-		return preg_split('/[^a-zA-Z0-9_\.]/', $table, 2)[0];
+		return $this->connection->quote(preg_split('/[^a-zA-Z0-9_\.]/', $table, 2)[0]);
 	}
 
 	private function extractSpecial($field){
@@ -304,7 +316,7 @@ class SQL{
 	 * @return array              [description]
 	 */
 	public function &holes($tableName, $column, $scan = 1000, $jumps = 0){
-		if($this->table_prefix !== '') $tableName = "$this->table_prefix.$tableName";
+		if($this->table_prefix !== '') $tableName = $this->table_prefix.$tableName;
 
 		if(!is_numeric($scan) || !is_numeric($jumps))
 			trigger_error('`Limit` or `Jumps` must be numeric value');
@@ -331,7 +343,7 @@ class SQL{
 
 	public function createTable($tableName, $columns)
 	{
-		if($this->table_prefix !== '') $tableName = "$this->table_prefix.$tableName";
+		if($this->table_prefix !== '') $tableName = $this->table_prefix.$tableName;
 
 		$columns_ = array_keys($columns);
 		for($i = 0; $i < count($columns_); $i++){
@@ -346,7 +358,7 @@ class SQL{
 	}
 
 	public function count($tableName, $where=false){
-		if($this->table_prefix !== '') $tableName = "$this->table_prefix.$tableName";
+		if($this->table_prefix !== '') $tableName = $this->table_prefix.$tableName;
 
 		$wheres = $this->makeWhere($where);
 		$query = 'SELECT COUNT(1) FROM ' . $this->validateTable($tableName) . $wheres[0];
@@ -355,7 +367,7 @@ class SQL{
 	}
 
 	public function select($tableName, $select = '*', $where = false, $fetchUnique = false){
-		if($this->table_prefix !== '') $tableName = "$this->table_prefix.$tableName";
+		if($this->table_prefix !== '') $tableName = $this->table_prefix.$tableName;
 		$wheres = $this->makeWhere($where);
 
 		if(is_array($select)){
@@ -379,7 +391,7 @@ class SQL{
 	}
 
 	public function get($tableName, $select = '*', $where = false){
-		if($this->table_prefix !== '') $tableName = "$this->table_prefix.$tableName";
+		if($this->table_prefix !== '') $tableName = $this->table_prefix.$tableName;
 
 		$where['LIMIT'] = 1;
 		$wheres = $this->makeWhere($where);
@@ -402,7 +414,7 @@ class SQL{
 	}
 
 	public function has($tableName, $where){
-		if($this->table_prefix !== '') $tableName = "$this->table_prefix.$tableName";
+		if($this->table_prefix !== '') $tableName = $this->table_prefix.$tableName;
 
 		$where['LIMIT'] = 1;
 		$wheres = $this->makeWhere($where);
@@ -412,7 +424,7 @@ class SQL{
 
 	// Only avaiable for string columns
 	public function &isEmpty($tableName, $columns, $where){
-		if($this->table_prefix !== '') $tableName = "$this->table_prefix.$tableName";
+		if($this->table_prefix !== '') $tableName = $this->table_prefix.$tableName;
 
 		$where['LIMIT'] = 1;
 		$wheres = $this->makeWhere($where);
@@ -436,7 +448,7 @@ class SQL{
 	}
 
 	public function delete($tableName, $where){
-		if($this->table_prefix !== '') $tableName = "$this->table_prefix.$tableName";
+		if($this->table_prefix !== '') $tableName = $this->table_prefix.$tableName;
 
 		if($where){
 			$wheres = $this->makeWhere($where);
@@ -450,7 +462,7 @@ class SQL{
 	}
 
 	public function insert($tableName, $object, $getInsertID = false){
-		if($this->table_prefix !== '') $tableName = "$this->table_prefix.$tableName";
+		if($this->table_prefix !== '') $tableName = $this->table_prefix.$tableName;
 
 		// Multiple insert
 		$multiple = false;
@@ -501,7 +513,7 @@ class SQL{
 	}
 
 	public function update($tableName, $object, $where=false){
-		if($this->table_prefix !== '') $tableName = "$this->table_prefix.$tableName";
+		if($this->table_prefix !== '') $tableName = $this->table_prefix.$tableName;
 		$wheres = $this->makeWhere($where);
 
 		$objectName = [];
@@ -557,7 +569,7 @@ class SQL{
 	}
 
 	public function drop($tableName){
-		if($this->table_prefix !== '') $tableName = "$this->table_prefix.$tableName";
+		if($this->table_prefix !== '') $tableName = $this->table_prefix.$tableName;
 		
 		return $this->query('DROP TABLE ' . $this->validateTable($tableName), []);
 	}

@@ -19,7 +19,7 @@ class Database{
 	 * @param string $credential CredentialID that configured on the configuration
 	 * @return \Scarlets\Interfaces\Database\SQL
 	 */
-	public static function &connect($credential=false, $returnConnection = false){
+	public static function &connect($credential=false){
 		// Use default credential if not specified
 		if($credential === false)
 			$credential = self::$default;
@@ -47,21 +47,37 @@ class Database{
 			$driver = &$options['driver'];
 
 			// MySQL
-			if($driver === 'mysql')
+			if($driver === 'mysql'){
 				self::$connectedDB[$credential] = new SQL($options);
+
+				// Obtain the clone
+				if($copy){
+					$copy = clone $db;
+					$copy->change($ref);
+					self::$connectedDB[$requestedCredential] = &$copy;
+					return $copy;
+				}
+			}
+			elseif($driver === 'pgsql'){
+				if($copy){
+					$options = &self::$connectedDB[$requestedCredential];
+					unset($options['connection']);
+
+					foreach (self::$credentials[$credential] as $key => $value) {
+						if(!isset($options[$key]))
+							$options[$key] = $value;
+					}
+					self::$connectedDB[$requestedCredential] = new SQL($options);
+				}
+				else self::$connectedDB[$credential] = new SQL($options);
+
+				// Remove prefix
+				self::$connectedDB[$credential]->change(false);
+			}
 			// Else ...
 		}
-		$db = &self::$connectedDB[$credential];
 
-		// Obtain the clone
-		if($copy){
-			$copy = clone $db;
-			$copy->change($ref);
-			self::$connectedDB[$requestedCredential] = &$copy;
-			return $copy;
-		}
-
-		if($returnConnection) return $db->connection;
+		$db = &self::$connectedDB[$copy ? $requestedCredential : $credential];
 		return $db;
 	}
 
