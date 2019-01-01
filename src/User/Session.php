@@ -351,7 +351,8 @@ class Session{
 				$data[1] = json_decode($data[1], true);
 			else $data[1] = [];
 		}
-		else $data[1] = false;
+		else $data = false;
+
 		return $data;
 	}
 
