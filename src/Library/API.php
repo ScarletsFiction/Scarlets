@@ -19,14 +19,47 @@ class API{
 		else $from = array_flip(array_flip(array_merge($from, $array)));
 	}
 
-	public static function request($field, $default = null){
-		if(isset($_REQUEST[$field]))
+	public static function &request($field, $default = null){
+		$type = null;
+		if(is_array($field)){
+			$key = array_keys($field)[0];
+			$type = &$field[$key];
+			$field = &$key;
+		}
+
+		if(isset($_REQUEST[$field])){
+			if($type !== null){
+				if($type === 'number' && is_numeric($_REQUEST[$field])){
+					$_REQUEST[$field] = $_REQUEST[$field] + 0;
+					return $_REQUEST[$field];
+				}
+
+				if($type === 'array' && is_array($_REQUEST[$field]))
+					return $_REQUEST[$field];
+
+				elseif($type === 'bool'){
+					$value = null;
+					if($_REQUEST[$field] === 'true' || $_REQUEST[$field] === '1')
+						$value = true;
+
+					elseif($_REQUEST[$field] === 'false' || $_REQUEST[$field] === '0')
+						$value = false;
+
+					if($value !== null)
+						return $value;
+
+					$type = 'boolean';
+				}
+
+				Serve::end("{\"error\":\"'$field' must be a $type\"}");
+			}
 			return $_REQUEST[$field];
+		}
 
 		if($default !== null)
 			return $default;
 
-		Serve::end('{"error":"\''.$field.'\' are required"}');
+		Serve::end("{\"error\":\"'$field' are required\"}");
 	}
 
 	public static function alias(&$store, $fields, $sanitizer = false){
