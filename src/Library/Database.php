@@ -47,17 +47,9 @@ class Database{
 			$driver = &$options['driver'];
 
 			// MySQL
-			if($driver === 'mysql'){
+			if($driver === 'mysql')
 				self::$connectedDB[$credential] = new SQL($options);
 
-				// Obtain the clone
-				if($copy){
-					$copy = clone $db;
-					$copy->change($ref);
-					self::$connectedDB[$requestedCredential] = &$copy;
-					return $copy;
-				}
-			}
 			elseif($driver === 'pgsql'){
 				if($copy){
 					$options = &self::$connectedDB[$requestedCredential];
@@ -74,7 +66,16 @@ class Database{
 				// Remove prefix
 				self::$connectedDB[$credential]->change(false);
 			}
+			
 			// Else ...
+		}
+
+		// Obtain the clone
+		if($copy && self::$credentials[$credential]['driver'] === 'mysql'){
+			$copy = clone self::$connectedDB[$credential];
+			$copy->change($ref);
+			self::$connectedDB[$requestedCredential] = &$copy;
+			return $copy;
 		}
 
 		$db = &self::$connectedDB[$copy ? $requestedCredential : $credential];
