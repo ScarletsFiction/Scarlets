@@ -122,13 +122,12 @@ class SQL{
 
 	// The code below could be similar with Javascript version
 	// But the PHP version doesn't include preprocessData
-	private $escapes = '`';
 	private function validateText($text){
 		return $this->connection->quote(preg_replace('/[^a-zA-Z0-9_\.]+/m', '', $text));
 	}
 
 	private function validateTable($table){
-		return $this->connection->quote(preg_split('/[^a-zA-Z0-9_\.]/', $table, 2)[0]);
+		return preg_split('/[^a-zA-Z0-9_\.]/', $table, 2)[0];
 	}
 
 	private function extractSpecial($field){
