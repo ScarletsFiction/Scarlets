@@ -39,13 +39,17 @@ class SQL{
 		$this->database = $options['database'];
 
 		$this->debug = &$options['debug'];
-		$this->table_prefix = $options['database'];
+		$this->table_prefix = "$options[database].";
 		if(isset($options['table_prefix']) && $options['table_prefix'] !== '')
-			$this->table_prefix .= ".$options[table_prefix].";
+			$this->table_prefix .= "$options[table_prefix].";
 
 		// Try to connect
 		try{
-			$this->connection = new PDO("$options[driver]:dbname=$options[database];host=$options[host];port=$options[port]", $options['user'], $options['password']);
+			if($options['driver'] === 'sqlite')
+				$this->connection = new PDO($options['host']);
+			else 
+				$this->connection = new PDO("$options[driver]:dbname=$options[database];host=$options[host];port=$options[port]", $options['user'], $options['password']);
+			
 			$this->connection->setAttribute(PDO::ATTR_STRINGIFY_FETCHES, false);
 			$this->connection->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);
 			$this->connection->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
@@ -67,10 +71,10 @@ class SQL{
 			return;
 		}
 
-		$this->table_prefix = $options['database'];
+		$this->table_prefix = "$options[database].";
 		$this->database = $options['database'];
 		if(isset($options['table_prefix']) && $options['table_prefix'] !== '')
-			$this->table_prefix .= ".$options[table_prefix].";
+			$this->table_prefix .= "$options[table_prefix].";
 	}
 
 	// SQLQuery
