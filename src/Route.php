@@ -445,19 +445,6 @@ class Route{
 			trigger_error("'$func' is not callable");
 			return;
 		}
-
-		if($_SERVER['REQUEST_METHOD'] === 'DELETE' || $_SERVER['REQUEST_METHOD'] === 'PUT'){
-			$received = file_get_contents('php://input');
-			if(strlen($received) !== 0){
-				$firstChar = substr($received, 0, 1);
-				if($firstChar === '{' || $firstChar === '[')
-					$_REQUEST = json_decode($received, true);
-				else{
-					parse_str($received, $parses);
-					$_REQUEST = $parses;
-				}
-			}
-		}
 		Route\Middleware::$routerArgs = &$args;
 
 		// Handle middleware

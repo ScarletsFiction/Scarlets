@@ -64,6 +64,20 @@ class Scarlets{
 				if($_SERVER['REQUEST_METHOD'] === 'GET')
 					$_GET = $_POST;
 			}
+			else {
+				if($_SERVER['REQUEST_METHOD'] === 'DELETE' || $_SERVER['REQUEST_METHOD'] === 'PUT'){
+					$contentType = explode(';', $_SERVER["CONTENT_TYPE"]);
+					if($contentType[0] === 'multipart/form-data'){
+						$contentType = trim(explode('boundary=', $contentType[1])[1]);
+						if($contentType){
+							$received = file_get_contents('php://input');
+							$received = Route\Parser::formDataRequest($contentType, $received);
+							$_REQUEST = $_POST = &$received['post'];
+							$_FILES = &$received['file'];
+						}
+					}
+				}
+			}
 		}
 
 		try{

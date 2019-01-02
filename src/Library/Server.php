@@ -351,7 +351,7 @@ class Server {
 			return $data;
 	    }
 	    
-	    $boundary = str_replace(["\r", "\n"], '', $matches[1]);
+	    $boundary = trim($matches[1]);
 
 	    // Check if simple query
 	    if (!strlen($boundary)) {
@@ -360,58 +360,7 @@ class Server {
 	        return $data;
 	    }
 
-	    else {
-	        $array = preg_split("/-+$boundary/", $postRaw);
-	        array_shift($array); // Http header
-	        array_pop($array); // End of boundary
-
-	        foreach($array as $key => $value) {
-	            if(empty($value))
-	                continue;
-
-	            // Parse stream
-	            if(strpos($value, 'application/octet-stream') !== FALSE){
-	                preg_match('/name=\"([^\"]*)\".*stream[\n|\r]+([^\n\r].*)?$/s', $value, $match);
-	                $data['post'][$match[1]] = !empty($match[2]) ? $match[2] : '';
-	                continue;
-	            }
-
-	            // Parse received file
-	            else if(strpos($value, 'filename') !== FALSE) {
-	                preg_match('/name=\"([^\"]*)\"; filename=\"([^\"]*)\"[\n|\r]+([^\n\r].*)?\r$/s', $value, $match);
-	                preg_match('/Content-Type: (.*)?/', $match[3], $mime);
-
-	                $image = preg_replace('/Content-Type: (.*)[^\n\r]/', '', $match[3]);
-	                $path = sys_get_temp_dir().'/php'.substr(sha1(rand()), 0, 6);
-	                $err = file_put_contents($path, ltrim($image));
-
-	                if (preg_match('/^(.*)\[\]$/i', $match[1], $tmp)) {
-	                    $index = $tmp[1];
-	                } else {
-	                    $index = $match[1];
-	                }
-
-	                $data['file'][$index]['name'] = $match[2];
-	                $data['file'][$index]['type'] = $mime[1];
-	                $data['file'][$index]['tmp_name'] = $path;
-	                $data['file'][$index]['error'] = ($err === FALSE) ? $err : 0;
-	                $data['file'][$index]['size'] = filesize($path);
-
-	                continue;
-	            }
-
-	            // Parse multiform data
-	            else {
-		            preg_match('/name=\"([^\"]*)\"[\n|\r]+([^\n\r].*)?\r$/s', $value, $match);
-
-		            if (preg_match('/^(.*)\[\]$/i', $match[1], $tmp))
-		                $data['post'][$tmp[1]][] = (!empty($match[2]) ? $match[2] : '');
-		            else
-		                $data['post'][$match[1]] = (!empty($match[2]) ? $match[2] : '');
-	            }
-	        }
-	    }
-
+	    $data = Scarlets\Route\Parser::formDataRequest($boundary, $postRaw);
 	    return $data;
 	}
 
