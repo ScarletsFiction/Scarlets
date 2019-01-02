@@ -58,6 +58,9 @@ class SQL{
 			trigger_error($e->getMessage());
 		}
 
+		if($options['driver'] !== 'mysql')
+			$this->escapes = '"';
+
 		$query = "SET NAMES '$options[charset]'";
 		if($this->type === 'mysql' && isset($options[ 'collation' ]))
 			$query .= " COLLATE '$options[collation]}'";
@@ -80,8 +83,12 @@ class SQL{
 	// SQLQuery
 	private $queryRetry = false;
 	public function query($query, $arrayData){
-		if($this->debug)
-			$this->lastQuery = [$query, $arrayData];
+		if($this->debug){
+			if($this->debug === 'log')
+				\Scarlets\Log::message([$query, $arrayData]);
+			else
+				$this->lastQuery = [$query, $arrayData];
+		}
 
 		try{
 			$statement = $this->connection->prepare($query);
@@ -122,8 +129,9 @@ class SQL{
 
 	// The code below could be similar with Javascript version
 	// But the PHP version doesn't include preprocessData
-	private function validateText($text){
-		return $this->connection->quote(preg_replace('/[^a-zA-Z0-9_\.]+/m', '', $text));
+	private $escapes = '`';
+	private function validateColumn($text){
+		return $this->escapes.preg_replace('/[^a-zA-Z0-9_\.]+/m', '', $text).$this->escapes;
 	}
 
 	private function validateTable($table){
@@ -170,19 +178,19 @@ class SQL{
 				{
 					if(!is_nan($value))
 					{
-						$wheres[] = $this->validateText($matches[0]) . ' ' . $matches[1] . ' ?';
+						$wheres[] = $this->validateColumn($matches[0]) . ' ' . $matches[1] . ' ?';
 						$objectData[] = $value;
 						continue;
 					}
 					else {
-						trigger_error('SQL where: value of ' . $this->validateText($matches[0]) . ' is non-numeric and can\'t be accepted');
+						trigger_error('SQL where: value of ' . $this->validateColumn($matches[0]) . ' is non-numeric and can\'t be accepted');
 					}
 				}
 				else if($matches[1] === '!')
 				{
 					$type = gettype($value);
 					if(!$type)
-						$wheres[] = $this->validateText($matches[0]) . ' IS NOT NULL';
+						$wheres[] = $this->validateColumn($matches[0]) . ' IS NOT NULL';
 					else{
 						if($type === 'array'){
 							if(empty($value)) trigger_error("'$matches[0]' array couldn't be empty");
@@ -191,17 +199,17 @@ class SQL{
 							for ($a = 0; $a < count($value); $a++) {
 								$temp[] = '?';
 							}
-							$wheres[] = $this->validateText($matches[0]) . ' NOT IN ('. implode(', ', $temp) .')';
+							$wheres[] = $this->validateColumn($matches[0]) . ' NOT IN ('. implode(', ', $temp) .')';
 							$objectData = array_merge($objectData, $value);
 						}
 
 						else if($type==='integer' || $type==='double' || $type==='boolean' || $type==='string'){
-							$wheres[] = $this->validateText($matches[0]) . ' != ?';
+							$wheres[] = $this->validateColumn($matches[0]) . ' != ?';
 							$objectData[] = $value;
 						}
 
 						else
-							trigger_error('SQL where: value of' . $this->validateText($matches[0]) . ' with type ' . $type . ' can\'t be accepted');
+							trigger_error('SQL where: value of' . $this->validateColumn($matches[0]) . ' with type ' . $type . ' can\'t be accepted');
 					}
 				}
 				else if ($matches[1] === '~' || $matches[1] === '!~')
@@ -212,7 +220,7 @@ class SQL{
 
 					$likes = [];
 					for ($a = 0; $a < count($value); $a++) {
-						$likes[] = $this->validateText($matches[0]) . ($matches[1] === '!~' ? ' NOT' : '') . ' LIKE ?';
+						$likes[] = $this->validateColumn($matches[0]) . ($matches[1] === '!~' ? ' NOT' : '') . ' LIKE ?';
 						if(strpos($value[$a], '%') === false) $value[$a] = "%$value[$a]%";
 						$objectData[] = $value[$a];
 					}
@@ -222,7 +230,7 @@ class SQL{
 			} else {
 				$type = gettype($value);
 				if(!$type)
-					$wheres[] = $this->validateText($matches[0]) . ' IS NULL';
+					$wheres[] = $this->validateColumn($matches[0]) . ' IS NULL';
 				else{
 					if($type === 'array'){
 						if(empty($value)) trigger_error("'$matches[0]' array couldn't be empty");
@@ -231,17 +239,17 @@ class SQL{
 						for ($a = 0; $a < count($value); $a++) {
 							$temp[] = '?';
 						}
-						$wheres[] = $this->validateText($matches[0]) . ' IN ('. implode(', ', $temp) .')';
+						$wheres[] = $this->validateColumn($matches[0]) . ' IN ('. implode(', ', $temp) .')';
 						$objectData = array_merge($objectData, $value);
 					}
 
 					else if($type==='integer' || $type==='double' || $type==='boolean' || $type==='string'){
-						$wheres[] = $this->validateText($matches[0]) . ' = ?';
+						$wheres[] = $this->validateColumn($matches[0]) . ' = ?';
 						$objectData[] = $value;
 					}
 
 					else
-						trigger_error('SQL where: value ' . $this->validateText($matches[0]) . ' with type ' . $type . ' can\'t be accepted');
+						trigger_error('SQL where: value ' . $this->validateColumn($matches[0]) . ' with type ' . $type . ' can\'t be accepted');
 				}
 			}
 		}
@@ -281,7 +289,7 @@ class SQL{
 			for($i = 0; $i < count($columns); $i++){
 				$order = strtoupper($object['ORDER'][$columns[$i]]);
 				if($order !== 'ASC' && $order !== 'DESC') continue;
-				$stack[] = $this->validateText($columns[$i]) . ' ' . $order;
+				$stack[] = $this->validateColumn($columns[$i]) . ' ' . $order;
 			}
 
 			$options = "$options ORDER BY " . implode(', ', $stack);
@@ -324,9 +332,9 @@ class SQL{
 		if(!is_numeric($scan) || !is_numeric($jumps))
 			trigger_error('`Limit` or `Jumps` must be numeric value');
 
-		$ids = $this->query('SELECT '.$this->validateText($column).' FROM '.$this->validateTable($tableName).' ORDER BY '.$this->validateText($column)." DESC LIMIT $jumps,$scan", [])->fetchAll(\PDO::FETCH_COLUMN);
+		$ids = $this->query('SELECT '.$this->validateColumn($column).' FROM '.$this->validateTable($tableName).' ORDER BY '.$this->validateColumn($column)." DESC LIMIT $jumps,$scan", [])->fetchAll(\PDO::FETCH_COLUMN);
 		
-		$last = $this->query('SELECT MAX('.$this->validateText($column).') FROM '.$this->validateTable($tableName), [])->fetchColumn(0);
+		$last = $this->query('SELECT MAX('.$this->validateColumn($column).') FROM '.$this->validateTable($tableName), [])->fetchColumn(0);
 		$last = $last - $jumps;
 
 		if($last > $scan)
@@ -351,9 +359,9 @@ class SQL{
 		$columns_ = array_keys($columns);
 		for($i = 0; $i < count($columns_); $i++){
 			if(gettype($columns[$columns_[$i]]) === 'array')
-				$columns_[$i] = $this->validateText($columns_[$i]).' '.strtoupper(implode(' ', $columns[$columns_[$i]]));
+				$columns_[$i] = $this->validateColumn($columns_[$i]).' '.strtoupper(implode(' ', $columns[$columns_[$i]]));
 			else
-				$columns_[$i] = $this->validateText($columns_[$i]).' '.strtoupper(strval($columns[$columns_[$i]]));
+				$columns_[$i] = $this->validateColumn($columns_[$i]).' '.strtoupper(strval($columns[$columns_[$i]]));
 		}
 		$query = 'CREATE TABLE IF NOT EXISTS '.$this->validateTable($tableName).' ('.implode(', ', $columns_).')';
 
@@ -376,12 +384,12 @@ class SQL{
 		if(is_array($select)){
 			$column = [];
 			for($i = 0; $i < count($select); $i++){
-				$column[] = $this->validateText($select[$i]);
+				$column[] = $this->validateColumn($select[$i]);
 			}
 			$select_ = implode(',', $column);
 		}
 		elseif($select !== '*')
-			$select_ = $this->validateText($select);
+			$select_ = $this->validateColumn($select);
 		
 		$query = "SELECT $select_ FROM " . $this->validateTable($tableName) . $wheres[0];
 
@@ -402,12 +410,12 @@ class SQL{
 		if(is_array($select)){
 			$column = [];
 			for($i = 0; $i < count($select); $i++){
-				$column[] = $this->validateText($select[$i]);
+				$column[] = $this->validateColumn($select[$i]);
 			}
 			$select_ = implode(',', $column);
 		}
 		elseif($select !== '*')
-			$select_ = $this->validateText($select);
+			$select_ = $this->validateColumn($select);
 		
 		$query = "SELECT $select_ FROM " . $this->validateTable($tableName) . $wheres[0];
 
@@ -434,7 +442,7 @@ class SQL{
 		
 		$selectQuery = '';
 		for ($i=0; $i < count($columns); $i++) { 
-			$selectQuery .= ','.$this->validateText($columns[$i])." = '' AS '$i'";
+			$selectQuery .= ','.$this->validateColumn($columns[$i])." = '' AS '$i'";
 		}
 
 		$query = 'SELECT '.substr($selectQuery, 1).' FROM ' . $this->validateTable($tableName) . $wheres[0];
@@ -481,7 +489,7 @@ class SQL{
 		$objectData = [];
 		$columns = array_keys($object);
 		for($i = 0; $i < count($columns); $i++){
-			$objectName[] = $this->validateText($columns[$i]);
+			$objectName[] = $this->validateColumn($columns[$i]);
 			$objectName_[] = '?';
 
 			$objectData[] = $object[$columns[$i]];
@@ -524,7 +532,7 @@ class SQL{
 		$columns = array_keys($object);
 		for($i = 0; $i < count($columns); $i++){
 			$special = $this->extractSpecial($columns[$i]);
-			$tableEscaped = $this->validateText($special[0]);
+			$tableEscaped = $this->validateColumn($special[0]);
 
 			if(count($special) === 1)
 				$objectName[] = "$tableEscaped = ?";
