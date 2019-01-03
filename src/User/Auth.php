@@ -53,7 +53,6 @@ class Auth{
 	// if beforeVerify return true, then the login will failed
 	// Return true if success, false if the login was failed, or a message if something invalid
 	public static function login($data, $where = false, $beforeVerify = false, $onSuccess = false){
-
 		$username = strtolower($data['email']);
 		$column = ['user_id', 'password', 'username'];
 		$where_ = [];

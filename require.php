@@ -64,7 +64,7 @@ class Scarlets{
 				if($_SERVER['REQUEST_METHOD'] === 'GET')
 					$_GET = $_POST;
 			}
-			else {
+			elseif(isset($_SERVER["CONTENT_TYPE"])) {
 				if($_SERVER['REQUEST_METHOD'] === 'DELETE' || $_SERVER['REQUEST_METHOD'] === 'PUT'){
 					$contentType = explode(';', $_SERVER["CONTENT_TYPE"]);
 					if($contentType[0] === 'multipart/form-data'){

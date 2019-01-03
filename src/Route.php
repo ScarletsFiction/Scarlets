@@ -73,7 +73,7 @@ class Route{
 	}
 
 	// ---- Route by request method ----
-		private static function requestMethod($method, &$url, &$func, &$opts){
+		private static function method($method, &$url, &$func, &$opts){
 			if(self::$namespace || self::$prefix || self::$name || self::$middleware)
 				self::implementCurrentScope($url, $func, $opts);
 
@@ -85,23 +85,23 @@ class Route{
 		}
 
 		public static function get($url, $func, $opts = false){
-			self::requestMethod('GET', $url, $func, $opts);
+			self::method('GET', $url, $func, $opts);
 		}
 		
 		public static function post($url, $func, $opts = false){
-			self::requestMethod('POST', $url, $func, $opts);
+			self::method('POST', $url, $func, $opts);
 		}
 		
 		public static function delete($url, $func, $opts = false){
-			self::requestMethod('DELETE', $url, $func, $opts);
+			self::method('DELETE', $url, $func, $opts);
 		}
 		
 		public static function put($url, $func, $opts = false){
-			self::requestMethod('PUT', $url, $func, $opts);
+			self::method('PUT', $url, $func, $opts);
 		}
 		
 		public static function options($url, $func, $opts = false){
-			self::requestMethod('OPTIONS', $url, $func, $opts);
+			self::method('OPTIONS', $url, $func, $opts);
 		}
 		
 		public static function any($url, $func, $opts = false){
