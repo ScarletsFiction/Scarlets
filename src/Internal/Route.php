@@ -29,10 +29,10 @@ class Handler{
 			if(is_string($opts))
 				$opts = [$opts];
 
-			foreach($opts as &$value){
-				if(strpos($value, 'name:') !== false){
-					$name[] = substr($value, 5);
-					unset($value);
+			for ($i = count($opts); $i >= 0; $i--) { 
+				if(strpos($opts[$i], 'name:') !== false){
+					$name[] = substr($opts[$i], 5);
+					array_splice($opts, $i, 1);
 				}
 			}
 
