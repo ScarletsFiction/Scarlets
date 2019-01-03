@@ -77,10 +77,10 @@ class AccessToken{
 		}
 
 		// Expand structure
-		self::$appID = &$temp[0];
-		self::$tokenID = &$temp[1];
-		self::$userID = &$temp[2];
-		self::$expiration = &$temp[3];
+		self::$appID = $temp[0]+0;
+		self::$tokenID = $temp[1]+0;
+		self::$userID = $temp[2]+0;
+		self::$expiration = $temp[3]+0;
 
 		$expiration = self::$db->get(self::$config['token_table'], ['user_id', 'expiration', 'permissions'], ['token_id'=>self::$tokenID]);
 		if(!$expiration || $expiration['expiration'] <= time() || self::$userID != $expiration['user_id']){
