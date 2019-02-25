@@ -29,7 +29,7 @@ class Handler{
 			if(is_string($opts))
 				$opts = [$opts];
 
-			for ($i = count($opts); $i >= 0; $i--) { 
+			for ($i = count($opts) - 1; $i >= 0; $i--) { 
 				if(strpos($opts[$i], 'name:') !== false){
 					$name[] = substr($opts[$i], 5);
 					array_splice($opts, $i, 1);

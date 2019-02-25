@@ -99,6 +99,8 @@ foreach ($list as &$value) {
 echo("\n - Task finished\n");
 
 function deleteContent($path, $pathAlso = true){
+	if(!file_exists($path) || !is_dir($path)) return;
+
 	$iterator = new DirectoryIterator($path);
 	foreach($iterator as $fileinfo){
 		if($fileinfo->isDot()) continue;
