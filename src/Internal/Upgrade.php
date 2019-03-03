@@ -3,7 +3,7 @@
 set_error_handler('warning_handler', E_WARNING);
 function warning_handler($errno, $errstr){
 	echo("  - $errstr\n\n");
-	echo("  - Upgrade failed\n");
+	echo(" - Upgrade failed\n");
 	exit;
 }
 
@@ -100,7 +100,8 @@ try{
 echo(" - Task finished\n");
 
 function deleteContent($path, $pathAlso = true){
-	if(!file_exists($path)) return;
+	if(!file_exists($path) || !is_dir($path)) return;
+
 	$iterator = new DirectoryIterator($path);
 	foreach($iterator as $fileinfo){
 		if($fileinfo->isDot()) continue;
@@ -109,6 +110,6 @@ function deleteContent($path, $pathAlso = true){
 		if($fileinfo->isFile())
 			@unlink($fileinfo->getPathname());
 	}
-	if($pathAlso) rmdir($path);
+	if($pathAlso) @rmdir($path);
 	return true;
 }

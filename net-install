@@ -109,6 +109,6 @@ function deleteContent($path, $pathAlso = true){
 		if($fileinfo->isFile())
 			@unlink($fileinfo->getPathname());
 	}
-	if($pathAlso) rmdir($path);
+	if($pathAlso) @rmdir($path);
 	return true;
 }
