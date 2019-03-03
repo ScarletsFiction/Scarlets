@@ -224,6 +224,7 @@ class Scarlets{
 spl_autoload_register('\\Scarlets::AppClassLoader');
 
 include_once __DIR__."/src/Config.php";
+include_once __DIR__."/src/Internal.php";
 
 // Handle uncaught error on shutdown
 Scarlets::onShutdown(function(){

@@ -2,6 +2,7 @@
 
 namespace Scarlets\Route;
 use \Scarlets;
+use \Scarlets\Internal;
 
 class Handler{
 	public static $Extension = false;
@@ -193,7 +194,7 @@ class Serve{
 		self::$headerSent = true;
 
 		if(!Scarlets::$isConsole)
-			throw new Scarlets\ExecutionFinish();
+			throw new Internal\ExecutionFinish();
 
 		self::$pendingLevel = 0;
 	}
