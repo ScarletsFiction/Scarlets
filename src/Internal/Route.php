@@ -193,7 +193,7 @@ class Serve{
 		self::$headerSent = true;
 
 		if(!Scarlets::$isConsole)
-			throw new \ExecutionFinish();
+			throw new Scarlets\ExecutionFinish();
 
 		self::$pendingLevel = 0;
 	}

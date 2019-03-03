@@ -33,7 +33,10 @@ class WebRequest{
 
     				// Encode the data as JSON and send on the body
 					else {
-						$headers[] = 'Content-type: application/json';
+						if($options['method'] === 'JSON_POST')
+							curl_setopt($ch, CURLOPT_POST, 1);
+
+						$headers['Content-Type'] = 'application/json; charset=utf-8';
 						curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($options['data']));
 					}
 

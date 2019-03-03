@@ -17,7 +17,7 @@ class Database{
 	 * connect.
 	 *
 	 * @param string $credential CredentialID that configured on the configuration
-	 * @return \Scarlets\Interfaces\Database\SQL
+	 * @return \Scarlets\Library\Database\SQL
 	 */
 	public static function &connect($credential=false){
 		// Use default credential if not specified
@@ -82,6 +82,7 @@ class Database{
 		return $db;
 	}
 
+	/** @ignore Initialization */
 	public static function init(){
 		$config = Config::load('database');
 		self::$default = &$config['database.default'];

@@ -19,7 +19,7 @@ use Scarlets\Route;
 class Scarlets{
 	public static $isConsole = false;
 	public static $isWebsite = false;
-	
+
 	/*
 		> Website Initialization
 		Call this method at very first to use this framework
@@ -85,7 +85,7 @@ class Scarlets{
 			include_once self::$registry['path.app']."/routes/status.php";
 			include_once self::$registry['path.app']."/routes/api.php";
 			include_once self::$registry['path.app']."/routes/web.php";
-		} catch(\ExecutionFinish $f) {
+		} catch(Scarlets\ExecutionFinish $f) {
 			echo($f->data);
 		}
 	}
@@ -123,7 +123,7 @@ class Scarlets{
 				try{
 					foreach ($list as &$function)
 						if($function()) exit;
-				} catch(ExecutionFinish $e) {
+				} catch(Scarlets\ExecutionFinish $e) {
 					exit;
 				}
 			}
@@ -241,14 +241,6 @@ Scarlets::onShutdown(function(){
     if($error && (!isset(Scarlets::$registry['error']) || !Scarlets::$registry['error']))
 		Scarlets\Error::ErrorHandler($error['type'], $error['message'], $error['file'], $error['line']);
 });
-
-// For throwing an finish event on the middle of execution
-class ExecutionFinish extends Exception{
-	public $data;
-	public function __construct($data = false){
-		$this->data = $data;
-	}
-}
 
 // Framework initialization
 Scarlets::Initialization();
