@@ -15,11 +15,12 @@
 */
 use Scarlets\Config;
 use Scarlets\Route;
+use Scarlets\Internal;
 
 class Scarlets{
 	public static $isConsole = false;
 	public static $isWebsite = false;
-
+	
 	/*
 		> Website Initialization
 		Call this method at very first to use this framework
@@ -85,7 +86,7 @@ class Scarlets{
 			include_once self::$registry['path.app']."/routes/status.php";
 			include_once self::$registry['path.app']."/routes/api.php";
 			include_once self::$registry['path.app']."/routes/web.php";
-		} catch(Scarlets\ExecutionFinish $f) {
+		} catch(Internal\ExecutionFinish $f) {
 			echo($f->data);
 		}
 	}
@@ -123,7 +124,7 @@ class Scarlets{
 				try{
 					foreach ($list as &$function)
 						if($function()) exit;
-				} catch(Scarlets\ExecutionFinish $e) {
+				} catch(Internal\ExecutionFinish $e) {
 					exit;
 				}
 			}

@@ -1,5 +1,5 @@
 <?php
-namespace Scarlets;
+namespace Scarlets\Internal;
 
 // For throwing an finish event on the middle of execution
 class ExecutionFinish extends Exception{
