@@ -10,8 +10,6 @@
 
 Scarlets is a web framework for PHP that can help you build a website with API and another build-in system. This framework have a lazyload on it's system, so you can select which system that you want to use to keep your website in a high performance state.
 
-Scarlets have a build-in traffic monitor for any hacking activity or another security problem. And it will suggest you a security option if you have a backdoor on your system.
-
 ## Installation instruction
 
 Clone/download this repository and put it on a folder
@@ -41,6 +39,13 @@ Please clone this repository and extract it to `vendor/scarletsfiction/scarlets`
 
 ## Usage
 
+### Setup your custom website domain
+Before we started, we need to setup Apache or Nginx to route every HTTP request into `project/public/` directory.
+ - On Apache, you could setup [VirtualHost](https://gist.github.com/hoandang/8066175).
+ - On Nginx, you will need to add [new site configuration](http://blog.manugarri.com/how-to-easily-set-up-subdomain-routing-in-nginx/).
+
+If you're using Windows, you can use [Laragon](https://laragon.org/) to easily `Switch Document Root` that will automatically create new Apache VirtualHost and modify `drivers\etc\hosts` for you. So you can easily access your project with a custom domain.
+
 ### Scarlets Console
 
 This framework has a build-in server by calling
@@ -49,6 +54,8 @@ This framework has a build-in server by calling
 > Options: --log, --verbose<br>
 
 ![alt text](https://raw.githubusercontent.com/ScarletsFiction/Scarlets/master/images/serve_command.webp)
+
+Even the build-in server was blazingly fast, it still have some problem because it's running in a single thread for every request. So it's very recommended to setup your website using Nginx. But if you want to deploy a small server into Raspberry PI, Android, or other linux devices it may be better to use the build-in server.
 
 You can also create your own command for your project
 
