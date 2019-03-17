@@ -316,6 +316,12 @@ $myDatabase->select('test', ['name', 'data'], {
     'LIMIT'=>1
 });
 // SELECT name, data FROM test WHERE (id = ? OR (words LIKE ?)) LIMIT 1
+
+/// hashtag column value: ,2,3,6,7,8,
+/// This query will match above row because it's have ",3," 
+$myDatabase->select('test', ['name', 'data'], {
+    'hashtag[array]'=>[3,4]
+});
 ```
 
 ##### Count Matching Rows
@@ -375,6 +381,17 @@ $myDatabase->update('posts', [
     ...
 ], ['LIMIT'=>1]);
 ```
+
+#### Addional option when updating row
+| Options  | Details |
+| --- | --- |
+| replace | Replace needle with text |
+| wrap | Wrap text between text `['name[wrap]'=>['maria', 'william']]` will result `maria ... william` |
+| append | Append text |
+| prepend | Prepend text |
+| * / + - % | Do a math equation `['counter[+]'=>1]` |
+| array-add | (special use cases) add number into a list separated by comma |
+| array-remove | (special use cases) remove a number from list separated by comma |
 
 ##### Delete row
 Delete row from table where some condition are true
