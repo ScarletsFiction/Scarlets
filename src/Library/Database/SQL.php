@@ -21,6 +21,7 @@ class SQL{
 	private $transactionCounter = 0;
 	private $database = '';
 	private $table_prefix = '';
+	private $driver = '';
 
 	// When debugging is enabled, this will have value
 	public $lastQuery = false;
@@ -37,6 +38,7 @@ class SQL{
 		if(!isset($options['debug'])) $options['debug'] = false;
 		if(!isset($options['database'])) trigger_error('Database name was not specified');
 		$this->database = $options['database'];
+		$this->driver = $options['driver'];
 
 		$this->debug = &$options['debug'];
 		$this->table_prefix = "$options[database].";
@@ -107,7 +109,7 @@ class SQL{
 							$tableName = $tableName[count($tableName) - 1];
 						}
 					}
-					else $tableName = $this->table_prefix.explode('\'', $tableName)[0];
+					else $tableName = $this->table_prefix.explode('\'', $tableName[1])[0];
 
 					$ref = &$this->whenTableMissing;
 					if(!$this->queryRetry && isset($ref[$tableName]) && is_callable($ref[$tableName])){
@@ -237,10 +239,41 @@ class SQL{
 
                     $wheres[] = '('.implode($OR, $likes).')';
 				}
-				else if($matches[1] === '%'){
-					// Check if 
-					// CHAR_LENGTH(`messages`) < 4
-					// ToDo
+				else if($matches[1] === 'REGEXP'){
+					if(gettype($value) === 'array')
+						trigger_error('SQL where: value of' . $this->validateColumn($matches[0]) . ' must be a string');
+
+                    $wheres[] = $this->validateColumn($matches[0]).
+                    	($this->driver === 'pgsql' ? ' ~ ' : ' REGEXP ').
+                    	$this->connection->quote($value);
+				}
+				else if(strpos($matches[1], 'array') !== false){
+					$implementTemplate = false;
+					if(gettype($value) === 'array'){
+						if(count($value) > 2){ // Optimize performance with regexp
+							$value = '('.implode('|', $value).')';
+							$like = $this->driver === 'pgsql' ? '~ ' : 'REGEXP ';
+						}
+						else{
+							$implementTemplate = true;
+							$like = 'LIKE ';
+						}
+					}
+					else $like = 'LIKE ';
+
+					if(strpos($matches[1], '!') === 0)
+						$like = ($this->driver === 'pgsql' && $implementTemplate === false ? ' !' : ' NOT ').$like;
+					else $like = " $like";
+
+					$template = $this->validateColumn($matches[0]).$like;
+					if($implementTemplate === true){
+						$tempValue = [];
+						for ($i=0; $i < count($value); $i++) { 
+							$tempValue[] = $template.$this->connection->quote(",$value[$i],");
+						}
+						$wheres[] = implode('AND', $tempValue);
+					}
+                    else $wheres[] = $template.$this->connection->quote(",$value,");
 				}
 			} else {
 				$type = gettype($value);
@@ -396,19 +429,22 @@ class SQL{
 		if($this->table_prefix !== '') $tableName = $this->table_prefix.$tableName;
 		$wheres = $this->makeWhere($where);
 
+		$isColumns = true;
 		if(is_array($select)){
 			$column = [];
 			for($i = 0; $i < count($select); $i++){
 				$column[] = $this->validateColumn($select[$i]);
 			}
-			$select_ = implode(',', $column);
+			$select = implode(',', $column);
 		}
-		elseif($select !== '*')
-			$select_ = $this->validateColumn($select);
+		elseif($select !== '*'){
+			$select = $this->validateColumn($select);
+			$isColumns = false;
+		}
 		
-		$query = "SELECT $select_ FROM " . $this->validateTable($tableName) . $wheres[0];
+		$query = "SELECT $select FROM " . $this->validateTable($tableName) . $wheres[0];
 
-		if(is_array($select) || $select === '*'){
+		if($isColumns === true || $select === '*'){
 			if($fetchUnique)
 				return $this->query($query, $wheres[1])->fetchAll(\PDO::FETCH_UNIQUE);
 			return $this->query($query, $wheres[1])->fetchAll(\PDO::FETCH_ASSOC);
@@ -422,19 +458,22 @@ class SQL{
 		$where['LIMIT'] = 1;
 		$wheres = $this->makeWhere($where);
 
+		$isColumns = true;
 		if(is_array($select)){
 			$column = [];
 			for($i = 0; $i < count($select); $i++){
 				$column[] = $this->validateColumn($select[$i]);
 			}
-			$select_ = implode(',', $column);
+			$select = implode(',', $column);
 		}
-		elseif($select !== '*')
-			$select_ = $this->validateColumn($select);
+		elseif($select !== '*'){
+			$select = $this->validateColumn($select);
+			$isColumns = true;
+		}
 		
-		$query = "SELECT $select_ FROM " . $this->validateTable($tableName) . $wheres[0];
+		$query = "SELECT $select FROM " . $this->validateTable($tableName) . $wheres[0];
 
-		if(is_array($select) || $select === '*')
+		if($isColumns === true || $select === '*')
 			return $this->query($query, $wheres[1])->fetch(\PDO::FETCH_ASSOC);
 		return $this->query($query, $wheres[1])->fetchColumn(0);
 	}
@@ -446,6 +485,50 @@ class SQL{
 		$wheres = $this->makeWhere($where);
 		$query = 'SELECT 1 FROM ' . $this->validateTable($tableName) . $wheres[0];
 		return $this->query($query, $wheres[1])->fetchColumn(0) === 1;
+	}
+
+	public function predict($tableName, $id = 'id', $where){
+		$column = '';
+		$value = '';
+		foreach ($where as $key => $val) {
+			if(strpos($key, '[%]') !== false){
+				$column = $key;
+				$value = $val;
+				break;
+			}
+		}
+
+		$strlen = strlen($value);
+		if($strlen < 2) // Protect system resource
+			return [];
+		unset($where[$column]);
+		$value = strtolower($value);
+		$column = substr($column, 0, -3);
+
+		$validatedColumn = $this->validateColumn($column);
+		if($strlen > 6)
+			$wheres[] = "CHAR_LENGTH($validatedColumn) > $strlen";
+
+		$obtained = [];
+
+		$whole = $this->select($tableName, [$id, $column], $where);
+		for ($i=0; $i < count($whole); $i++) { 
+			$ref = &$whole[$i];
+			similar_text(strtolower($ref[$column]), $value, $score);
+
+			if(strpos($score, '.') === false)
+				$score .= '.';
+			$obtained[$score.$i] = $ref[$id];
+
+			if(count($obtained) > 20){
+				ksort($obtained);
+				array_splice($obtained, 0, 10);
+			}
+		}
+		krsort($obtained);
+		$obtained = array_map('intval', array_flip($obtained));
+
+		return $obtained;
 	}
 
 	// Only avaiable for string columns
@@ -552,6 +635,28 @@ class SQL{
 			if(count($special) === 1)
 				$objectName[] = "$tableEscaped = ?";
 			else {
+				// Add value into array
+				if($special[1] === 'array-add'){
+					$objectName[] = "$tableEscaped = CONCAT($tableEscaped, ?)";
+					if(is_array($object[$columns[$i]]) === true)
+						$objectData[] = implode(',', $object[$columns[$i]]).',';
+					else $objectData[] = $object[$columns[$i]].',';
+					continue;
+				}
+
+				// Remove value from array
+				elseif($special[1] === 'array-remove'){
+					if(is_array($object[$columns[$i]]) === true){
+						$replacer = $this->connection->quote(',('.implode('|', $object[$columns[$i]]).'),');
+						$objectName[] = "$tableEscaped = REGEXP_REPLACE($tableEscaped, $replacer, ',')";
+					}
+					else {
+						$objectName[] = "$tableEscaped = REPLACE($tableEscaped, ?, ',')";
+						$objectData[] = ','.$object[$columns[$i]].',';
+					}
+					continue;
+				}
+
 				if(is_string($object[$columns[$i]])){
 					// Append
 					if($special[1] === 'append')
