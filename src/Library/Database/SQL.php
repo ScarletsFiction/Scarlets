@@ -182,9 +182,8 @@ class SQL{
 						$objectData[] = $value;
 						continue;
 					}
-					else {
+					else
 						trigger_error('SQL where: value of ' . $this->validateColumn($matches[0]) . ' is non-numeric and can\'t be accepted');
-					}
 				}
 				else if($matches[1] === '!')
 				{
@@ -212,20 +211,25 @@ class SQL{
 							trigger_error('SQL where: value of' . $this->validateColumn($matches[0]) . ' with type ' . $type . ' can\'t be accepted');
 					}
 				}
-				else if ($matches[1] === '~' || $matches[1] === '!~')
+				else if(substr($matches[1], -1) === '~')
 				{
-					if(gettype($value) !== 'array'){
+					if(gettype($value) !== 'array')
 						$value = [$value];
-					}
+
+					$OR = strpos($matches[1], '&') === false ? ' OR ' : ' AND ';
+					$NOT = strpos($matches[1], '!') === 0 ? ' NOT' : '';
 
 					$likes = [];
 					for ($a = 0; $a < count($value); $a++) {
-						$likes[] = $this->validateColumn($matches[0]) . ($matches[1] === '!~' ? ' NOT' : '') . ' LIKE ?';
+						$likes[] = $this->validateColumn($matches[0]) . "$NOT LIKE ?";
 						if(strpos($value[$a], '%') === false) $value[$a] = "%$value[$a]%";
 						$objectData[] = $value[$a];
 					}
 
-                    $wheres[] = '('.implode(' OR ', $likes).')';
+                    $wheres[] = '('.implode($OR, $likes).')';
+				}
+				else if($matches[1] === '%'){
+					// ToDo
 				}
 			} else {
 				$type = gettype($value);
