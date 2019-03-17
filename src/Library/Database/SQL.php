@@ -510,25 +510,40 @@ class SQL{
 			$wheres[] = "CHAR_LENGTH($validatedColumn) > $strlen";
 
 		$obtained = [];
+		$lastLow = 0;
 
 		$whole = $this->select($tableName, [$id, $column], $where);
 		for ($i=0; $i < count($whole); $i++) { 
 			$ref = &$whole[$i];
 			similar_text(strtolower($ref[$column]), $value, $score);
 
-			if(strpos($score, '.') === false)
-				$score .= '.';
-			$obtained[$score.$i] = $ref[$id];
+			if(count($obtained) >= 10){
+				if($score < $lastLow) continue;
+				for ($a=0; $a < 10; $a++) { 
+					if($obtained[$a][1] === $lastLow){
+						array_splice($obtained, $a, 1);
+						break;
+					}
+				}
 
-			if(count($obtained) > 20){
-				ksort($obtained);
-				array_splice($obtained, 0, 10);
+				$lastLow = $score;
+				foreach ($obtained as &$val) {
+					if($val[1] < $lastLow)
+						$lastLow = $val[1];
+				}
 			}
-		}
-		krsort($obtained);
-		$obtained = array_map('intval', array_flip($obtained));
+			else $lastLow = $score;
 
-		return $obtained;
+			$obtained[] = [$ref[$id], $score];
+		}
+
+		$temp = [];
+		foreach ($obtained as &$val) {
+			$temp[intval($val[1])] = $val[0];
+		}
+		krsort($temp);
+
+		return array_flip($temp);
 	}
 
 	// Only avaiable for string columns
