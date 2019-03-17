@@ -97,8 +97,17 @@ class SQL{
 			$msg = $e->getMessage();
 			if($msg){
 				if(strpos($msg, 'Table') !== false && strpos($msg, 'doesn\'t exist') !== false && $this->table_prefix !== ''){
-					$tableName = explode($this->table_prefix, $msg)[1];
-					$tableName = $this->table_prefix.explode('\'', $tableName)[0];
+					$tableName = explode($this->table_prefix, $msg);
+
+					if(count($tableName) === 1){
+						$tableName = explode("'", explode('Table \'', $msg)[1])[0];
+
+						if(strpos($tableName, '.') !== false){
+							$tableName = explode('.', $msg);
+							$tableName = $tableName[count($tableName) - 1];
+						}
+					}
+					else $tableName = $this->table_prefix.explode('\'', $tableName)[0];
 
 					$ref = &$this->whenTableMissing;
 					if(!$this->queryRetry && isset($ref[$tableName]) && is_callable($ref[$tableName])){
@@ -229,6 +238,8 @@ class SQL{
                     $wheres[] = '('.implode($OR, $likes).')';
 				}
 				else if($matches[1] === '%'){
+					// Check if 
+					// CHAR_LENGTH(`messages`) < 4
 					// ToDo
 				}
 			} else {
