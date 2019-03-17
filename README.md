@@ -265,6 +265,47 @@ Before using this library, you must modify the database configuration on `/confi
 
 ##### Get database connection
 > $myDatabase = Scarlets\Library\Database::connect(databaseName='{default}');
+> $myDatabase->connection // PDO Class
+> $myDatabase->debug = 'log' // Log to error.log
+> $myDatabase->lastQuery // Will have value if debug === true
+
+##### Transaction
+Start a database transaction
+```php
+$myDatabase->transaction(function($db){
+    $db->select(...);
+    $db->insert(...);
+    ...
+    return true; // Rollback if set to true
+});
+```
+
+##### onTableMissing
+Do an action if an table was missing
+```php
+$myDatabase->onTableMissing('users', function(){
+    $myDatabase->createTable(...);
+});
+```
+
+#### For every parameter with `$where`
+| Options  | Details |
+| --- | --- |
+| ! | Not Equal to |
+| ~ | Like |
+| !~ | Not Like |
+| &~ | Like (With AND) |
+| !&~ | Not Like (With AND) |
+| > | More than |
+| >= | More than or Equal |
+| < | Less than |
+| <= | Less than or Equal |
+| array | (special use cases) Match number in comma separated list |
+| REGEXP | Use regex search `['name[REGEXP]'=>'alex|jason|loki']` |
+| LIMIT | Limit returned value `['LIMIT'=>1]` or `['LIMIT'=>[$page, $length]]` |
+| ORDER | Order rows based on column `['ORDER'=>['time'=>'DESC']]` |
+| AND | And condition `['AND'=>['name'=>'alex', 'age'=>[34, 29]]]` |
+| OR | Or condition `['OR'=>['AND'=>['type'=>'human', 'name'=>'alex']], 'type'=>'animal']` |
 
 ##### Select table rows
 > $myDatabase->select(tableName, $columns, $where=[]);
@@ -276,6 +317,72 @@ $myDatabase->select('test', ['name', 'data'], {
 });
 // SELECT name, data FROM test WHERE (id = ? OR (words LIKE ?)) LIMIT 1
 ```
+
+##### Count Matching Rows
+Count rows where the data was matched by query
+> $integer = $myDatabase->count($tableName, $where=[]);
+
+##### Get single row
+Get a single row where the data was matched
+> $data = $myDatabase->get($tableName, $column='*', $where=[]);
+
+If `$column` was defined with *string*, it will return string of that column data. But if it's defined with *array*, it will return associative array.
+
+##### Check if table has matched row
+> $boolean = $myDatabase->has($tableName, $where);
+
+##### Predict/Suggestion search
+Predict possible similar text on a column and return percentage while the highest percentage are on first index.
+> $array = $myDatabase->predict($tableName, $id = 'id', $where);
+
+```php
+$array = $myDatabase->predict('hashtag', $id = 'id', ['name[%]'=>'baloons']);
+
+Return: Array
+(     id     Score
+    [2006] => 75
+    [1009] => 66
+    [4029] => 60
+    [5218] => 57
+    [8371] => 54
+)
+```
+
+For better performanc, the `$id` should be the `row_id`, `Primary` key, or `Unique` key.
+
+##### Insert row
+Insert row to table
+> $myDatabase->insert($tableName, $object, $getInsertID = false);
+
+```php
+$primary_id = $myDatabase->insert('users', [
+    'name'=>'Alex Andreas',
+    'username'=>'alexan',
+    ...
+], true);
+```
+
+Bulk insert is available when you put indexed array into `$object` parameter.
+
+##### Update row
+Update some matched row in a table 
+> $myDatabase->update($tableName, $object, $where = false);
+
+```php
+$myDatabase->update('posts', [
+    'name[replace]'=>['Water', 'Fire'], // from 'Clean the water' to 'Clean the Fire'
+    'author'=>'Brian', // from 'any' to 'Brian'
+    ...
+], ['LIMIT'=>1]);
+```
+
+##### Delete row
+Delete row from table where some condition are true
+> $myDatabase->delete($tableName, $where = false);
+
+##### Drop table
+Drop a table
+> $myDatabase->delete($tableName);
 
 The other database library documentation is almost similar with [SFDatabase-js](https://github.com/ScarletsFiction/SFDatabase-js)
 
@@ -459,6 +566,9 @@ The sample below will return loaded configuration from `/config/` folder
 
 #### Log
 > Scarlets\Log::message('Something happen');
+
+#### Trace
+> Scarlets\Log::trace('Something happen');
 
 #### Register shutdown callback
 > Scarlets::onShutdown(callback);
