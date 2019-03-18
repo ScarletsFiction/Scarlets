@@ -50,6 +50,8 @@ class Console{
 		$fp = fopen('php://stdin','r');
 		$lastInput = microtime();
 
+		\Scarlets::$interactiveCLI = true;
+
 		$config = &\Scarlets\Config::$data;
 		while(1){
 			echo($config['app.console_user'].'> ');

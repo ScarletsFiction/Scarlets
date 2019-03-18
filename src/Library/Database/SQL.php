@@ -174,15 +174,15 @@ class SQL{
 		$objectData = [];
 		$columns = array_keys($object);
 		$defaultConditional = ' AND ';
-		$specialList = ['order', 'limit'];
+		$specialList = ['ORDER', 'LIMIT'];
 
 		for($i = 0; $i < count($columns); $i++){
 			$value = $object[$columns[$i]];
 
 			$matches = $this->extractSpecial($columns[$i]);
 			
-			$check = strtolower($matches[0]);
-			if($check==='and' || $check==='or') continue;
+			$check = strtoupper($matches[0]);
+			if($check === 'AND' || $check === 'OR') continue;
 			if(!$children && in_array($check, $specialList) !== false) continue;
 
 			if(isset($matches[1])){
@@ -197,7 +197,7 @@ class SQL{
 					else
 						trigger_error('SQL where: value of ' . $this->validateColumn($matches[0]) . ' is non-numeric and can\'t be accepted');
 				}
-				else if($matches[1] === '!')
+				elseif($matches[1] === '!')
 				{
 					$type = gettype($value);
 					if(!$type)
@@ -205,16 +205,18 @@ class SQL{
 					else{
 						if($type === 'array'){
 							if(empty($value)) trigger_error("'$matches[0]' array couldn't be empty");
-							
-							$temp = [];
-							for ($a = 0; $a < count($value); $a++) {
-								$temp[] = '?';
+							else {
+								$temp = [];
+								foreach ($value as &$xx) {
+									$temp[] = '?';
+								}
+
+								$wheres[] = $this->validateColumn($matches[0]) . ' NOT IN ('. implode(', ', $temp) .')';
+								$objectData = array_merge($objectData, $value);
 							}
-							$wheres[] = $this->validateColumn($matches[0]) . ' NOT IN ('. implode(', ', $temp) .')';
-							$objectData = array_merge($objectData, $value);
 						}
 
-						else if($type==='integer' || $type==='double' || $type==='boolean' || $type==='string'){
+						elseif($type==='integer' || $type==='double' || $type==='boolean' || $type==='string'){
 							$wheres[] = $this->validateColumn($matches[0]) . ' != ?';
 							$objectData[] = $value;
 						}
@@ -223,7 +225,7 @@ class SQL{
 							trigger_error('SQL where: value of' . $this->validateColumn($matches[0]) . ' with type ' . $type . ' can\'t be accepted');
 					}
 				}
-				else if(substr($matches[1], -1) === '~')
+				elseif(substr($matches[1], -1) === '~')
 				{
 					if(gettype($value) !== 'array')
 						$value = [$value];
@@ -240,59 +242,80 @@ class SQL{
 
                     $wheres[] = '('.implode($OR, $likes).')';
 				}
-				else if($matches[1] === 'REGEXP'){
-					if(gettype($value) === 'array')
-						trigger_error('SQL where: value of' . $this->validateColumn($matches[0]) . ' must be a string');
 
-                    $wheres[] = $this->validateColumn($matches[0]).
-                    	($this->driver === 'pgsql' ? ' ~ ' : ' REGEXP ').
-                    	$this->connection->quote($value);
-				}
-				else if(strpos($matches[1], 'array') !== false){
-					$implementTemplate = false;
-					if(gettype($value) === 'array'){
-						if(count($value) > 2){ // Optimize performance with regexp
-							$value = '('.implode('|', $value).')';
-							$like = $this->driver === 'pgsql' ? '~ ' : 'REGEXP ';
-						}
-						else{
-							$implementTemplate = true;
-							$like = 'LIKE ';
-						}
+				else { // Special feature
+					$matches[1] = strtoupper($matches[1]);
+
+					if(strpos($matches[1], 'LENGTH') !== false){
+						if(preg_match('/[<>=]+/', $matches[1], $op))
+							$op = $op[0];
+						else $op = '=';
+
+						$wheres[] = "CHAR_LENGTH(".$this->validateColumn($matches[0]).") $op ?";
+						$objectData[] = $value;
 					}
-					else $like = 'LIKE ';
 
-					if(strpos($matches[1], '!') === 0)
-						$like = ($this->driver === 'pgsql' && $implementTemplate === false ? ' !' : ' NOT ').$like;
-					else $like = " $like";
+					elseif($matches[1] === 'REGEXP'){
+						if(gettype($value) === 'array')
+							trigger_error('SQL where: value of' . $this->validateColumn($matches[0]) . ' must be a string');
 
-					$template = $this->validateColumn($matches[0]).$like;
-					if($implementTemplate === true){
-						$tempValue = [];
-						for ($i=0; $i < count($value); $i++) { 
-							$tempValue[] = $template.$this->connection->quote(",$value[$i],");
-						}
-						$wheres[] = implode('AND', $tempValue);
+	                    $wheres[] = $this->validateColumn($matches[0]).($this->driver === 'pgsql' ? ' ~ ' : ' REGEXP ').'?';
+	                    $objectData[] = $value;
 					}
-                    else $wheres[] = $template.$this->connection->quote(",$value,");
+					elseif(strpos($matches[1], 'ARRAY') !== false){
+						$implementTemplate = false;
+						if(gettype($value) === 'array'){
+							if(count($value) > 2){ // Optimize performance with regexp
+								$value = '('.implode('|', $value).')';
+								$like = $this->driver === 'pgsql' ? '~ ' : 'REGEXP ';
+							}
+							else{
+								$implementTemplate = true;
+								$like = 'LIKE ';
+							}
+						}
+						else $like = 'LIKE ';
+
+						if(strpos($matches[1], '!') === 0)
+							$like = ($this->driver === 'pgsql' && $implementTemplate === false ? ' !' : ' NOT ').$like;
+						else $like = " $like";
+
+						$template = $this->validateColumn($matches[0]).$like;
+						if($implementTemplate === true){
+							$tempValue = [];
+							for ($i=0; $i < count($value); $i++) { 
+								$tempValue[] = '?';
+								$objectData[] = ",$value[$i],";
+							}
+							$wheres[] = implode('AND', $tempValue);
+						}
+	                    else{
+	                    	$wheres[] = $template;
+							$objectData[] = ",$value,";
+	                    }
+					}
 				}
-			} else {
+			}
+
+			else {
 				$type = gettype($value);
 				if(!$type)
 					$wheres[] = $this->validateColumn($matches[0]) . ' IS NULL';
 				else{
 					if($type === 'array'){
 						if(empty($value)) trigger_error("'$matches[0]' array couldn't be empty");
+						else{
+							$temp = [];
+							foreach ($value as &$xx) {
+								$temp[] = '?';
+							}
 
-						$temp = [];
-						for ($a = 0; $a < count($value); $a++) {
-							$temp[] = '?';
+							$wheres[] = $this->validateColumn($matches[0]) . ' IN ('. implode(', ', $temp) .')';
+							$objectData = array_merge($objectData, $value);
 						}
-						$wheres[] = $this->validateColumn($matches[0]) . ' IN ('. implode(', ', $temp) .')';
-						$objectData = array_merge($objectData, $value);
 					}
 
-					else if($type==='integer' || $type==='double' || $type==='boolean' || $type==='string'){
+					elseif($type==='integer' || $type==='double' || $type==='boolean' || $type==='string'){
 						$wheres[] = $this->validateColumn($matches[0]) . ' = ?';
 						$objectData[] = $value;
 					}
@@ -347,7 +370,7 @@ class SQL{
 			if(!is_array($object['LIMIT']) && !is_nan($object['LIMIT']))
 				$options = "$options LIMIT $object[LIMIT]";
 
-			else if(!is_nan($object['LIMIT'][0]) && !is_nan($object['LIMIT'][1]))
+			elseif(!is_nan($object['LIMIT'][0]) && !is_nan($object['LIMIT'][1]))
 				$options = "$options LIMIT " . $object['LIMIT'][1] . ' OFFSET ' . $object['LIMIT'][0];
 		}
 		
@@ -507,9 +530,9 @@ class SQL{
 		$value = strtolower($value);
 		$column = substr($column, 0, -3);
 
-		$validatedColumn = $this->validateColumn($column);
-		if($strlen > 6)
-			$wheres[] = "CHAR_LENGTH($validatedColumn) > $strlen";
+		// On interactive CLI mode, the data must be cached
+		if(\Scarlets::$interactiveCLI === false)
+			$where[$column.'[length(>)]'] = $strlen;
 
 		$obtained = [];
 		$lastLow = 1;
@@ -523,38 +546,46 @@ class SQL{
 		foreach ($cache as &$ref) {
 			$text = strtolower($ref[$column]);
 			similar_text($text, $value, $score);
+			$pendingScore = 0;
 
 			// Improve accuracy
-			if($score > 10 && $score < 70){
+			if($score > 10 && $score < 80){
 				$pos = strpos($text, $value);
-				if($pos === false) continue;
-				if($pos === 0) $score = 101;
-				elseif(strpos($text, " $value ") !== false) $score = 103;
-				elseif(substr($text, $pos-1, 1) === ' ') $score = 102;
-				else $score = 70;
+				if($pos === false && $score < $lastLow)
+					continue;
+
+				if($pos === 0)
+					$pendingScore = 101+($score/100);
+
+				elseif(strpos($text, " $value ") !== false)
+					$pendingScore = 103+($score/100);
+
+				elseif(substr($text, $pos-1, 1) === ' ')
+					$pendingScore = 102+($score/100);
 			}
-			elseif($score < $lastLow) continue;
+			elseif($score < $lastLow)
+				continue;
 
 			if($z >= 10){
 				array_splice($obtained, $lastLowID, 1);
 
 				$lastLow = $score;
 				foreach ($obtained as $key => &$val) {
-					if($val[1] < $lastLow){
+					if($val[1] < $lastLow && $pendingScore === 0){
 						$lastLow = &$val[1];
 						$lastLowID = $key;
 					}
 				}
 			}
 			else{
-				if($val[1] < $lastLow){
+				if($val[1] < $lastLow && $pendingScore === 0){
 					$lastLow = $score;
 					$lastLowID = $z;
 				}
 				$z++;
 			}
 
-			$obtained[] = [$ref[$id], $score];
+			$obtained[] = [$ref[$id], $pendingScore ?: $score];
 		}
 
 		$lastHigh = 0;
@@ -565,12 +596,14 @@ class SQL{
 				$lastHigh = $val[1];
 		}
 
+		if($lastHigh === 100)
+			$lastHigh = 80;
+
 		// Normalize value
+		$normalize = 100 - $lastHigh;
 		foreach ($obtained as &$val) {
-			if($val < 101) continue;
-			if($val === 101) $val = $lastHigh + 1;
-			if($val === 102) $val = $lastHigh + 2;
-			if($val === 103) $val = $lastHigh + 3;
+			if($val[1] > 100)
+				$val[1] -= $normalize;
 		}
 
 		arsort($temp);

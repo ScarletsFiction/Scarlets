@@ -300,7 +300,8 @@ $myDatabase->onTableMissing('users', function(){
 | >= | More than or Equal |
 | < | Less than |
 | <= | Less than or Equal |
-| array | (special use cases) Match number in comma separated list |
+| ARRAY | (special use cases) Match number in comma separated list |
+| LENGTH(<, >, <=, >=) | Return row that have some text length in the column |
 | REGEXP | Use regex search `['name[REGEXP]'=>'alex|jason|loki']` |
 | LIMIT | Limit returned value `['LIMIT'=>1]` or `['LIMIT'=>[$page, $length]]` |
 | ORDER | Order rows based on column `['ORDER'=>['time'=>'DESC']]` |
@@ -339,22 +340,34 @@ If `$column` was defined with *string*, it will return string of that column dat
 
 ##### Predict/Suggestion search
 Predict possible similar text on a column and return percentage while the highest percentage are on first index.
-> $array = $myDatabase->predict($tableName, $id = 'id', $where);
+> $array = $myDatabase->predict($tableName, $id = 'id', $where, &$cache);
 
 ```php
-$array = $myDatabase->predict('hashtag', $id = 'id', ['name[%]'=>'baloons']);
+$cache = null; // This will greatly improve performance on CLI
+$scores = $myDatabase->predict('users', 'user_id', ['username[%]'=>'anything'], $cache);
 
 Return: Array
 (     id     Score
-    [2006] => 75
-    [1009] => 66
-    [4029] => 60
-    [5218] => 57
-    [8371] => 54
+    [2006] => 75.4323%
+    [1009] => 66.6666%
+    [49] => 60%
+    [5218] => 57.2574%
+    [71] => 54%
 )
 ```
 
-For better performanc, the `$id` should be the `row_id`, `Primary` key, or `Unique` key.
+For better performance, the `$id` should be the `row_id`, `Primary` key, or `Unique` key. After you got the scores, you can obtain another data from the database by it's ID that returned after the prediction.
+
+```php
+$ids = array_keys($scores);
+$data = $neko->select('users', ['user_id', 'username'], ['user_id'=>$ids]);
+
+// Sort the received data from database
+Scarlets\Extend\Arrays::sortWithReference($data, 'user_id', $ids);
+// Do something with $data
+```
+
+![alt text](https://raw.githubusercontent.com/ScarletsFiction/Scarlets/master/images/predict_database.png)
 
 ##### Insert row
 Insert row to table
@@ -399,7 +412,7 @@ Delete row from table where some condition are true
 
 ##### Drop table
 Drop a table
-> $myDatabase->delete($tableName);
+> $myDatabase->drop($tableName);
 
 The other database library documentation is almost similar with [SFDatabase-js](https://github.com/ScarletsFiction/SFDatabase-js)
 

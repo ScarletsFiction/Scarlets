@@ -20,6 +20,7 @@ use Scarlets\Internal;
 class Scarlets{
 	public static $isConsole = false;
 	public static $isWebsite = false;
+	public static $interactiveCLI = false;
 	
 	/*
 		> Website Initialization
