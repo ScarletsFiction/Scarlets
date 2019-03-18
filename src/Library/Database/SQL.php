@@ -121,6 +121,7 @@ class SQL{
 				}
 				trigger_error($msg);
 			}
+			return;
 		}
 
 		// $error = $statement->errorInfo();
@@ -487,7 +488,7 @@ class SQL{
 		return $this->query($query, $wheres[1])->fetchColumn(0) === 1;
 	}
 
-	public function predict($tableName, $id = 'id', $where){
+	public function predict($tableName, $id = 'id', $where, &$cache = false){
 		$column = '';
 		$value = '';
 		foreach ($where as $key => $val) {
@@ -499,8 +500,9 @@ class SQL{
 		}
 
 		$strlen = strlen($value);
-		if($strlen < 2) // Protect system resource
+		if($strlen < 2) // Protect system from meaningless test
 			return [];
+
 		unset($where[$column]);
 		$value = strtolower($value);
 		$column = substr($column, 0, -3);
@@ -510,40 +512,69 @@ class SQL{
 			$wheres[] = "CHAR_LENGTH($validatedColumn) > $strlen";
 
 		$obtained = [];
-		$lastLow = 0;
+		$lastLow = 1;
+		$lastLowID = 0;
 
-		$whole = $this->select($tableName, [$id, $column], $where);
-		for ($i=0; $i < count($whole); $i++) { 
-			$ref = &$whole[$i];
-			similar_text(strtolower($ref[$column]), $value, $score);
+		// Get the data if cache is not available
+		if($cache === false)
+			$cache = $this->select($tableName, [$id, $column], $where);
 
-			if(count($obtained) >= 10){
-				if($score < $lastLow) continue;
-				for ($a=0; $a < 10; $a++) { 
-					if($obtained[$a][1] === $lastLow){
-						array_splice($obtained, $a, 1);
-						break;
-					}
-				}
+		$z = 0;
+		foreach ($cache as &$ref) {
+			$text = strtolower($ref[$column]);
+			similar_text($text, $value, $score);
+
+			// Improve accuracy
+			if($score > 10 && $score < 70){
+				$pos = strpos($text, $value);
+				if($pos === false) continue;
+				if($pos === 0) $score = 101;
+				elseif(strpos($text, " $value ") !== false) $score = 103;
+				elseif(substr($text, $pos-1, 1) === ' ') $score = 102;
+				else $score = 70;
+			}
+			elseif($score < $lastLow) continue;
+
+			if($z >= 10){
+				array_splice($obtained, $lastLowID, 1);
 
 				$lastLow = $score;
-				foreach ($obtained as &$val) {
-					if($val[1] < $lastLow)
-						$lastLow = $val[1];
+				foreach ($obtained as $key => &$val) {
+					if($val[1] < $lastLow){
+						$lastLow = &$val[1];
+						$lastLowID = $key;
+					}
 				}
 			}
-			else $lastLow = $score;
+			else{
+				if($val[1] < $lastLow){
+					$lastLow = $score;
+					$lastLowID = $z;
+				}
+				$z++;
+			}
 
 			$obtained[] = [$ref[$id], $score];
 		}
 
+		$lastHigh = 0;
 		$temp = [];
 		foreach ($obtained as &$val) {
-			$temp[intval($val[1])] = $val[0];
+			$temp[$val[0]] = &$val[1];
+			if($val[1] < 100 && $lastHigh < $val[1])
+				$lastHigh = $val[1];
 		}
-		krsort($temp);
 
-		return array_flip($temp);
+		// Normalize value
+		foreach ($obtained as &$val) {
+			if($val < 101) continue;
+			if($val === 101) $val = $lastHigh + 1;
+			if($val === 102) $val = $lastHigh + 2;
+			if($val === 103) $val = $lastHigh + 3;
+		}
+
+		arsort($temp);
+		return $temp;
 	}
 
 	// Only avaiable for string columns
