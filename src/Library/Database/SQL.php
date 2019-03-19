@@ -242,6 +242,35 @@ class SQL{
 
                     $wheres[] = '('.implode($OR, $likes).')';
 				}
+				elseif(substr($matches[1], -1) === ','){
+					$NOT = strpos($matches[1], '!') === 0 ? ' NOT' : '';
+					$OR = strpos($matches[1], '&') === false ? ' OR ' : ' AND ';
+
+					if(gettype($value) === 'array'){
+						if(count($value) > 2 && $OR === ' OR '){ // Optimize performance with regexp
+							$value = '('.implode('|', $value).')';
+
+							if($NOT !== '' && $this->driver === 'pgsql')
+								$like = ' !~ ?';
+							else $like = " NOT REGEXP ?";
+
+		                	$wheres[] = $this->validateColumn($matches[0]).$like;
+							$objectData[] = ",$value,";
+						}
+						else{
+							$tempValue = [];
+							for ($i=0; $i < count($value); $i++) { 
+								$tempValue[] = "$NOT LIKE ?";
+								$objectData[] = ",$value[$i],";
+							}
+							$wheres[] = implode($OR, $tempValue);
+						}
+					}
+					else{
+						$wheres[] = $this->validateColumn($matches[0])."$NOT LIKE ?";
+						$objectData[] = ",$value,";
+					}
+				}
 
 				else { // Special feature
 					$matches[1] = strtoupper($matches[1]);
@@ -261,38 +290,6 @@ class SQL{
 
 	                    $wheres[] = $this->validateColumn($matches[0]).($this->driver === 'pgsql' ? ' ~ ' : ' REGEXP ').'?';
 	                    $objectData[] = $value;
-					}
-					elseif(strpos($matches[1], 'COMMA') !== false){
-						$implementTemplate = false;
-						if(gettype($value) === 'array'){
-							if(count($value) > 2){ // Optimize performance with regexp
-								$value = '('.implode('|', $value).')';
-								$like = $this->driver === 'pgsql' ? '~ ' : 'REGEXP ';
-							}
-							else{
-								$implementTemplate = true;
-								$like = 'LIKE ';
-							}
-						}
-						else $like = 'LIKE ';
-
-						if(strpos($matches[1], '!') === 0)
-							$like = ($this->driver === 'pgsql' && $implementTemplate === false ? ' !' : ' NOT ').$like;
-						else $like = " $like";
-
-						$template = $this->validateColumn($matches[0]).$like;
-						if($implementTemplate === true){
-							$tempValue = [];
-							for ($i=0; $i < count($value); $i++) { 
-								$tempValue[] = '?';
-								$objectData[] = ",$value[$i],";
-							}
-							$wheres[] = implode('AND', $tempValue);
-						}
-	                    else{
-	                    	$wheres[] = $template;
-							$objectData[] = ",$value,";
-	                    }
 					}
 				}
 			}
@@ -731,7 +728,7 @@ class SQL{
 				$objectName[] = "$tableEscaped = ?";
 			else {
 				// Add value into array
-				if($special[1] === 'comma++'){
+				if($special[1] === ',++'){
 					$objectName[] = "$tableEscaped = CONCAT($tableEscaped, ?)";
 					if(is_array($object[$columns[$i]]) === true)
 						$objectData[] = implode(',', $object[$columns[$i]]).',';
@@ -740,7 +737,7 @@ class SQL{
 				}
 
 				// Remove value from array
-				elseif($special[1] === 'comma--'){
+				elseif($special[1] === ',--'){
 					if(is_array($object[$columns[$i]]) === true){
 						$replacer = $this->connection->quote(',('.implode('|', $object[$columns[$i]]).'),');
 						$objectName[] = "$tableEscaped = REGEXP_REPLACE($tableEscaped, $replacer, ',')";
