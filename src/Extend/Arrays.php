@@ -13,7 +13,7 @@ class Arrays{
 		array_multisort($temp, $sort, $temp_);
 		return $temp_;
 	}
-	
+
 	public static function &duplicates($array){
     	$duplicates = [];
     	$values = array_count_values($array);
@@ -51,5 +51,20 @@ class Arrays{
 	        	return true;
 	    }
 	    return false;
+	}
+
+	// Return ',' or ',1,'
+	public static function encodeComma(&$array){
+		if(count($array) === 0) return ',';
+
+		return ','.implode(',', $array).',';
+	}
+
+	// Return [1]
+	public static function decodeComma(&$text){
+		if(strlen($text) <= 2)
+			return [];
+
+		return json_decode('['.substr($text, 1, -1).']', true);
 	}
 }
