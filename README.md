@@ -299,7 +299,10 @@ $myDatabase->onTableMissing('users', function(){
 | >= | More than or Equal |
 | < | Less than |
 | <= | Less than or Equal |
-| , | (single|array) Match number in comma separated list |
+| , | (single|array) True if value exist in comma separated list |
+| &, | (single|array) True if all value exist in comma separated list|
+| !, | (single|array) True if value not exist in comma separated list|
+| !&, | (single|array) True if all value not exist in comma separated list|
 | LENGTH(<, >, <=, >=) | Return row that have some text length in the column |
 | REGEXP | Use regex search `['name[REGEXP]'=>'alex|jason|loki']` |
 | LIMIT | Limit returned value `['LIMIT'=>1]` or `['LIMIT'=>[$page, $length]]` |
