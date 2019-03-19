@@ -263,10 +263,12 @@ Route\Middleware::$register['limit'] = function($request = 2, $seconds = 30){
 Before using this library, you must modify the database configuration on `/config/database.php`. Usage is almost similar with [SFDatabase-js](https://github.com/ScarletsFiction/SFDatabase-js).
 
 ### Get database connection
-> $myDatabase = Scarlets\Library\Database::connect(databaseName='{default}');
-> $myDatabase->connection // PDO Class
-> $myDatabase->debug = 'log' // Log to error.log
-> $myDatabase->lastQuery // Will have value if debug === true
+```php
+$myDatabase = Scarlets\Library\Database::connect(databaseName='{default}');
+$myDatabase->connection; // PDO Class
+$myDatabase->debug = 'log'; // Log to error.log
+$myDatabase->lastQuery; // Will have value if debug === true
+```
 
 ### Transaction
 Start a database transaction
