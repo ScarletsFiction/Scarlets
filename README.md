@@ -299,7 +299,7 @@ $myDatabase->onTableMissing('users', function(){
 | >= | More than or Equal |
 | < | Less than |
 | <= | Less than or Equal |
-| ARRAY | (special use cases) Match number in comma separated list |
+| COMMA | (special use cases) Match number in comma separated list |
 | LENGTH(<, >, <=, >=) | Return row that have some text length in the column |
 | REGEXP | Use regex search `['name[REGEXP]'=>'alex|jason|loki']` |
 | LIMIT | Limit returned value `['LIMIT'=>1]` or `['LIMIT'=>[$page, $length]]` |
@@ -406,8 +406,8 @@ $myDatabase->update('posts', [
 | append | Append text |
 | prepend | Prepend text |
 | * / + - % | Do a math equation `['counter[+]'=>1]` |
-| array-add | (special use cases) add number into a list separated by comma |
-| array-remove | (special use cases) remove a number from list separated by comma |
+| comma++ | (special use cases) add number into a list separated by comma |
+| comma-- | (special use cases) remove a number from list separated by comma |
 
 ### Delete row
 Delete row from table where some condition are true. If `$where` is set to false, this will truncate the table itself.

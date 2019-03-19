@@ -262,7 +262,7 @@ class SQL{
 	                    $wheres[] = $this->validateColumn($matches[0]).($this->driver === 'pgsql' ? ' ~ ' : ' REGEXP ').'?';
 	                    $objectData[] = $value;
 					}
-					elseif(strpos($matches[1], 'ARRAY') !== false){
+					elseif(strpos($matches[1], 'COMMA') !== false){
 						$implementTemplate = false;
 						if(gettype($value) === 'array'){
 							if(count($value) > 2){ // Optimize performance with regexp
@@ -731,7 +731,7 @@ class SQL{
 				$objectName[] = "$tableEscaped = ?";
 			else {
 				// Add value into array
-				if($special[1] === 'array-add'){
+				if($special[1] === 'comma++'){
 					$objectName[] = "$tableEscaped = CONCAT($tableEscaped, ?)";
 					if(is_array($object[$columns[$i]]) === true)
 						$objectData[] = implode(',', $object[$columns[$i]]).',';
@@ -740,7 +740,7 @@ class SQL{
 				}
 
 				// Remove value from array
-				elseif($special[1] === 'array-remove'){
+				elseif($special[1] === 'comma--'){
 					if(is_array($object[$columns[$i]]) === true){
 						$replacer = $this->connection->quote(',('.implode('|', $object[$columns[$i]]).'),');
 						$objectName[] = "$tableEscaped = REGEXP_REPLACE($tableEscaped, $replacer, ',')";
