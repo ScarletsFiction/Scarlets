@@ -104,9 +104,9 @@ function deleteContent($path, $pathAlso = true){
 	$iterator = new DirectoryIterator($path);
 	foreach($iterator as $fileinfo){
 		if($fileinfo->isDot()) continue;
-		if($fileinfo->isDir() && deleteContent($fileinfo->getPathname(), true))
-			@rmdir($fileinfo->getPathname());
-		if($fileinfo->isFile())
+		elseif($fileinfo->isDir())
+			deleteContent($fileinfo->getPathname(), true);
+		elseif($fileinfo->isFile())
 			@unlink($fileinfo->getPathname());
 	}
 	if($pathAlso) @rmdir($path);
