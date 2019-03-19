@@ -19,20 +19,26 @@ Then copy the example folder and edit the framework path on `root.php`
 Make sure you have installed PHP on your computer (Windows and OSX can use [XAMPP](https://www.apachefriends.org/index.html))<br>
 and make sure the php command is available on the command prompt
 
-> $ php -v
+```sh
+$ php -v
+```
 
 If not, then you need to set it up on the [environment variables](https://www.youtube.com/watch?v=51IlfNzZVGo).
 
 When the php command is available, open your command prompt and enter this line
 
-> $ php -r "copy('https://raw.githubusercontent.com/ScarletsFiction/Scarlets/master/net-install', 'net-install');"<br>
-> $ php net-install
+```sh
+$ php -r "copy('https://raw.githubusercontent.com/ScarletsFiction/Scarlets/master/net-install', 'net-install');"<br>
+$ php net-install
+```
 
 The framework will automatically installed, and the example files will be prepared on your project folder.
 
 ## Upgrade
 Scarlets have internal upgrade feature
-> $ php scarlets upgrade
+```sh
+$ php scarlets upgrade
+```
 
 But if there are any error and the framework was unable to be loaded<br>
 Please clone this repository and extract it to `vendor/scarletsfiction/scarlets`
@@ -49,7 +55,10 @@ If you're using Windows, you can use [Laragon](https://laragon.org/) to easily `
 ## Scarlets Console
 
 This framework has a build-in server by calling
-> $ php scarlets serve (port) (address) (options)<br><br>
+```sh
+$ php scarlets serve (port) (address) (options)
+```
+
 > Address: localhost, network, IPAddress<br>
 > Options: --log, --verbose<br>
 
@@ -564,6 +573,7 @@ $data = WebRequest::loadURL('https://www.google.com', [
     'header'=>['Some: header'],
     'post'=>['data' => 'anything'],
     /*
+    'method'=>'post',
     'cookiefile'=>'path',
     'cookie'=>'urlencoded=data',
     'limitSize'=>10, // In KB
@@ -592,11 +602,13 @@ avoid security issue
 ## Accessing App Configuration
 ### Get all configuration array reference
 The sample below will return loaded configuration from `/config/` folder
-> $config = Scarlets\Config::load('app');
-> /* 
->   (App folder)/config/app.php -> `hostname` value
->   $config['app.hostname'] = 'localhost';
-> */
+```php
+$config = Scarlets\Config::load('app');
+/* 
+  (App folder)/config/app.php -> `hostname` value
+  $config['app.hostname'] = 'localhost';
+*/
+```
 
 ## Debugging
 ### Error warning
