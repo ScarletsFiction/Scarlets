@@ -46,7 +46,7 @@ Before we started, we need to setup Apache or Nginx to route every HTTP request 
 
 If you're using Windows, you can use [Laragon](https://laragon.org/) to easily `Switch Document Root` that will automatically create new Apache VirtualHost and modify `drivers\etc\hosts` for you. So you can easily access your project with a custom domain.
 
-### Scarlets Console
+## Scarlets Console
 
 This framework has a build-in server by calling
 > $ php scarlets serve (port) (address) (options)<br><br>
@@ -63,7 +63,7 @@ You can also create your own command for your project
 
 The user defined command are editable on `/routes/console.php`<br>
 
-#### Define command
+### Define command
 > Console::command(pattern, callback, info='');
 ```php
 Console::command('echo {*}', function($message){
@@ -71,7 +71,7 @@ Console::command('echo {*}', function($message){
 });
 ```
 
-#### Use invisible writting
+### Use invisible writting
 > Console::hiddenInput();
 ```php
 Console::command('input', function(){
@@ -80,7 +80,7 @@ Console::command('input', function(){
 }, 'Type something');
 ```
 
-#### Change text color
+### Change text color
 > Console::chalk(text, color);
 ```php
 Console::command('echo {*}', function($message){
@@ -88,8 +88,9 @@ Console::command('echo {*}', function($message){
 });
 ```
 
-#### Match more pattern
+### Match more pattern
 > Console::args(pattern, callback);
+
 ```php
 Console::command('echo {*}', function($all){
     Console::args('{0} {1}', function($name, $message){
@@ -102,25 +103,25 @@ Console::command('echo {*}', function($all){
 });
 ```
 
-#### Adding help section
+### Adding help section
 > Console::help(text, color);
 ```php
 Console::help('echo', "Type 'echo (anything here)' to get echo back.");
 ```
 
-#### Clear console
+### Clear console
 > Console::clear();
 
-#### Check if running on console
+### Check if running on console
 > Console::isConsole();
 
-#### Obtain registered console command
+### Obtain registered console command
 > Console::collection();
 
-#### Arrange result as a table on console
+### Arrange result as a table on console
 > Console::table(array);
 
-### WebRouter
+## WebRouter
 This webrouter will help you route any URL Request<br>
 All route should be placed on `/routes/` folder
 The router priority is:
@@ -128,7 +129,7 @@ The router priority is:
 2. api.php (API Router)
 3. web.php (Web Router)
 
-#### Route by Request Method
+### Route by Request Method
 > Route::get(pattern, callback, options='');
 The accepted request method are `get`, `post`, `delete`, `put`, `options`.
 
@@ -145,7 +146,7 @@ Route::get('/text/{0:[A-Za-z]+}', function($text = ['world']){
 });
 ```
 
-#### Serve views
+### Serve views
 The views folder are located on `/resources/views/` folder
 > Serve::view(file, parameter);
 
@@ -168,7 +169,7 @@ or maybe obtaining `POST, GET` request with
 
 If you're using frontend MVW framework, you can obtain dynamic view only by set `isStatic` to true for static view.
 
-#### Namespace Router group
+### Namespace Router group
 > Route::namespace(namespace, callback);
 
 ```php
@@ -180,7 +181,7 @@ Route::namespaces('App\Http\Controllers', function(){
 });
 ```
 
-#### URL Prefix group
+### URL Prefix group
 > Route::prefix(prefix, callback);
 
 ```php
@@ -195,7 +196,7 @@ Route::prefix('admin', function(){
 });
 ```
 
-#### Router name group
+### Router name group
 > Route::name(name, callback);
 
 ```php
@@ -207,7 +208,7 @@ Route::name('list', function(){
 });
 ```
 
-#### Domain Router
+### Domain Router
 > Route::domain(domain, callback);
 
 ```php
@@ -218,7 +219,7 @@ Route::domain('{0}.framework.test', function($domain){
 });
 ```
 
-#### Middleware Router group
+### Middleware Router group
 > Route::domain(domain, callback);
 
 ```php
@@ -234,7 +235,7 @@ Route::get('limit', function(){
 }, 'limit:2,60');
 ```
 
-#### Registering middleware for router
+### Registering middleware for router
 ```php
 Route\Middleware::$register['limit'] = function($request = 2, $seconds = 30){
     $total = Cache::get('request.limit', 0);
@@ -258,18 +259,16 @@ Route\Middleware::$register['limit'] = function($request = 2, $seconds = 30){
 };
 ```
 
-### Library
+## SQL Database
+Before using this library, you must modify the database configuration on `/config/database.php`. Usage is almost similar with [SFDatabase-js](https://github.com/ScarletsFiction/SFDatabase-js).
 
-#### Database
-Before using this library, you must modify the database configuration on `/config/database.php`
-
-##### Get database connection
+### Get database connection
 > $myDatabase = Scarlets\Library\Database::connect(databaseName='{default}');
 > $myDatabase->connection // PDO Class
 > $myDatabase->debug = 'log' // Log to error.log
 > $myDatabase->lastQuery // Will have value if debug === true
 
-##### Transaction
+### Transaction
 Start a database transaction
 ```php
 $myDatabase->transaction(function($db){
@@ -280,7 +279,7 @@ $myDatabase->transaction(function($db){
 });
 ```
 
-##### onTableMissing
+### onTableMissing
 Do an action if an table was missing
 ```php
 $myDatabase->onTableMissing('users', function(){
@@ -288,7 +287,7 @@ $myDatabase->onTableMissing('users', function(){
 });
 ```
 
-#### For every parameter with `$where`
+### For every parameter with `$where`
 | Options  | Details |
 | --- | --- |
 | ! | Not Equal to |
@@ -308,7 +307,7 @@ $myDatabase->onTableMissing('users', function(){
 | AND | And condition `['AND'=>['name'=>'alex', 'age'=>[34, 29]]]` |
 | OR | Or condition `['OR'=>['AND'=>['type'=>'human', 'name'=>'alex']], 'type'=>'animal']` |
 
-##### Select table rows
+### Select table rows
 > $myDatabase->select(tableName, $columns, $where=[]);
 
 ```php
@@ -325,35 +324,39 @@ $myDatabase->select('test', ['name', 'data'], {
 });
 ```
 
-##### Count Matching Rows
+### Count Matching Rows
 Count rows where the data was matched by query
 > $integer = $myDatabase->count($tableName, $where=[]);
 
-##### Get single row
+### Get single row
 Get a single row where the data was matched
 > $data = $myDatabase->get($tableName, $column='*', $where=[]);
 
 If `$column` was defined with *string*, it will return string of that column data. But if it's defined with *array*, it will return associative array.
 
-##### Check if table has matched row
+### Check if table has matched row
 > $boolean = $myDatabase->has($tableName, $where);
 
-##### Predict/Suggestion search
+### Check if column has missing index
+Find missing index from 1 to rows length and return array of number. If the `$offset` is out of bound this will return false.
+> $list = $myDatabase->holes($tableName, $column, $length = 0, $offset = 0);
+
+### Predict/Suggestion search
 Predict possible similar text on a column and return percentage while the highest percentage are on first index.
 > $array = $myDatabase->predict($tableName, $id = 'id', $where, &$cache);
 
 ```php
-$cache = null; // This will greatly improve performance on CLI
+$cache = null; // This will greatly improve performance on Interactive CLI
 $scores = $myDatabase->predict('users', 'user_id', ['username[%]'=>'anything'], $cache);
 
-Return: Array
-(     id     Score
+/* Return: Array
+ *    id       Score
     [2006] => 75.4323%
     [1009] => 66.6666%
-    [49] => 60%
+    [49]   => 60%
     [5218] => 57.2574%
-    [71] => 54%
-)
+    [71]   => 54%
+*/
 ```
 
 For better performance, the `$id` should be the `row_id`, `Primary` key, or `Unique` key. After you got the scores, you can obtain another data from the database by it's ID that returned after the prediction.
@@ -369,7 +372,7 @@ Scarlets\Extend\Arrays::sortWithReference($data, 'user_id', $ids);
 
 ![alt text](https://raw.githubusercontent.com/ScarletsFiction/Scarlets/master/images/predict_database.png)
 
-##### Insert row
+### Insert row
 Insert row to table
 > $myDatabase->insert($tableName, $object, $getInsertID = false);
 
@@ -383,7 +386,7 @@ $primary_id = $myDatabase->insert('users', [
 
 Bulk insert is available when you put indexed array into `$object` parameter.
 
-##### Update row
+### Update row
 Update some matched row in a table 
 > $myDatabase->update($tableName, $object, $where = false);
 
@@ -395,7 +398,7 @@ $myDatabase->update('posts', [
 ], ['LIMIT'=>1]);
 ```
 
-#### Addional option when updating row
+### Addional option when updating row
 | Options  | Details |
 | --- | --- |
 | replace | Replace needle with text |
@@ -406,11 +409,11 @@ $myDatabase->update('posts', [
 | array-add | (special use cases) add number into a list separated by comma |
 | array-remove | (special use cases) remove a number from list separated by comma |
 
-##### Delete row
-Delete row from table where some condition are true
+### Delete row
+Delete row from table where some condition are true. If `$where` is set to false, this will truncate the table itself.
 > $myDatabase->delete($tableName, $where = false);
 
-##### Drop table
+### Drop table
 Drop a table
 > $myDatabase->drop($tableName);
 
@@ -418,16 +421,16 @@ The other database library documentation is almost similar with [SFDatabase-js](
 
 ## Below are the undocumented library
 The library documentation still in progress<br>
-If you're willing to help write this documentation I will gladly accept it
+If you're willing to help write this documentation I will gladly accept it<br>
 
-#### LocalFile system
+## LocalFile system
 You may need to assign the namespace to the top of your code
 > use \Scarlets\Library\FileSystem\LocalFile;
 
 The filesystem configuration are stored on `/config/filesystem.php`.<br>
 Then you can pass `{the storage name}/your/path` to the LocalFile function.
 
-##### load
+### load
 Load contents from file
 > LocalFile::load(path);
 
@@ -437,11 +440,11 @@ $data = LocalFile::load('{app}/data/text.inf');
 
 `load, size, append, prepend, createDir, put, search, lastModified, copy, rename, move, delete, read, tail, zipDirectory, extractZip, zipStatus`
 
-#### Cache
+## Cache
 You may need to assign the namespace to the top of your code
 > use \Scarlets\Library\Cache;
 
-##### get
+### get
 > Cache::get(key, default=null);
 
 The example below will return data from `timestamp` key<br>
@@ -452,7 +455,7 @@ default value.
 $data = Cache::get('timestamp', 0);
 ```
 
-##### set
+### set
 > Cache::set(key, value, seconds=0);
 
 The example below will set `time()` on timestamp key<br>
@@ -464,7 +467,7 @@ $data = Cache::set('timestamp', time(), 20);
 
 `has, pull, forget, flush, extendTime`
 
-#### Crypto
+## Crypto
 You may need to assign the namespace to the top of your code
 > use \Scarlets\Library\Crypto;
 
@@ -475,7 +478,7 @@ This library is using `openssl` php extension.<br>
 So make sure you have enabled it before use.<br>
 And the available cipher are listed on [php documentation](http://php.net/manual/en/function.openssl-get-cipher-methods.php).
 
-##### encrypt
+### encrypt
 > Crypto::encrypt(text, pass=false, cipher=false, mask=false);
 
 Set the mask parameter to true if you want to encode any symbol<br>
@@ -488,32 +491,32 @@ $data = Cache::encrypt('hello', 'secretcode', false, false);
 // Tst2nVw4sDMB5M5jwwSPiTp+Olh4QTRhek55YnF6VFdPUURYa1ZKbHc9PQ==
 ```
 
-##### decrypt
+### decrypt
 > Crypto::decrypt(encryptedText, pass=false, cipher=false, mask=false);
 
 ```php
 $data = Cache::decrypt('hello', 'secretcode');
 ```
 
-#### Language
+## Language
 You may need to assign the namespace to the top of your code
 > use \Scarlets\Library\Language;
 
 The default language are configured on `/config/app.php`.<br>
 And the languages files are located on `/resources/lang/`.<br>
 
-##### get
+### get
 > Language::get($key, $values = [], $languageID='')
 
 ```php
 $text = Language::get('time.current_date', [date('d M Y')], 'en');
 ```
 
-#### Socket
+## Socket
 You may need to assign the namespace to the top of your code
 > use \Scarlets\Library\Socket;
 
-##### create
+### create
 This function will open new socket server that able<br>
 to process multiple request at the same time.
 > Socket::create(address, port, readCallback, connectionCallback=0)
@@ -527,7 +530,7 @@ Socket::create('localhost', 8000, function($socketResource, $data){
 });
 ```
 
-##### simple
+### simple
 This function will open new socket server than able<br>
 to process single request at the a time.
 > Socket::simple(address, port, readCallback)
@@ -539,14 +542,14 @@ Socket::simple('localhost', 8000, function($socketResource, $data){
 });
 ```
 
-##### ping
+### ping
 > Socket::ping(domain, port=80)
 
-#### WebRequest
+## WebRequest
 You may need to assign the namespace to the top of your code
 > use \Scarlets\Library\WebRequest;
 
-##### loadURL
+### loadURL
 Web Request with curl extension
 > WebRequest::loadURL(url, data="")
 
@@ -565,15 +568,15 @@ $data = WebRequest::loadURL('https://www.google.com', [
 ]);
 ```
 
-##### giveFiles
+### giveFiles
 From this server to client browser
 > WebRequest::giveFiles(filePath, fileName = null)
 
-##### download
+### download
 From other server to local file
 > WebRequest::download(from, to, type="curl")
 
-##### receiveFile
+### receiveFile
 From client browser to this server
 > WebRequest::receiveFile(directory, allowedExt, rename='')
 
@@ -581,8 +584,8 @@ Make sure you limit the allowed extension to<br>
 avoid security issue
 > allowedExt = ['css', 'js', 'png']
 
-### Accessing App Configuration
-#### Get all configuration array reference
+## Accessing App Configuration
+### Get all configuration array reference
 The sample below will return loaded configuration from `/config/` folder
 > $config = Scarlets\Config::load('app');
 > /* 
@@ -590,17 +593,17 @@ The sample below will return loaded configuration from `/config/` folder
 >   $config['app.hostname'] = 'localhost';
 > */
 
-### Debugging
-#### Error warning
+## Debugging
+### Error warning
 > Scarlets\Error::warning('Something happen');
 
-#### Log
+### Log
 > Scarlets\Log::message('Something happen');
 
-#### Trace
+### Trace
 > Scarlets\Log::trace('Something happen');
 
-#### Register shutdown callback
+### Register shutdown callback
 > Scarlets::onShutdown(callback);
 
 The callback will be called when the framework is going to shutdown

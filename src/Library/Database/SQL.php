@@ -390,35 +390,51 @@ class SQL{
 	}
 
 	/**
-	 * Find auto_increment holes in the indexed column
+	 * Find auto_increment holes in the indexed column.
+	 * Will return empty array if not found.
+	 * And return false if out of range.
 	 * 
 	 * @param  string  $tableName [description]
 	 * @param  string  $column    [description]
-	 * @param  integer $scan      [description]
-	 * @param  integer $jumps     [description]
+	 * @param  integer $length      [description]
+	 * @param  integer $offset     [description]
 	 * @return array              [description]
 	 */
-	public function &holes($tableName, $column, $scan = 1000, $jumps = 0){
-		if($this->table_prefix !== '') $tableName = $this->table_prefix.$tableName;
+	public function &holes($tableName, $column, $length = 0, $offset = 0){
+		if(!is_numeric($length) || !is_numeric($offset))
+			trigger_error('`length` or `offset` must be numeric value');
 
-		if(!is_numeric($scan) || !is_numeric($jumps))
-			trigger_error('`Limit` or `Jumps` must be numeric value');
+		if($length !== 0){
+			$total = $this->query('SELECT MAX('.$this->validateColumn($column).') FROM '.$this->validateTable($this->table_prefix.$tableName), [])->fetchColumn(0);
 
-		$ids = $this->query('SELECT '.$this->validateColumn($column).' FROM '.$this->validateTable($tableName).' ORDER BY '.$this->validateColumn($column)." DESC LIMIT $jumps,$scan", [])->fetchAll(\PDO::FETCH_COLUMN);
-		
-		$last = $this->query('SELECT MAX('.$this->validateColumn($column).') FROM '.$this->validateTable($tableName), [])->fetchColumn(0);
-		$last = $last - $jumps;
+			if($total <= $offset)
+				return false;
 
-		if($last > $scan)
-			$scan = $last - $scan;
-		else $scan = 0;
+			$ids = $this->select($tableName, $column, [
+				'ORDER'=>[$column=>'ASC'],
+				'LIMIT'=>[$offset, $length]
+			]);
 
-		$missing = [];
+			if(count($ids) === 0)
+				return false;
+			$first = $ids[0];
+		}
+		else $ids = $this->select($tableName, $column);
+
 		$ids = array_flip($ids);
+		$missing = [];
 
-		for ($i = $last - 1; $scan < $i; $i--) { 
-			if(!isset($ids[$i]))
-				$missing[] = $i;
+		if($length !== 0){
+			for ($i = $first, $n = $first + $length; $i < $n; $i++) { 
+				if(!isset($ids[$i]))
+					$missing[] = $i;
+			}
+		}
+		else{
+			for ($i = 1, $n = count($ids); $i < $n; $i++) { 
+				if(!isset($ids[$i]))
+					$missing[] = $i;
+			}
 		}
 
 		return $missing;
