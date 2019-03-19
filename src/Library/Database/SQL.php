@@ -194,8 +194,7 @@ class SQL{
 						$objectData[] = $value;
 						continue;
 					}
-					else
-						trigger_error('SQL where: value of ' . $this->validateColumn($matches[0]) . ' is non-numeric and can\'t be accepted');
+					trigger_error('SQL where: value of ' . $this->validateColumn($matches[0]) . ' is non-numeric and can\'t be accepted');
 				}
 				elseif($matches[1] === '!')
 				{
@@ -204,16 +203,18 @@ class SQL{
 						$wheres[] = $this->validateColumn($matches[0]) . ' IS NOT NULL';
 					else{
 						if($type === 'array'){
-							if(empty($value)) trigger_error("'$matches[0]' array couldn't be empty");
-							else {
-								$temp = [];
-								foreach ($value as &$xx) {
-									$temp[] = '?';
-								}
-
-								$wheres[] = $this->validateColumn($matches[0]) . ' NOT IN ('. implode(', ', $temp) .')';
-								$objectData = array_merge($objectData, $value);
+							if(empty($value)){
+								trigger_error("'$matches[0]' array couldn't be empty");
+								continue;
 							}
+
+							$temp = [];
+							foreach ($value as &$xx) {
+								$temp[] = '?';
+							}
+
+							$wheres[] = $this->validateColumn($matches[0]) . ' NOT IN ('. implode(', ', $temp) .')';
+							$objectData = array_merge($objectData, $value);
 						}
 
 						elseif($type==='integer' || $type==='double' || $type==='boolean' || $type==='string'){
@@ -267,6 +268,11 @@ class SQL{
 						}
 					}
 					else{
+						if($OR === ' AND '){
+							trigger_error('SQL where: value of' . $this->validateColumn($matches[0]) . ' must be a array');
+							continue;
+						}
+
 						$wheres[] = $this->validateColumn($matches[0])."$NOT LIKE ?";
 						$objectData[] = ",$value,";
 					}
@@ -285,8 +291,10 @@ class SQL{
 					}
 
 					elseif($matches[1] === 'REGEXP'){
-						if(gettype($value) === 'array')
+						if(gettype($value) === 'array'){
 							trigger_error('SQL where: value of' . $this->validateColumn($matches[0]) . ' must be a string');
+							continue;
+						}
 
 	                    $wheres[] = $this->validateColumn($matches[0]).($this->driver === 'pgsql' ? ' ~ ' : ' REGEXP ').'?';
 	                    $objectData[] = $value;
@@ -300,16 +308,18 @@ class SQL{
 					$wheres[] = $this->validateColumn($matches[0]) . ' IS NULL';
 				else{
 					if($type === 'array'){
-						if(empty($value)) trigger_error("'$matches[0]' array couldn't be empty");
-						else{
-							$temp = [];
-							foreach ($value as &$xx) {
-								$temp[] = '?';
-							}
-
-							$wheres[] = $this->validateColumn($matches[0]) . ' IN ('. implode(', ', $temp) .')';
-							$objectData = array_merge($objectData, $value);
+						if(empty($value)){
+							trigger_error("'$matches[0]' array couldn't be empty");
+							continue;
 						}
+
+						$temp = [];
+						foreach ($value as &$xx) {
+							$temp[] = '?';
+						}
+
+						$wheres[] = $this->validateColumn($matches[0]) . ' IN ('. implode(', ', $temp) .')';
+						$objectData = array_merge($objectData, $value);
 					}
 
 					elseif($type==='integer' || $type==='double' || $type==='boolean' || $type==='string'){
@@ -317,8 +327,7 @@ class SQL{
 						$objectData[] = $value;
 					}
 
-					else
-						trigger_error('SQL where: value ' . $this->validateColumn($matches[0]) . ' with type ' . $type . ' can\'t be accepted');
+					else trigger_error('SQL where: value ' . $this->validateColumn($matches[0]) . ' with type ' . $type . ' can\'t be accepted');
 				}
 			}
 		}
