@@ -28,7 +28,7 @@ If not, then you need to set it up on the [environment variables](https://www.yo
 When the php command is available, open your command prompt and enter this line
 
 ```sh
-$ php -r "copy('https://raw.githubusercontent.com/ScarletsFiction/Scarlets/master/net-install', 'net-install');"<br>
+$ php -r "copy('https://raw.githubusercontent.com/ScarletsFiction/Scarlets/master/net-install', 'net-install');"
 $ php net-install
 ```
 
