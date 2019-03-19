@@ -481,7 +481,7 @@ class SQL{
 			$select = $this->validateColumn($select);
 			$isColumns = false;
 		}
-		
+
 		$query = "SELECT $select FROM " . $this->validateTable($tableName) . $wheres[0];
 
 		if($isColumns === true || $select === '*'){
@@ -508,9 +508,9 @@ class SQL{
 		}
 		elseif($select !== '*'){
 			$select = $this->validateColumn($select);
-			$isColumns = true;
+			$isColumns = false;
 		}
-		
+
 		$query = "SELECT $select FROM " . $this->validateTable($tableName) . $wheres[0];
 
 		if($isColumns === true || $select === '*')
