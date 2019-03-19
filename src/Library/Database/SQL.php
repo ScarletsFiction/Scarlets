@@ -249,20 +249,18 @@ class SQL{
 
 					if(gettype($value) === 'array'){
 						if(count($value) > 2 && $OR === ' OR '){ // Optimize performance with regexp
-							$value = '('.implode('|', $value).')';
-
 							if($NOT !== '' && $this->driver === 'pgsql')
 								$like = ' !~ ?';
 							else $like = " NOT REGEXP ?";
 
 		                	$wheres[] = $this->validateColumn($matches[0]).$like;
-							$objectData[] = ",$value,";
+							$objectData[] = ',('.implode('|', $value).'),';
 						}
 						else{
 							$tempValue = [];
 							for ($i=0; $i < count($value); $i++) { 
 								$tempValue[] = "$NOT LIKE ?";
-								$objectData[] = ",$value[$i],";
+								$objectData[] = "%,$value[$i],%";
 							}
 							$wheres[] = implode($OR, $tempValue);
 						}
@@ -274,7 +272,7 @@ class SQL{
 						}
 
 						$wheres[] = $this->validateColumn($matches[0])."$NOT LIKE ?";
-						$objectData[] = ",$value,";
+						$objectData[] = "%,$value,%";
 					}
 				}
 
