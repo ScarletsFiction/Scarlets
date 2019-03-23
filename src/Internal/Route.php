@@ -157,7 +157,11 @@ class Serve{
 
 	public static function status($statusCode, $headerOnly = false){
 		if(self::$headerSent) return;
-		http_response_code($statusCode);
+
+		if(Scarlets::$isConsole === true) 
+			Scarlets\Route::$statusCode = $statusCode;
+		else
+			http_response_code($statusCode);
 
 		if($headerOnly) return;
 		
@@ -166,7 +170,8 @@ class Serve{
 		if(isset($router[$statusCode])){
 			self::$headerSent = true;
 			$router[$statusCode](ob_get_level() ?: ob_get_clean());
-			exit;
+
+			if(Scarlets::$isConsole === false) exit;
 		}
 	}
 

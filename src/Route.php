@@ -225,8 +225,8 @@ class Route{
 				</form>
 				<script type="text/javascript">document.getElementById('autoForm').submit();</script></body></html><?php
 			}
-		} else
-			header("Location: $to", true, $http);
+		} else header("Location: $to", true, $http);
+		Route\Serve::$headerSent = true;
 		exit;
 	}
 
@@ -401,6 +401,8 @@ class Route{
 				elseif(substr($matches, 0, 1) === '*'){
 					$haveMatchAll = true;
 					$argData = $current;
+					if($requestURI === $current)
+						continue;
 				}
 
 				// Argument Match
