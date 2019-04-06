@@ -8,45 +8,45 @@ class FileSystem{
 	public $lastCheck = 0;
 
 	public function __construct($settings){
-		self::$path = "$settings[path]/cache";
-		self::$expirationPath = self::$path.'/__expiration.srz';
+		$this->path = "$settings[path]";
+		$this->expirationPath = $this->path.'/__expiration.srz';
 
-		if(!file_exists(self::$path))
-			mkdir(self::$path, 0777, true);
+		if(!file_exists($this->path))
+			mkdir($this->path, 0777, true);
 
-		if(!file_exists(self::$expirationPath)){
-			file_put_contents(self::$expirationPath, serialize([]));
-			self::$expiration = [];
+		if(!file_exists($this->expirationPath)){
+			file_put_contents($this->expirationPath, serialize([]));
+			$this->expiration = [];
 		}
 		else
-			self::$expiration = unserialize(file_get_contents(self::$expirationPath));
+			$this->expiration = unserialize(file_get_contents($this->expirationPath));
 
-		self::$lastCheck = filemtime(self::$expirationPath);
+		$this->lastCheck = filemtime($this->expirationPath);
 	}
 	
 	private function reloadExpiration(){
-		$temp = filemtime(self::$expirationPath);
-		if(self::$lastCheck < $temp){
-			self::$lastCheck = $temp;
-			self::$expiration = unserialize(file_get_contents(self::$expirationPath));
+		$temp = filemtime($this->expirationPath);
+		if($this->lastCheck < $temp){
+			$this->lastCheck = $temp;
+			$this->expiration = unserialize(file_get_contents($this->expirationPath));
 		}
 	}
 
 	public function &get($key, $default=null){
-		if(!isset(self::$expiration[$key]))
+		if(!isset($this->expiration[$key]))
 			return $default;
 
-		if(self::$expiration[$key] !== 0){
-			self::reloadExpiration();
-			if(self::$expiration[$key] < time()){
-				unset(self::$expiration[$key]);
-				unlink(self::$path."/$key.cache");
-				file_put_contents(self::$expirationPath, serialize(self::$expiration));
+		if($this->expiration[$key] !== 0){
+			$this->reloadExpiration();
+			if($this->expiration[$key] < time()){
+				unset($this->expiration[$key]);
+				unlink($this->path."/$key.cache");
+				file_put_contents($this->expirationPath, serialize($this->expiration));
 				return $default;
 			}
 		}
 
-		$data = file_get_contents(self::$path."/$key.cache");
+		$data = file_get_contents($this->path."/$key.cache");
 		if(substr($data, 1, 1) === ':' || is_numeric(substr($data, 2, 1)))
 			$data = unserialize($data);
 
@@ -55,31 +55,31 @@ class FileSystem{
 
 	public function set($key, $value, $seconds=0){
 		if($seconds !== 0){
-			self::$expiration[$key] = $seconds + time();
-			file_put_contents(self::$expirationPath, serialize(self::$expiration));
+			$this->expiration[$key] = $seconds + time();
+			file_put_contents($this->expirationPath, serialize($this->expiration));
 		}
 
-		if(!isset(self::$expiration[$key])){
-			self::$expiration[$key] = 0;
-			file_put_contents(self::$expirationPath, serialize(self::$expiration));
+		if(!isset($this->expiration[$key])){
+			$this->expiration[$key] = 0;
+			file_put_contents($this->expirationPath, serialize($this->expiration));
 		}
 
 		if(!is_string($value))
 			$value = serialize($value);
 
-		file_put_contents(self::$path."/$key.cache", $value);
+		file_put_contents($this->path."/$key.cache", $value);
 	}
 
 	public function has($key){
-		if(!isset(self::$expiration[$key]))
+		if(!isset($this->expiration[$key]))
 			return false;
 
-		if(self::$expiration[$key] !== 0){
-			self::reloadExpiration();
-			if(self::$expiration[$key] < time()){
-				unset(self::$expiration[$key]);
-				unlink(self::$path."/$key.cache");
-				file_put_contents(self::$expirationPath, serialize(self::$expiration));
+		if($this->expiration[$key] !== 0){
+			$this->reloadExpiration();
+			if($this->expiration[$key] < time()){
+				unset($this->expiration[$key]);
+				unlink($this->path."/$key.cache");
+				file_put_contents($this->expirationPath, serialize($this->expiration));
 				return false;
 			}
 		}
@@ -89,31 +89,31 @@ class FileSystem{
 
 	// Get and forget
 	public function &pull($key, $default=null){
-		if(!isset(self::$expiration[$key]))
+		if(!isset($this->expiration[$key]))
 			return $default;
 
-		$data = file_get_contents(self::$path."/$key.cache");
+		$data = file_get_contents($this->path."/$key.cache");
 		if(substr($data, 1, 1) === ':' || is_numeric(substr($data, 2, 1)))
 			$data = unserialize($data);
 
-		unlink(self::$path."/$key.cache");
-		unset(self::$expiration[$key]);
-		file_put_contents(self::$expirationPath, serialize(self::$expiration));
+		unlink($this->path."/$key.cache");
+		unset($this->expiration[$key]);
+		file_put_contents($this->expirationPath, serialize($this->expiration));
 		return $data;
 	}
 
 	public function forget($key){
-		unlink(self::$path."/$key.cache");
-		if(!isset(self::$expiration[$key]))
+		unlink($this->path."/$key.cache");
+		if(!isset($this->expiration[$key]))
 			return false;
 
-		unset(self::$expiration[$key]);
-		file_put_contents(self::$expirationPath, serialize(self::$expiration));
+		unset($this->expiration[$key]);
+		file_put_contents($this->expirationPath, serialize($this->expiration));
 	}
 	
 	public function flush($key){
-		self::$expiration = [];
-		$list = glob(self::$path.'/*.*');
+		$this->expiration = [];
+		$list = glob($this->path.'/*.*');
 		foreach($list as &$value){
 			unlink($value);
 		}
@@ -121,19 +121,19 @@ class FileSystem{
 	}
 	
 	public function extendTime($key, $seconds){
-		if(!isset(self::$expiration[$key]))
+		if(!isset($this->expiration[$key]))
 			return false;
 
-		self::reloadExpiration();
-		if(self::$expiration[$key] >= time()){
-			unset(self::$expiration[$key]);
-			unlink(self::$path."/$key.cache");
-			file_put_contents(self::$expirationPath, serialize(self::$expiration));
+		$this->reloadExpiration();
+		if($this->expiration[$key] >= time()){
+			unset($this->expiration[$key]);
+			unlink($this->path."/$key.cache");
+			file_put_contents($this->expirationPath, serialize($this->expiration));
 			return false;
 		}
 
-		self::$expiration[$key] = $seconds + time();
-		file_put_contents(self::$expirationPath, serialize(self::$expiration));
+		$this->expiration[$key] = $seconds + time();
+		file_put_contents($this->expirationPath, serialize($this->expiration));
 		return true;
 	}
 }
