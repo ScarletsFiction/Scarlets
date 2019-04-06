@@ -53,11 +53,12 @@ if($status <= $last){
 }
 
 echo(" - Determining archive size\n");
-$headers = get_headers('https://codeload.github.com/ScarletsFiction/Scarlets/zip/master', true);
-if(isset($headers['Content-Length']))
-	$filesize = round(intval($headers['Content-Length'])/1024);
-else 
+$status = file_get_contents('https://api.github.com/repos/ScarletsFiction/Scarlets', 0, $context);
+try{
+	$filesize = round(json_decode($status, true)['size']);
+}catch(\Exception $e){
 	$filesize = '?';
+}
 
 echo(" - Downloading repository ($filesize KB)\n");
 file_put_contents('master.zip', file_get_contents('https://codeload.github.com/ScarletsFiction/Scarlets/zip/master'));

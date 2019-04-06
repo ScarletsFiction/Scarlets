@@ -2,6 +2,10 @@
 namespace Scarlets\Extend;
 
 class Strings{
+	public static function between($start, $end, $str){
+		return explode($end, explode($start, $str, 2)[1], 2)[0];
+	}
+
 	public static function formatBytes($bytes, $precision = 2){
 		$units = ['B', 'KB', 'MB', 'GB', 'TB'];
 		$bytes = max($bytes, 0);
