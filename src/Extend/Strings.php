@@ -2,7 +2,7 @@
 namespace Scarlets\Extend;
 
 class Strings{
-	public static function between($start, $end, $str){
+	public static function between($start, $end, &$str){
 		try{
 			return trim(explode($end, explode($start, $str, 2)[1], 2)[0]);
 		}catch(\Exception $e){
@@ -24,14 +24,14 @@ class Strings{
 		if(is_array($d)){
 			$k = array_keys($d);
 			for ($i=0; $i < count($k); $i++) { 
-				$d[$k[$i]] = utf8ize($d[$k[$i]]);
+				$d[$k[$i]] = self::utf8ize($d[$k[$i]]);
 			}
 		}
 
 		else if(is_object($d)){
 			$k = array_keys($d);
 			for ($i=0; $i < count($k); $i++) { 
-				$d->$k[$i] = utf8ize($d->$k[$i]);
+				$d->$k[$i] = self::utf8ize($d->$k[$i]);
 			}
 		}
 
