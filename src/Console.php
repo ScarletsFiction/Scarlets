@@ -123,7 +123,11 @@ class Console{
 			// Check if zero argument
 			if($argsLen === 0){
 				$return = call_user_func($commands);
-				if($return) echo("\n$return");
+				if($return){
+					if(is_array($return) === true)
+						echo json_encode($return, JSON_PRETTY_PRINT);
+					else echo("\n$return");
+				}
 				echo("\n");
 				return $return;
 			}
@@ -185,7 +189,11 @@ class Console{
 						$arguments[$number] = $pattern[$number];
 					}
 					$return = call_user_func_array($command[2], $arguments);
-					if($return) echo("\n".$return);
+					if($return){
+						if(is_array($return) === true)
+							echo json_encode($return, JSON_PRETTY_PRINT);
+						else echo("\n".$return);
+					}
 					echo("\n");
 
 					// Reset
