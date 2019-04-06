@@ -376,12 +376,13 @@ class WebRequest{
 
 		# Close handles
 		foreach ($chs as &$ch) {
-			foreach ($ch as &$value) {
-				curl_multi_remove_handle($mh, $value);
-
-				if($closeCurl === true)
+			if($closeCurl === true){
+				foreach ($ch as &$value) {
+					curl_multi_remove_handle($mh, $value);
 					curl_close($value);
+				}
 			}
+			else curl_multi_remove_handle($mh, $ch);
 		}
 		curl_multi_close($mh);
 	}
