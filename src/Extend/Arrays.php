@@ -69,11 +69,13 @@ class Arrays{
 	}
 
 	public static function &scoreSimillar(&$cache, $value, $column = null, $id = null){
+		$value = strtolower($value);
 		$obtained = [];
 		$lastLow = 1;
 		$lastLowID = 0;
 		$z = 0;
-		$i = -1;
+		$i = 0;
+		$n = 0;
 		foreach ($cache as &$ref) {
 			if($id === null) $i++;
 
@@ -82,7 +84,6 @@ class Arrays{
 			else $text = strtolower($ref[$column]);
 
 			similar_text($text, $value, $score);
-			$pendingScore = 0;
 
 			// Improve accuracy
 			if($score > 10 && $score < 80){
@@ -91,30 +92,30 @@ class Arrays{
 					continue;
 
 				if($pos === 0)
-					$pendingScore = 101+($score/100);
+					$score = 101+($score/100);
 
 				elseif(strpos($text, " $value ") !== false)
-					$pendingScore = 103+($score/100);
+						$score = 103+($score/100);
 
 				elseif(substr($text, $pos-1, 1) === ' ')
-					$pendingScore = 102+($score/100);
+					$score = 102+($score/100);
 			}
 			elseif($score < $lastLow)
 				continue;
 
 			if($z >= 10){
-				array_splice($obtained, $lastLowID, 1);
+				unset($obtained[$lastLowID]);
 
 				$lastLow = $score;
 				foreach ($obtained as $key => &$val) {
-					if($val[1] < $lastLow && $pendingScore === 0){
+					if($val[1] < $lastLow){
 						$lastLow = &$val[1];
 						$lastLowID = $key;
 					}
 				}
 			}
 			else{
-				if($score < $lastLow && $pendingScore === 0){
+				if($score < $lastLow){
 					$lastLow = $score;
 					$lastLowID = $z;
 				}
@@ -122,8 +123,9 @@ class Arrays{
 			}
 
 			if($id !== null)
-				$obtained[] = [$ref[$id], $pendingScore ?: $score];
-			else $obtained[] = [$i, $pendingScore ?: $score];
+				$obtained[$n] = [$ref[$id], $score];
+			else $obtained[$n] = [$i, $score];
+			$n++;
 		}
 
 		$lastHigh = 0;

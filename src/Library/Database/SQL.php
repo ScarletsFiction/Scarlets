@@ -548,7 +548,6 @@ class SQL{
 			return [];
 
 		unset($where[$column]);
-		$value = strtolower($value);
 		$column = substr($column, 0, -3);
 
 		// On interactive CLI mode, the data must be cached
