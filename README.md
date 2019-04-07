@@ -119,16 +119,24 @@ Console::help('echo', "Type 'echo (anything here)' to get echo back.");
 ```
 
 ### Clear console
-> Console::clear();
+```php
+Console::clear();
+```
 
 ### Check if running on console
-> Console::isConsole();
+```php
+Console::isConsole() === true;
+```
 
 ### Obtain registered console command
-> Console::collection();
+```php
+Console::collection();
+```
 
 ### Arrange result as a table on console
-> Console::table(array);
+```php
+Console::table(array);
+```
 
 ## WebRouter
 This webrouter will help you route any URL Request<br>
@@ -310,8 +318,8 @@ $myDatabase->onTableMissing('users', function(){
 | >= | More than or Equal |
 | < | Less than |
 | <= | Less than or Equal |
-| , | (single|array) True if a value exist in comma separated list |
-| !, | (single|array) True if a value not exist in comma separated list|
+| , | (single,array) True if a value exist in comma separated list |
+| !, | (single,array) True if a value not exist in comma separated list|
 | &, | (array) True if all value exist in comma separated list|
 | !&, | (array) True if all value not exist in comma separated list|
 | LENGTH(<, >, <=, >=) | Return row that have some text length in the column |
@@ -322,7 +330,9 @@ $myDatabase->onTableMissing('users', function(){
 | OR | Or condition `['OR'=>['AND'=>['type'=>'human', 'name'=>'alex']], 'type'=>'animal']` |
 
 ### Select table rows
-> $myDatabase->select(tableName, $columns, $where=[]);
+```php
+$myDatabase->select(tableName, $columns, $where=[]);
+```
 
 ```php
 $myDatabase->select('test', ['name', 'data'], {
@@ -334,30 +344,40 @@ $myDatabase->select('test', ['name', 'data'], {
 /// hashtag column value: ,2,3,6,7,8,
 /// This query will match above row because it's have ",3," 
 $myDatabase->select('test', ['name', 'data'], {
-    'hashtag[array]'=>[3,4]
+    'hashtag[,]'=>[3,4]
 });
 ```
 
 ### Count Matching Rows
 Count rows where the data was matched by query
-> $integer = $myDatabase->count($tableName, $where=[]);
+```php
+$integer = $myDatabase->count($tableName, $where=[]);
+```
 
 ### Get single row
 Get a single row where the data was matched
-> $data = $myDatabase->get($tableName, $column='*', $where=[]);
+```php
+$data = $myDatabase->get($tableName, $column='*', $where=[]);
+```
 
 If `$column` was defined with *string*, it will return string of that column data. But if it's defined with *array*, it will return associative array.
 
 ### Check if table has matched row
-> $boolean = $myDatabase->has($tableName, $where);
+```php
+$boolean = $myDatabase->has($tableName, $where);
+```
 
 ### Check if column has missing index
 Find missing index from 1 to rows length and return array of number. If the `$offset` is out of bound this will return false.
-> $list = $myDatabase->holes($tableName, $column, $length = 0, $offset = 0);
+```php
+$list = $myDatabase->holes($tableName, $column, $length = 0, $offset = 0);
+```
 
 ### Predict/Suggestion search
 Predict possible similar text on a column and return percentage while the highest percentage are on first index.
-> $array = $myDatabase->predict($tableName, $id = 'id', $where, &$cache);
+```php
+$array = $myDatabase->predict($tableName, $id = 'id', $where, &$cache);
+```
 
 ```php
 $cache = null; // This will greatly improve performance on Interactive CLI
@@ -388,7 +408,9 @@ Scarlets\Extend\Arrays::sortWithReference($data, 'user_id', $ids);
 
 ### Insert row
 Insert row to table
-> $myDatabase->insert($tableName, $object, $getInsertID = false);
+```php
+$myDatabase->insert($tableName, $object, $getInsertID = false);
+```
 
 ```php
 $primary_id = $myDatabase->insert('users', [
@@ -402,7 +424,9 @@ Bulk insert is available when you put indexed array into `$object` parameter.
 
 ### Update row
 Update some matched row in a table 
-> $myDatabase->update($tableName, $object, $where = false);
+```php
+$myDatabase->update($tableName, $object, $where = false);
+```
 
 ```php
 $myDatabase->update('posts', [
@@ -420,16 +444,20 @@ $myDatabase->update('posts', [
 | append | Append text |
 | prepend | Prepend text |
 | * / + - % | Do a math equation `['counter[+]'=>1]` |
-| ,++ | (single|array) add number into a list separated by comma |
-| ,-- | (single|array) remove a number from list separated by comma |
+| ,++ | (single,array) add number into a list separated by comma |
+| ,-- | (single,array) remove a number from list separated by comma |
 
 ### Delete row
 Delete row from table where some condition are true. If `$where` is set to false, this will truncate the table itself.
-> $myDatabase->delete($tableName, $where = false);
+```php
+$myDatabase->delete($tableName, $where = false);
+```
 
 ### Drop table
 Drop a table
-> $myDatabase->drop($tableName);
+```php
+$myDatabase->drop($tableName);
+```
 
 The other database library documentation is almost similar with [SFDatabase-js](https://github.com/ScarletsFiction/SFDatabase-js)
 
@@ -439,14 +467,18 @@ If you're willing to help write this documentation I will gladly accept it<br>
 
 ## LocalFile system
 You may need to assign the namespace to the top of your code
-> use \Scarlets\Library\FileSystem\LocalFile;
+```php
+use \Scarlets\Library\FileSystem\LocalFile;
+```
 
 The filesystem configuration are stored on `/config/filesystem.php`.<br>
 Then you can pass `{the storage name}/your/path` to the LocalFile function.
 
 ### load
 Load contents from file
-> LocalFile::load(path);
+```php
+LocalFile::load(path);
+```
 
 ```php
 $data = LocalFile::load('{app}/data/text.inf');
@@ -456,10 +488,14 @@ $data = LocalFile::load('{app}/data/text.inf');
 
 ## Cache
 You may need to assign the namespace to the top of your code
-> use \Scarlets\Library\Cache;
+```php
+use \Scarlets\Library\Cache;
+```
 
 ### get
-> Cache::get(key, default=null);
+```php
+Cache::get(key, default=null);
+```
 
 The example below will return data from `timestamp` key<br>
 but if the key was not found or expired, then it will return<br>
@@ -470,7 +506,9 @@ $data = Cache::get('timestamp', 0);
 ```
 
 ### set
-> Cache::set(key, value, seconds=0);
+```php
+Cache::set(key, value, seconds=0);
+```
 
 The example below will set `time()` on timestamp key<br>
 and expired after 20 second.
@@ -483,7 +521,9 @@ $data = Cache::set('timestamp', time(), 20);
 
 ## Crypto
 You may need to assign the namespace to the top of your code
-> use \Scarlets\Library\Crypto;
+```php
+use \Scarlets\Library\Crypto;
+```
 
 The security configuration are stored on `/config/security.php`.<br>
 The default cipher will be used if the cipher parameter was false.
@@ -493,7 +533,9 @@ So make sure you have enabled it before use.<br>
 And the available cipher are listed on [php documentation](http://php.net/manual/en/function.openssl-get-cipher-methods.php).
 
 ### encrypt
-> Crypto::encrypt(text, pass=false, cipher=false, mask=false);
+```php
+Crypto::encrypt(text, pass=false, cipher=false, mask=false);
+```
 
 Set the mask parameter to true if you want to encode any symbol<br>
 to text. Make sure you have change default `crypto_mask`<br>
@@ -506,7 +548,9 @@ $data = Cache::encrypt('hello', 'secretcode', false, false);
 ```
 
 ### decrypt
-> Crypto::decrypt(encryptedText, pass=false, cipher=false, mask=false);
+```php
+Crypto::decrypt(encryptedText, pass=false, cipher=false, mask=false);
+```
 
 ```php
 $data = Cache::decrypt('hello', 'secretcode');
@@ -514,13 +558,17 @@ $data = Cache::decrypt('hello', 'secretcode');
 
 ## Language
 You may need to assign the namespace to the top of your code
-> use \Scarlets\Library\Language;
+```php
+use \Scarlets\Library\Language;
+```
 
 The default language are configured on `/config/app.php`.<br>
 And the languages files are located on `/resources/lang/`.<br>
 
 ### get
-> Language::get($key, $values = [], $languageID='')
+```php
+Language::get($key, $values = [], $languageID='')
+```
 
 ```php
 $text = Language::get('time.current_date', [date('d M Y')], 'en');
@@ -528,12 +576,16 @@ $text = Language::get('time.current_date', [date('d M Y')], 'en');
 
 ## Socket
 You may need to assign the namespace to the top of your code
-> use \Scarlets\Library\Socket;
+```php
+use \Scarlets\Library\Socket;
+```
 
 ### create
 This function will open new socket server that able<br>
 to process multiple request at the same time.
-> Socket::create(address, port, readCallback, connectionCallback=0)
+```php
+Socket::create(address, port, readCallback, connectionCallback=0)
+```
 
 ```php
 Socket::create('localhost', 8000, function($socketResource, $data){
@@ -547,7 +599,9 @@ Socket::create('localhost', 8000, function($socketResource, $data){
 ### simple
 This function will open new socket server than able<br>
 to process single request at the a time.
-> Socket::simple(address, port, readCallback)
+```php
+Socket::simple(address, port, readCallback)
+```
 
 ```php
 Socket::simple('localhost', 8000, function($socketResource, $data){
@@ -557,15 +611,23 @@ Socket::simple('localhost', 8000, function($socketResource, $data){
 ```
 
 ### ping
-> Socket::ping(domain, port=80)
+```php
+Socket::ping(domain, port=80)
+```
 
 ## WebRequest
 You may need to assign the namespace to the top of your code
-> use \Scarlets\Library\WebRequest;
+```php
+use \Scarlets\Library\WebRequest;
+```
 
 ### loadURL
 Web Request with curl extension
-> WebRequest::loadURL(url, data="")
+```php
+WebRequest::loadURL(url, data="")
+```
+
+`url` can also be an array if you would like to do paralel request in a time.
 
 ```php
 $data = WebRequest::loadURL('https://www.google.com', [
@@ -585,15 +647,21 @@ $data = WebRequest::loadURL('https://www.google.com', [
 
 ### giveFiles
 From this server to client browser
-> WebRequest::giveFiles(filePath, fileName = null)
+```php
+WebRequest::giveFiles(filePath, fileName = null)
+```
 
 ### download
 From other server to local file
-> WebRequest::download(from, to, type="curl")
+```php
+WebRequest::download(from, to, type="curl")
+```
 
 ### receiveFile
 From client browser to this server
-> WebRequest::receiveFile(directory, allowedExt, rename='')
+```php
+WebRequest::receiveFile(directory, allowedExt, rename='')
+```
 
 Make sure you limit the allowed extension to<br>
 avoid security issue
@@ -612,16 +680,24 @@ $config = Scarlets\Config::load('app');
 
 ## Debugging
 ### Error warning
-> Scarlets\Error::warning('Something happen');
+```php
+Scarlets\Error::warning('Something happen');
+```
 
 ### Log
-> Scarlets\Log::message('Something happen');
+```php
+Scarlets\Log::message('Something happen');
+```
 
 ### Trace
-> Scarlets\Log::trace('Something happen');
+```php
+Scarlets\Log::trace('Something happen');
+```
 
 ### Register shutdown callback
-> Scarlets::onShutdown(callback);
+```php
+Scarlets::onShutdown(callback);
+```
 
 The callback will be called when the framework is going to shutdown
 
