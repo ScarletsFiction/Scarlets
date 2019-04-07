@@ -13,6 +13,7 @@
 namespace Scarlets\Library\Database;
 use \PDO;
 use \PDOException;
+use \Scarlets\Extend\Arrays;
 
 class SQL{
 	public $connection;
@@ -554,80 +555,11 @@ class SQL{
 		if(\Scarlets::$interactiveCLI === false)
 			$where[$column.'[length(>)]'] = $strlen;
 
-		$obtained = [];
-		$lastLow = 1;
-		$lastLowID = 0;
-
 		// Get the data if cache is not available
 		if($cache === false)
 			$cache = $this->select($tableName, [$id, $column], $where);
 
-		$z = 0;
-		foreach ($cache as &$ref) {
-			$text = strtolower($ref[$column]);
-			similar_text($text, $value, $score);
-			$pendingScore = 0;
-
-			// Improve accuracy
-			if($score > 10 && $score < 80){
-				$pos = strpos($text, $value);
-				if($pos === false && $score < $lastLow)
-					continue;
-
-				if($pos === 0)
-					$pendingScore = 101+($score/100);
-
-				elseif(strpos($text, " $value ") !== false)
-					$pendingScore = 103+($score/100);
-
-				elseif(substr($text, $pos-1, 1) === ' ')
-					$pendingScore = 102+($score/100);
-			}
-			elseif($score < $lastLow)
-				continue;
-
-			if($z >= 10){
-				array_splice($obtained, $lastLowID, 1);
-
-				$lastLow = $score;
-				foreach ($obtained as $key => &$val) {
-					if($val[1] < $lastLow && $pendingScore === 0){
-						$lastLow = &$val[1];
-						$lastLowID = $key;
-					}
-				}
-			}
-			else{
-				if($val[1] < $lastLow && $pendingScore === 0){
-					$lastLow = $score;
-					$lastLowID = $z;
-				}
-				$z++;
-			}
-
-			$obtained[] = [$ref[$id], $pendingScore ?: $score];
-		}
-
-		$lastHigh = 0;
-		$temp = [];
-		foreach ($obtained as &$val) {
-			$temp[$val[0]] = &$val[1];
-			if($val[1] < 100 && $lastHigh < $val[1])
-				$lastHigh = $val[1];
-		}
-
-		if($lastHigh === 100)
-			$lastHigh = 80;
-
-		// Normalize value
-		$normalize = 100 - $lastHigh;
-		foreach ($obtained as &$val) {
-			if($val[1] > 100)
-				$val[1] -= $normalize;
-		}
-
-		arsort($temp);
-		return $temp;
+		return Arrays::scoreSimillar($cache, $column, $value, $id);
 	}
 
 	// Only avaiable for string columns

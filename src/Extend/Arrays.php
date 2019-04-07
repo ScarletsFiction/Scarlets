@@ -67,4 +67,84 @@ class Arrays{
 
 		return json_decode('['.substr($text, 1, -1).']', true);
 	}
+
+	public static function &scoreSimillar(&$cache, $value, $column = null, $id = null){
+		$obtained = [];
+		$lastLow = 1;
+		$lastLowID = 0;
+		$z = 0;
+		$i = -1;
+		foreach ($cache as &$ref) {
+			if($id === null) $i++;
+
+			if($column === null)
+				$text = strtolower($ref);
+			else $text = strtolower($ref[$column]);
+
+			similar_text($text, $value, $score);
+			$pendingScore = 0;
+
+			// Improve accuracy
+			if($score > 10 && $score < 80){
+				$pos = strpos($text, $value);
+				if($pos === false && $score < $lastLow)
+					continue;
+
+				if($pos === 0)
+					$pendingScore = 101+($score/100);
+
+				elseif(strpos($text, " $value ") !== false)
+					$pendingScore = 103+($score/100);
+
+				elseif(substr($text, $pos-1, 1) === ' ')
+					$pendingScore = 102+($score/100);
+			}
+			elseif($score < $lastLow)
+				continue;
+
+			if($z >= 10){
+				array_splice($obtained, $lastLowID, 1);
+
+				$lastLow = $score;
+				foreach ($obtained as $key => &$val) {
+					if($val[1] < $lastLow && $pendingScore === 0){
+						$lastLow = &$val[1];
+						$lastLowID = $key;
+					}
+				}
+			}
+			else{
+				if($score < $lastLow && $pendingScore === 0){
+					$lastLow = $score;
+					$lastLowID = $z;
+				}
+				$z++;
+			}
+
+			if($id !== null)
+				$obtained[] = [$ref[$id], $pendingScore ?: $score];
+			else $obtained[] = [$i, $pendingScore ?: $score];
+		}
+
+		$lastHigh = 0;
+		$temp = [];
+		foreach ($obtained as &$val) {
+			$temp[$val[0]] = &$val[1];
+			if($val[1] < 100 && $lastHigh < $val[1])
+				$lastHigh = $val[1];
+		}
+
+		if($lastHigh === 100)
+			$lastHigh = 80;
+
+		// Normalize value
+		$normalize = 100 - $lastHigh;
+		foreach ($obtained as &$val) {
+			if($val[1] > 100)
+				$val[1] -= $normalize;
+		}
+
+		arsort($temp);
+		return $temp;
+	}
 }
