@@ -401,8 +401,6 @@ class Route{
 				elseif(substr($matches, 0, 1) === '*'){
 					$haveMatchAll = true;
 					$argData = $current;
-					if($requestURI === $current)
-						continue;
 				}
 
 				// Argument Match
@@ -479,7 +477,7 @@ class Route{
 			ob_end_clean();
 		}
 		else {
-			if($args) $pendingData = call_user_func_array($func, $args);
+			if(count($args) !== 0) $pendingData = call_user_func_array($func, $args);
 			else $pendingData = call_user_func($func);
 		}
 
