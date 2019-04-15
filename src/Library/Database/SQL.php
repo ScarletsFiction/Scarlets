@@ -247,6 +247,7 @@ class SQL{
 				elseif(substr($matches[1], -1) === ','){
 					$NOT = strpos($matches[1], '!') === 0 ? ' NOT' : '';
 					$OR = strpos($matches[1], '&') === false ? ' OR ' : ' AND ';
+					$validatedColumn = $this->validateColumn($matches[0]);
 
 					if(gettype($value) === 'array'){
 						if(count($value) > 2 && $OR === ' OR '){ // Optimize performance with regexp
@@ -254,13 +255,13 @@ class SQL{
 								$like = ' !~ ?';
 							else $like = " NOT REGEXP ?";
 
-		                	$wheres[] = $this->validateColumn($matches[0]).$like;
+		                	$wheres[] = $validatedColumn.$like;
 							$objectData[] = ',('.implode('|', $value).'),';
 						}
 						else{
 							$tempValue = [];
 							for ($i=0; $i < count($value); $i++) { 
-								$tempValue[] = "$NOT LIKE ?";
+								$tempValue[] = "$validatedColumn$NOT LIKE ?";
 								$objectData[] = "%,$value[$i],%";
 							}
 							$wheres[] = implode($OR, $tempValue);
@@ -268,11 +269,11 @@ class SQL{
 					}
 					else{
 						if($OR === ' AND '){
-							trigger_error('SQL where: value of' . $this->validateColumn($matches[0]) . ' must be a array');
+							trigger_error("SQL where: value of $validatedColumn must be a array");
 							continue;
 						}
 
-						$wheres[] = $this->validateColumn($matches[0])."$NOT LIKE ?";
+						$wheres[] = "$validatedColumn$NOT LIKE ?";
 						$objectData[] = "%,$value,%";
 					}
 				}
