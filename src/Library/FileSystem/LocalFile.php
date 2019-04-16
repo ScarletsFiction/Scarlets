@@ -1,6 +1,7 @@
 <?php
 namespace Scarlets\Library\FileSystem;
 use \Scarlets\Extend\Strings;
+use \Scarlets\Config;
 
 /*
 ---------------------------------------------------------------------------
@@ -16,12 +17,12 @@ class LocalFile{
 
 	public static function init(){
 		$config = Config::load('filesystem');
-		self::$storage = &$config['filesystem.storage']['localfile'];
+		self::$storage = &$config['filesystem.storage'];
 	}
 
 	private static function realpath(&$path){
 		$path = explode('}', $path);
-		$path = self::$storage[substr($path[0], 1)].$path[1];
+		$path = self::$storage[substr($path[0], 1)]['path'].$path[1];
 	}
 
 	public static function load($path){
