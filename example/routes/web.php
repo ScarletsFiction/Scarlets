@@ -91,3 +91,8 @@ Route::middleware('limit:2,60', function(){
         Serve::raw("Limited request");
     });
 });
+
+RemoteFile::listen('incoming', 'put', function($path){
+    // ... Record to MySQL maybe?
+});
+RemoteFile::route('/remote-handler', 'incoming');
