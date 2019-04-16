@@ -1,11 +1,11 @@
 <?php 
 namespace Scarlets\Library;
 use \Scarlets;
+use \Scarlets\Extend\Strings;
 
 class WebRequest{
 	public static $userAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Safari/537.36';
-	public static function loadURL($url, $options = false){
-		$headers = ['Accept'=>'*/*;q=0.8'];
+	public static function &loadURL($url, $options = false){
 		$options_ = [
 			CURLOPT_ENCODING=>'gzip',
 			CURLOPT_USERAGENT=>self::$userAgent,
@@ -16,91 +16,16 @@ class WebRequest{
 			CURLOPT_SSL_VERIFYHOST=>0,
 			CURLOPT_SSL_VERIFYPEER=>0
 		];
-		
-		if($options){
-			if(isset($options['ssl'])){ # 0, 1
-				$options_[CURLOPT_SSL_VERIFYHOST] = $options['ssl'];
-				$options_[CURLOPT_SSL_VERIFYPEER] = $options['ssl'];
-			}
 
-			if(isset($options['header'])) # ['X-Custom'=>'values']
-				$headers = array_merge($headers, $options['header']);
+		$headers = ['Accept'=>'*/*;q=0.8'];
 
-			if(isset($options['method'])){ # 'post'
-				$options['method'] = strtoupper($options['method']);
-
-				if(isset($options['data'])){
-    				// Default GET parameter
-					if($options['method'] === 'GET' || $options['method'] === 'HEAD')
-						$url .= '?'.http_build_query($options['data']);
-
-					elseif($options['method'] === 'POST'){
-						$options_[CURLOPT_POST] = 1;
-						$options_[CURLOPT_POSTFIELDS] = $options['data'];
-					}
-
-    				// Encode the data as JSON and send on the body
-					else {
-						if($options['method'] === 'JSON_POST')
-							$options_[CURLOPT_POST] = 1;
-
-						$headers['Content-Type'] = 'application/json; charset=utf-8';
-						$options_[CURLOPT_POSTFIELDS] = json_encode($options['data']);
-					}
-
-					$options_[CURLOPT_CUSTOMREQUEST] = $options['method'];
-				}
-
-				elseif($options['method'] === 'HEAD')
-					$options_[CURLOPT_NOBODY] = 1;
-
-    			else $options_[CURLOPT_CUSTOMREQUEST] = $options['method'];
-    		}
-
-    		// Default GET parameter
-			else if(isset($options['data'])){ # ['field' => 'value']
-				$url .= '?'.http_build_query($options['data']);
-			}
-
-			if(isset($options['cookiefile'])){ # 'path/to/file'
-				if(!file_exists($options['cookiefile']))
-					file_put_contents($options['cookiefile'], '');
-
-				$options_[CURLOPT_COOKIE] = file_get_contents($options['cookiefile']);
-			}
-
-			if(isset($options['cookie'])) # 'field=value;data=values'
-				$options_[CURLOPT_COOKIE] = $options['cookie'];
-
-			if(isset($options['limitSize'])){ # in KB
-				$options_[CURLOPT_BUFFERSIZE] = 128; // more progress info
-				$options_[CURLOPT_NOPROGRESS] = false;
-				$options_[CURLOPT_PROGRESSFUNCTION] = function(
-					$DownloadSize, $Downloaded, $UploadSize, $Uploaded
-				) use($options) {
-					// If $Downloaded exceeds 1KB, returning non-0 breaks the connection!
-					return ($Downloaded > ($options['limitSize'] * 1024)) ? 1 : 0;
-				};
-			}
-
-			if(isset($options['proxy'])){ # [ip=>127.0.0.1, port=>3000, *userpass=>'user:pass']
-				$options_[CURLOPT_PROXYAUTH] = CURLAUTH_NTLM;
-				$options_[CURLOPT_PROXY] = $options['proxy']['ip'];
-				$options_[CURLOPT_PROXYPORT] = $options['proxy']['port'];   
-
-				if(isset($options['userpass']))
-					$options_[CURLOPT_PROXYUSERPWD] = $options['proxy']['userpass'];
-			}
-
-			if(isset($options['returnheader']) || isset($options['cookiefile']))
-				$options_[CURLOPT_HEADER] = 1;
-		}
+		if($options)
+			self::implementCURLOptions($options_, $options, $headers);
 
 		$header = [];
-		foreach ($headers as $key => $value) {
+		foreach ($headers as $key => &$value)
 			$header[] = "$key: $value";
-		}
-		$options_[CURLOPT_HTTPHEADER] = $header;
+		$options_[CURLOPT_HTTPHEADER] = &$header;
 
 		$preprocess = function($result, &$ch) use(&$options) {
 			if($options){
@@ -152,7 +77,8 @@ class WebRequest{
 		if(is_array($url) === false){
 			$ch = curl_init($url);
 			curl_setopt_array($ch, $options_);
-			return $preprocess(curl_exec($ch), $ch);
+			$results = $preprocess(curl_exec($ch), $ch);
+			return $results;
 		}
 		else {
 			$mh = curl_multi_init(); $ch = [];
@@ -223,7 +149,7 @@ class WebRequest{
 				$file_ext = $path_parts['extension'];
 
 			$streamable = in_array($file_ext, ['swf', 'pdf', 'gif', 'png', 'jpeg', 'jpg', 'ra', 'ram', 'ogg', 'wav', 'wmv', 'avi', 'asf', 'divx', 'mp3', 'mp4', 'mpeg', 'mpg', 'mpe', 'mov', 'swf', '3gp', 'm4a', 'aac', 'm3u']);
-		    $ctype = fileTypes($file_ext);
+		    $ctype = Strings::mimeType($file_ext);
 
 			if($streamable){
 				header('Content-Disposition: inline;');
@@ -283,19 +209,36 @@ class WebRequest{
 	}
 
 	// From other server to local file
-	public static function download($path, $connection = 4, $onProgress = false){
+	public static function download($path, $options = false){
+		$onProgress = false;
+
+		$options_ = ['connection' => 4];
+		if($options !== false)
+			$options_ = array_merge($options, $options_);
+		
+		$connection = &$options_['connection'];
+
 		$mh = curl_multi_init();
 		$options = [
 			CURLOPT_FOLLOWLOCATION => 1,
 			CURLOPT_SSL_VERIFYPEER => 0,
 			CURLOPT_SSL_VERIFYHOST => 0,
 			CURLOPT_RETURNTRANSFER => 0,
-			// CURLOPT_VERBOSE => 1,
 			CURLOPT_BINARYTRANSFER => 1,
 			CURLOPT_FRESH_CONNECT => 0,
 			CURLOPT_CONNECTTIMEOUT => 10,
 			CURLOPT_USERAGENT => self::$userAgent
 		];
+
+		$headers = ['Accept'=>'*/*;q=0.8'];
+
+		if($options)
+			self::implementCURLOptions($options_, $options, $headers);
+
+		$header = [];
+		foreach ($headers as $key => &$value)
+			$header[] = "$key: $value";
+		$options_[CURLOPT_HTTPHEADER] = &$header;
 
 		$addRequest = function(&$url, &$path) use(&$mh, &$options, &$connection) {
 			$size = self::contentSize($url);
@@ -323,6 +266,9 @@ class WebRequest{
 
 		$reqs = []; $ch = [];
 		foreach ($path as $url => &$path) {
+			if($getRequest === true)
+				$url .= '?'.http_build_query($options_['data']);
+
 			$tmp = $addRequest($url, $path);
 			$reqs[] = $tmp[0];
 			$ch[] = $tmp[1];
@@ -385,6 +331,84 @@ class WebRequest{
 			else curl_multi_remove_handle($mh, $ch);
 		}
 		curl_multi_close($mh);
+	}
+
+	private static function implementCURLOptions(&$options_, &$options, &$headers){
+		if(isset($options['ssl'])){ # 0, 1
+			$options_[CURLOPT_SSL_VERIFYHOST] = &$options['ssl'];
+			$options_[CURLOPT_SSL_VERIFYPEER] = &$options['ssl'];
+		}
+
+		if(isset($options['header'])) # ['X-Custom'=>'values']
+			$headers = array_merge($headers, $options['header']);
+
+		if(isset($options['method'])){ # 'post'
+			$options['method'] = strtoupper($options['method']);
+
+			if(isset($options['data'])){
+    			// Default GET parameter
+				if($options['method'] === 'GET' || $options['method'] === 'HEAD')
+					$url .= '?'.http_build_query($options['data']);
+
+				elseif($options['method'] === 'POST'){
+					$options_[CURLOPT_POST] = 1;
+					$options_[CURLOPT_POSTFIELDS] = &$options['data'];
+				}
+
+    			// Encode the data as JSON and send on the body
+				elseif($options['method'] === 'JSON_POST'){
+					$options_[CURLOPT_CUSTOMREQUEST] = 'POST';
+
+					$headers['Content-Type'] = 'application/json; charset=utf-8';
+					$options_[CURLOPT_POSTFIELDS] = json_encode($options['data']);
+				}
+
+				else $options_[CURLOPT_CUSTOMREQUEST] = &$options['method'];
+			}
+
+			elseif($options['method'] === 'HEAD')
+				$options_[CURLOPT_NOBODY] = 1;
+
+    		else $options_[CURLOPT_CUSTOMREQUEST] = &$options['method'];
+    	}
+
+    	// Default GET parameter
+		else if(isset($options['data'])){ # ['field' => 'value']
+			$url .= '?'.http_build_query($options['data']);
+		}
+
+		if(isset($options['cookiefile'])){ # 'path/to/file'
+			if(!file_exists($options['cookiefile']))
+				file_put_contents($options['cookiefile'], '');
+
+			$options_[CURLOPT_COOKIE] = file_get_contents($options['cookiefile']);
+		}
+
+		if(isset($options['cookie'])) # 'field=value;data=values'
+			$options_[CURLOPT_COOKIE] = &$options['cookie'];
+
+		if(isset($options['limitSize'])){ # in KB
+			$options_[CURLOPT_BUFFERSIZE] = 128; // more progress info
+			$options_[CURLOPT_NOPROGRESS] = false;
+			$options_[CURLOPT_PROGRESSFUNCTION] = function(
+				$DownloadSize, $Downloaded, $UploadSize, $Uploaded
+			) use($options) {
+				// If $Downloaded exceeds 1KB, returning non-0 breaks the connection!
+				return ($Downloaded > ($options['limitSize'] * 1024)) ? 1 : 0;
+			};
+		}
+
+		if(isset($options['proxy'])){ # [ip=>127.0.0.1, port=>3000, *userpass=>'user:pass']
+			$options_[CURLOPT_PROXYAUTH] = CURLAUTH_NTLM;
+			$options_[CURLOPT_PROXY] = &$options['proxy']['ip'];
+			$options_[CURLOPT_PROXYPORT] = &$options['proxy']['port'];   
+
+			if(isset($options['userpass']))
+				$options_[CURLOPT_PROXYUSERPWD] = &$options['proxy']['userpass'];
+		}
+
+		if(isset($options['returnheader']) || isset($options['cookiefile']))
+			$options_[CURLOPT_HEADER] = 1;
 	}
 
 	// allowedExt = array

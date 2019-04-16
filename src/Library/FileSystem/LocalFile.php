@@ -22,7 +22,16 @@ class LocalFile{
 
 	private static function realpath(&$path){
 		$path = explode('}', $path);
-		$path = self::$storage[substr($path[0], 1)]['path'].$path[1];
+		$ref = &self::$storage[substr($path[0], 1)];
+		$path = $ref['path'].$path[1];
+
+		if(isset($ref['auto-directory']) && $ref['auto-directory'] === true && is_file($path) === false && is_dir($path) === false)
+			self::createDir($path);
+	}
+
+	public static function path($path){
+		self::realpath($path);
+		return $path;
 	}
 
 	public static function load($path){

@@ -40,10 +40,10 @@ class Scarlets{
 		if(!self::$isConsole){
 
 			// Put to $_POST because it's usually been send from POST method
-			if(isset($_SERVER["CONTENT_TYPE"]) && $_SERVER["CONTENT_TYPE"] === 'application/json')
+			if(isset($_SERVER["CONTENT_TYPE"]) && strpos($_SERVER["CONTENT_TYPE"], 'application/json') !== false)
 				$_POST = $_REQUEST = json_decode(file_get_contents('php://input'), true);
 
-			header("X-Framework: ScarletsFiction");
+			header("X-Framework: Scarlets");
 
 			// Reroute last slash
 			if(Config::$data['app.sensitive_web_route'] === false){
