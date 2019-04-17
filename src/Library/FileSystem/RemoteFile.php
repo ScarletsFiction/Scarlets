@@ -59,7 +59,7 @@ class RemoteFile{
 		if($isFile !== false)
 			$value = new \CURLFile(self::realpath($value));
 
-		return self::transmit($target, $action, [$path, $value], '0');
+		return self::transmit($target, $action, [$path, $value], '0') === '1';
 	}
 
 	public static function put($path, $value, $isFile = false){
@@ -76,32 +76,38 @@ class RemoteFile{
 
 	public static function delete($path, $recursive = false){
 		$target = self::targetHost($path);
-		return self::transmit($target, 'delete', [$path, $recursive], '0');
+		return self::transmit($target, 'delete', [$path, $recursive], '0') === '1';
 	}
 
 	public static function move($path, $to){
 		$target = self::targetHost($path);
-		return self::transmit($target, 'move', [$path, $to], '0|1');
+		return self::transmit($target, 'move', [$path, self::realpath($to)], '0|1') === '1';
 	}
 
 	public static function search($path, $regex, $recursive = false){
 		$target = self::targetHost($path);
-		return self::transmit($target, 'search', [$path, $regex, $recursive], '0');
+		return @json_decode(self::transmit($target, 'search', [$path, $regex, $recursive], '0')) ?: [];
 	}
 
 	public static function copy($path, $to){
 		$target = self::targetHost($path);
-		return self::transmit($target, 'copy', [$path, $to], '0|1');
+		self::targetHost($to);
+		return self::transmit($target, 'copy', [$path, $to], '0|1') === '1';
+	}
+
+	public static function dirList($path){
+		$target = self::targetHost($path);
+		return @json_decode(self::transmit($target, 'dirList', [$path], '0')) ?: [];
 	}
 
 	public static function size($path){
 		$target = self::targetHost($path);
-		return self::transmit($target, 'size', [$path], '0');
+		return @floatval(self::transmit($target, 'size', [$path], '0')) ?: 0;
 	}
 
 	public static function lastModified($path){
 		$target = self::targetHost($path);
-		return self::transmit($target, 'lastModified', [$path], '0');
+		return @intval(self::transmit($target, 'lastModified', [$path], '0')) ?: 0;
 	}
 
 	public static function download($path, $to){
@@ -188,7 +194,12 @@ class RemoteFile{
 			}
 
 			// Pass to handler
-			return call_user_func_array($callable, $_POST['args']);
+			$return = call_user_func_array($callable, $_POST['args']);
+			if($return === NULL)
+				return 1;
+			if(is_array($return) === true)
+				return json_encode($return);
+			return $return;
 		});
 	}
 

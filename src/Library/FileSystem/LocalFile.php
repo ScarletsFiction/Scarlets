@@ -23,7 +23,7 @@ class LocalFile{
 	private static function realpath(&$path){
 		$path = explode('}', $path);
 		$ref = &self::$storage[substr($path[0], 1)];
-		$path = $ref['path'].$path[1];
+		$path = preg_replace('/(?:\/|^)\.+?(?:\/|$)/', '/', $ref['path'].$path[1]);
 
 		if(isset($ref['auto-directory']) && $ref['auto-directory'] === true && is_file($path) === false && is_dir($path) === false)
 			self::createDir($path);
@@ -32,6 +32,18 @@ class LocalFile{
 	public static function path($path){
 		self::realpath($path);
 		return $path;
+	}
+
+	public static function dirList($path){
+		self::realpath($path);
+		if(is_dir($path) === false)
+			return [];
+
+		$dir = scandir($path);
+		if($dir[1] === '..')
+			array_splice($dir, 0, 2);
+
+		return $dir;
 	}
 
 	public static function load($path){
@@ -259,8 +271,7 @@ class LocalFile{
 		return trim($output);
 	}
 
-	public static function zipDirectory($sourcePath, $outZipPath, $password='', $regex='')
-	{
+	public static function zipDirectory($sourcePath, $outZipPath, $password='', $regex=''){
 		if($sourcePath[0]==='{') self::realpath($sourcePath);
 		if($outZipPath[0]==='{') self::realpath($outZipPath);
 		
@@ -285,8 +296,7 @@ class LocalFile{
 		return true;
 	}
 	
-	public static function extractZip($path, $to, $password='')
-	{
+	public static function extractZip($path, $to, $password=''){
 		if($path[0]==='{') self::realpath($path);
 		if($to[0]==='{') self::realpath($to);
 		
@@ -310,8 +320,7 @@ class LocalFile{
 		return true;
 	}
 	
-	public static function zipStatus($path)
-	{
+	public static function zipStatus($path){
 		if($path[0]==='{') self::realpath($path);
 		
 		$zip = new ZipArchive();

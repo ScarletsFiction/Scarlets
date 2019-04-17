@@ -37,7 +37,7 @@ return [
         'key' => 'IU.;>:G87&# 2Y$)*G)D*T&$)8 UWG(T#Gb ',
 
         // Addional security
-        'allow-ip' => ['127.0.0.1', '192.168.1.1']
+        // 'allow-ip' => ['127.0.0.1', '192.168.1.1']
     ]
 ],
 ];
