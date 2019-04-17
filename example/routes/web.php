@@ -14,6 +14,7 @@ use \Scarlets\Route\Query;
 use \Scarlets\Library\Cache;
 use \Scarlets\Library\Language;
 use \App\Http\Controllers\YourController;
+use \Scarlets\Library\FileSystem\RemoteFile;
 
 Route::get('/', function(){
     Serve::view('static.header', [
