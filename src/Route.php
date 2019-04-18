@@ -201,34 +201,6 @@ class Route{
 
 		self::$waitName[] = [$name, $data];
 	}
-	
-	// $http = http status like 301 or redirect method
-	public static function redirect($to, $http = 301, $data = false){
-		if(!is_numeric($http)){
-			// GET method
-			if(strtolower($method) === 'get'){
-				if($data)
-					header('Location: '.explode('?', $to)[0].'?'.http_build_query($data));
-				else
-					header("Location: $to");
-			}
-
-			// POST method
-			else {
-				?><!DOCTYPE html><html><head></head><body>
-				<form id="autoForm" action="<?= $to ?>" method="post">
-				<?php
-					if($data) foreach ($data as $key => $value) {
-						echo('<input type="hidden" name="'.htmlentities($key).'" value="'.htmlentities($value).'">');
-					}
-				?>
-				</form>
-				<script type="text/javascript">document.getElementById('autoForm').submit();</script></body></html><?php
-			}
-		} else header("Location: $to", true, $http);
-		Route\Serve::$headerSent = true;
-		exit;
-	}
 
 	public static function status($code, $func){
 		Route\Handler::register('STATUS', $code, $func);
@@ -497,11 +469,10 @@ class Route{
 		Force any http request to be send from https protocol
 	*/
 	public static function forceSecure(){
-		if(\Scarlets::$isConsole){
+		if(\Scarlets::$isConsole)
 			return;
-		}
 		
-		if(empty($_SERVER['HTTPS']) || $_SERVER['HTTPS'] == 'off'){
+		if(empty($_SERVER['HTTPS']) || $_SERVER['HTTPS'] === 'off'){
 		    $redirect = 'https://' . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'];
 		    header("Location: $redirect", true);
 		    exit;

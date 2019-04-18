@@ -26,7 +26,7 @@ class LocalFile{
 		$path = preg_replace('/(?:\/|^)\.+?(?:\/|$)/', '/', $ref['path'].$path[1]);
 
 		if(isset($ref['auto-directory']) && $ref['auto-directory'] === true && is_file($path) === false && is_dir($path) === false)
-			self::createDir($path);
+			self::mkdir($path);
 	}
 
 	public static function path($path){
@@ -34,7 +34,7 @@ class LocalFile{
 		return $path;
 	}
 
-	public static function dirList($path){
+	public static function contents($path){
 		self::realpath($path);
 		if(is_dir($path) === false)
 			return [];
@@ -98,7 +98,7 @@ class LocalFile{
 		rename("$path._temp", $path);
 	}
 
-	public static function createDir($path){
+	public static function mkdir($path){
 		if($path[0]==='{') self::realpath($path);
 		
 	    if(!is_dir(dirname($path)))
@@ -136,13 +136,6 @@ class LocalFile{
 		copy($path, $to);
 	}
 
-	// Can be used for moving file/folder
-	public static function rename($path, $to){
-		if($path[0]==='{') self::realpath($path);
-		if($to[0]==='{') self::realpath($to);
-		
-		rename($path, $to);
-	}
 	public static function move($path, $to){
 		if($path[0]==='{') self::realpath($path);
 		if($to[0]==='{') self::realpath($to);
@@ -327,15 +320,14 @@ class LocalFile{
 		$res = $zip->open(realpath($path), ZipArchive::CHECKCONS);
 		if ($res !== true) {
 			if($res === ZipArchive::ER_NOZIP)
-				return [false, 'Not a zip file'];
-			if($res === ZipArchive::ER_INCONS )
-				return [false, 'Consistency check failed'];
-			if($res === ZipArchive::ER_CRC )
-				return [false, 'Checksum failed'];
-			else
-				return [false, $res];
+				return 'Not a zip file';
+			elseif($res === ZipArchive::ER_INCONS)
+				return 'Consistency check failed';
+			elseif($res === ZipArchive::ER_CRC )
+				return 'Checksum failed';
+			return $res;
 		}
-		else return [true];
+		return false;
 	}
 }
 LocalFile::init();

@@ -60,7 +60,7 @@ class Middleware{
 	        ob_start();
 
 	        // On request finished
-	        return function($headerData, $footerData){
+	        return function($headerData = [], $footerData = []){
 	            $body = ob_get_clean();
 
 	            // This will trigger 'special' router event on ScarletsFrame

@@ -95,9 +95,9 @@ class RemoteFile{
 		return self::transmit($target, 'copy', [$path, $to], '0|1') === '1';
 	}
 
-	public static function dirList($path){
+	public static function contents($path){
 		$target = self::targetHost($path);
-		return @json_decode(self::transmit($target, 'dirList', [$path], '0')) ?: [];
+		return @json_decode(self::transmit($target, 'contents', [$path], '0')) ?: [];
 	}
 
 	public static function size($path){
@@ -196,7 +196,7 @@ class RemoteFile{
 			// Pass to handler
 			$return = call_user_func_array($callable, $_POST['args']);
 			if($return === NULL)
-				return 1;
+				return '1';
 			if(is_array($return) === true)
 				return json_encode($return);
 			return $return;

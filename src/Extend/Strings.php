@@ -2,9 +2,18 @@
 namespace Scarlets\Extend;
 
 class Strings{
-	public static function between($start, $end, &$str){
+	public static function between($start, $end, &$str, $all = false){
 		try{
-			return trim(explode($end, explode($start, $str, 2)[1], 2)[0]);
+			if($all === false)
+				return explode($end, explode($start, $str, 2)[1], 2)[0];
+
+			$found = [];
+			$data = explode($start, $str);
+			foreach ($data as &$value) {
+				$value = explode($end, $value);
+				if(count($value) === 1) continue;
+				$found[] = $value[0];
+			}
 		}catch(\Exception $e){
 			return '';
 		}
@@ -20,24 +29,22 @@ class Strings{
 		return round($bytes, $precision) . '' . $units[$pow];
 	}
 
-	public static function utf8ize($d){
+	public static function &utf8ize(&$d){
 		if(is_array($d)){
 			$k = array_keys($d);
 			for ($i=0; $i < count($k); $i++) { 
-				$d[$k[$i]] = self::utf8ize($d[$k[$i]]);
+				self::utf8ize($d[$k[$i]]);
 			}
 		}
 
 		else if(is_object($d)){
 			$k = array_keys($d);
 			for ($i=0; $i < count($k); $i++) { 
-				$d->$k[$i] = self::utf8ize($d->$k[$i]);
+				self::utf8ize($d->$k[$i]);
 			}
 		}
 
-		else 
-			return iconv('UTF-8', 'UTF-8//IGNORE', $d);
-
+		$d = iconv('UTF-8', 'UTF-8//IGNORE', $d);
 		return $d;
 	}
 
