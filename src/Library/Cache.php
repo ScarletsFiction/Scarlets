@@ -2,7 +2,7 @@
 namespace Scarlets\Library;
 use \Scarlets;
 use \Scarlets\Config;
-use \Scarlets\Library\Cache\FileSystem;
+use \Scarlets\Library\Cache\LocalFile;
 use \Scarlets\Library\Cache\Redis;
 
 /*
@@ -25,7 +25,7 @@ class Cache{
 	 * Connect to cache
 	 *
 	 * @param string $credential CredentialID that configured on the configuration
-	 * @return \Scarlets\Library\Cache\FileSystem
+	 * @return \Scarlets\Library\Cache\LocalFile
 	 */
 	public static function &connect($credential = false){
 		// Use default credential if not specified
@@ -41,8 +41,8 @@ class Cache{
 			$options = &self::$credentials[$credential];
 			$driver = &$options['driver'];
 
-			if($driver === 'filesystem')
-				self::$connectedDB[$credential] = new FileSystem($options);
+			if($driver === 'localfile')
+				self::$connectedDB[$credential] = new LocalFile($options);
 			elseif($driver === 'redis')
 				self::$connectedDB[$credential] = new Redis($options);
 			// Else ...

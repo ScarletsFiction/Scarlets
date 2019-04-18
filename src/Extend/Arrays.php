@@ -14,6 +14,13 @@ class Arrays{
 		return $temp_;
 	}
 
+	public static function sortWithReference(&$arr, $key, $ref){
+		foreach ($arr as &$value) {
+	        $ref[array_search($value[$key], $ref)] = $value;
+	    }
+	    $arr = $ref;
+	}
+
 	public static function &duplicates($array){
     	$duplicates = [];
     	$values = array_count_values($array);

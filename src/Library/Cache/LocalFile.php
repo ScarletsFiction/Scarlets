@@ -1,7 +1,7 @@
 <?php
 namespace Scarlets\Library\Cache;
 
-class FileSystem{
+class LocalFile{
 	public $path = '';
 	public $expiration = [];
 	public $expirationPath = '';
@@ -111,9 +111,9 @@ class FileSystem{
 		file_put_contents($this->expirationPath, serialize($this->expiration));
 	}
 	
-	public function flush($key){
+	public function flush($key="*"){
 		$this->expiration = [];
-		$list = glob($this->path.'/*.*');
+		$list = glob($this->path."/$key.*");
 		foreach($list as &$value){
 			unlink($value);
 		}

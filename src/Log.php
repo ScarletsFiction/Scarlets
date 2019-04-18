@@ -25,6 +25,13 @@ class Log{
 			file_put_contents(self::$path, 'Log: '.print_r($msg, true)."\n---\n", FILE_APPEND);
 	}
 
+	public static function trace($msg = ''){
+		$e = new \Exception();
+
+		if(self::$type === 'errorlog')
+			file_put_contents(self::$path, "Trace (".print_r($msg, true)."): ".str_replace(self::$path, '', $e->getTraceAsString())."\n---\n", FILE_APPEND);
+	}
+
 	public static function broke($msg){
 		while(ob_get_level()){
 			ob_get_clean();
