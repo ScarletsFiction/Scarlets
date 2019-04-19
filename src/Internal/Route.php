@@ -60,8 +60,8 @@ class Serve{
 	public static $pending = []; // [func, callable]
 	public static $pendingLevel = 0;
 
-	public static function view($path, $values = [], $static = false){
-		if($static && isset($_REQUEST['_scarlets']) && strpos($_REQUEST['_scarlets'], '.dynamic.') !== false)
+	public static function view($path, $values = [], $isMVW = false){
+		if($isMVW && isset($_REQUEST['_scarlets']) && strpos($_REQUEST['_scarlets'], '.dynamic.') !== false)
 			return;
 
 		if(Scarlets::$isConsole && !self::$headerSent)
@@ -159,9 +159,9 @@ class Serve{
 		if(self::$headerSent) return;
 
 		if(Scarlets::$isConsole === true) 
-			Scarlets\Route::$statusCode = $statusCode;
+			Scarlets\Route::$statusCode = $statusCode ?: 500;
 		else
-			http_response_code($statusCode);
+			http_response_code($statusCode ?: 500);
 
 		if($headerOnly) return;
 		
@@ -228,6 +228,13 @@ class Serve{
 		} else header("Location: $to", true, $http);
 		self::$headerSent = true;
 		exit;
+	}
+
+	public static function maintenance(){
+		$status = &Scarlets::$registry['Route']['STATUS'];
+		if(isset($status[503]) && $status[503]() !== true)
+			Serve::end();
+		self::$headerSent = false;
 	}
 }
 

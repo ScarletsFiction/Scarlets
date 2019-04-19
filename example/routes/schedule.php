@@ -13,19 +13,21 @@
 | or register command console and create new cron from webhost's
 | control panelto execute that command
 |
+| You need to turn on this feature by install task scheduler (minimal 5 minutes)
+| $ scarlets install 5
+|
 */
 use \Scarlets\Library\Schedule;
 
-Schedule::cron('* * * * * *', function(){
-	
-});
+// https://crontab.guru/
+Schedule::cron('* * * * *', function(){});
 
 // Every hour
 Schedule::hourly(function(){
 	
 });
 
-// Every hour at 30m and 15s
-Schedule::hourly('30:15', function(){
+// Every 2 week
+Schedule::weekly(2, function(){
 	
 });

@@ -49,6 +49,8 @@ class LocalFile{
 	public static function load($path){
 		if($path[0]==='{') self::realpath($path);
 
+		if(file_exists($path) === false)
+			return '';
 		return file_get_contents($path);
 		/*
 	    	$fhandle = fopen($path, 'r');
@@ -69,7 +71,7 @@ class LocalFile{
 			}
 			return $bytes;
 		}
-		if(!file_exists($path)) return 0;
+		if(file_exists($path) === false) return 0;
 		if(is_file($path))
 			return filesize($path);
 	}
@@ -126,6 +128,7 @@ class LocalFile{
 	public static function lastModified($path){
 		if($path[0]==='{') self::realpath($path);
 		
+		if(file_exists($path) === false) return 0;
 		return filemtime($path);
 	}
 
@@ -133,6 +136,7 @@ class LocalFile{
 		if($path[0]==='{') self::realpath($path);
 		if($to[0]==='{') self::realpath($to);
 		
+		if(file_exists($path) === false) return 0;
 		copy($path, $to);
 	}
 
@@ -140,6 +144,7 @@ class LocalFile{
 		if($path[0]==='{') self::realpath($path);
 		if($to[0]==='{') self::realpath($to);
 		
+		if(file_exists($path) === false) return 0;
 		rename($path, $to);
 	}
 

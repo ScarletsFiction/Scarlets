@@ -26,6 +26,17 @@ Route::status(500, function(){
     Serve::view('static.footer');
 });
 
+Route::status(503, function(){
+    Serve::view('static.header', [
+        'title'=>'Maintenance'
+    ]);
+    Serve::view('status', [
+        'status' => 'Maintenance',
+        'information' => 'There are some maintenance on the server'
+    ]);
+    Serve::view('static.footer');
+});
+
 Route::status(404, function(){
     Serve::view('static.header', [
         'title'=>'Not Found'

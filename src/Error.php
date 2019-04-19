@@ -34,7 +34,7 @@ class Error{
 	// Error handler, passes flow over the exception logger with new ErrorException.
 	public static function ErrorHandler($severity, $message, $file, $line){
 		if(E_RECOVERABLE_ERROR === $severity){
-		    throw new ErrorException($message, $severity, 0, $file, $line);
+		    throw new \ErrorException($message, $severity, 0, $file, $line);
 		    return;
 		}
 

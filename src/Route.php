@@ -1,6 +1,7 @@
 <?php 
 namespace Scarlets;
 use Scarlets;
+use Scarlets\Route\Serve;
 use Scarlets\Route\Middleware;
 include_once __DIR__.'/Internal/Route.php';
 
@@ -291,6 +292,9 @@ class Route{
 	}
 
 	public static function handleURL($url, $func, $opts, $checkOnly = false){
+		if(\Scarlets::$maintenance === true)
+			Serve::maintenance();
+
 		$matched = $haveMatchAll = false;
 		$args = [];
 		$requestURI = explode('?', $_SERVER['REQUEST_URI'], 2)[0];

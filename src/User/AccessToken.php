@@ -43,6 +43,25 @@ class AccessToken{
 		self::$config['permissions'] = &$config['permissions'];
 		self::$config['token_table'] = &$config['token_table'];
 		self::$config['app_table'] = &$config['app_table'];
+
+		// If the token_table was not found
+		self::$database->onTableMissing($config['token_table'], function(){
+			self::$database->createTable($config['token_table'], [
+				'token_id' => ['bigint(19)', 'primary', 'key', 'AUTO_INCREMENT'],
+				'app_id' => 'int(11)',
+				'user_id' => 'int(11)',
+				'expiration' => 'int(11)',
+				'permissions' => ['text', 'COLLATE', 'latin1_swedish_ci']
+			]);
+		});
+
+		// If the app_table was not found
+		self::$database->onTableMissing($config['app_table'], function(){
+			self::$database->createTable($config['app_table'], [
+				'app_id' => ['bigint(19)', 'primary', 'key', 'AUTO_INCREMENT'],
+				'app_secret' => ['text', 'COLLATE', 'latin1_swedish_ci']
+			]);
+		});
 	}
 
 	public static function parseAvailableToken(){
@@ -92,12 +111,12 @@ class AccessToken{
 		return true;
 	}
 
-	public static function isAllowed($action){
+	public static function isAllowed($pemissionID){
 		self::$config['permissions'] = &self::$permissions;
 		if(self::$config['permissions'] === '|*|') return true;
 
 		for($i=0; $i < count(self::$config['permissions']); $i++){
-			if(self::$config['permissions'][$i] === $action){
+			if(self::$config['permissions'][$i] === $pemissionID){
 				return strpos(self::$config['permissions'], "|$i|") !== false; // Permissions -> |0|12|
 			}
 		}
@@ -171,7 +190,8 @@ class AccessToken{
 	}
 
 	// Delete access token from database
-	public static function revoke($tokenID){
+	public static function revoke($tokenID = false){
+		$tokenID = self::$tokenID;
 		self::$db->delete(self::$config['token_table'], ['token_id'=>$tokenID]);
 	}
 }

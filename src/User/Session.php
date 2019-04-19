@@ -17,7 +17,7 @@ use \Scarlets\Library\Database;
 | will have some chance to be stealed by MIM Attack.
 |
 | SFSession.id === sifyData.id
-| SessionDB.lastcreated === sifyData.@created
+| SessionDB.last_created === sifyData.@created
 | sifyData.integrity === SFIntegrity (Not imlemented yet)
 |
 */
@@ -96,11 +96,11 @@ class Session{
 					'id' => ['bigint(19)', 'primary', 'key', 'AUTO_INCREMENT'],
 					'session' => 'tinytext',
 					'data' => 'text',
-					'ipaddress' => 'text',
-					'lasturlaccess' => 'text',
-					'lastlistingaccess' => ['int(11)', 'default', 0],
-					'lastrecordedtime' => ['int(11)', 'default', 0],
-					'lastcreated' => ['int(11)', 'default', 0],
+					'ip_address' => 'text',
+					'last_url_access' => 'text',
+					'last_limited_access' => ['int(11)', 'default', 0],
+					'last_access_time' => ['int(11)', 'default', 0],
+					'last_created' => ['int(11)', 'default', 0],
 					'blocked' => ['tinyint(1)', 'default', 0]
 				]);
 			});
@@ -134,12 +134,19 @@ class Session{
 					self::load();
 			});
 		}
-		else
-			Scarlets::onShutdown($saveData);
+		else Scarlets::onShutdown($saveData);
+	}
+
+	public static function sify($data){
+		foreach ($data as $key => $value) {
+			self::$sify[$key] = $value;
+		}
+
+		self::saveSify();
 	}
 
 	// Load sifyData from cookie
-	public static function loadSifyData(){
+	public static function loadSify(){
 		$ref = &self::$sify;
 		$ref = self::extractSifyData();
 		if($ref === false)
@@ -162,7 +169,7 @@ class Session{
 	}
 
 	// Save sifyData to cookie
-	public static function saveSifyData($force=false){
+	public static function saveSify($force=false){
 		if(!Scarlets::$isConsole && headers_sent()){
 			trigger_error('Couldn\'t save sifyData because header already sent. Make sure you save it before any body content being sent');
 			return;
@@ -203,19 +210,19 @@ class Session{
 		self::$started = true;
 
 		// Set SFSession data from cookies
-		if(self::$ID === false && !self::loadSifyData())
+		if(self::$ID === false && !self::loadSify())
 			return $false;
 		$database = &self::$database;
 
 		// Search session in database
-		$data = $database->get(self::$table, ['data', 'lastrecordedtime', 'blocked', 'ipaddress', 'lastcreated'], ['id'=>self::$ID]);
+		$data = $database->get(self::$table, ['data', 'last_recorded_time', 'blocked', 'ip_address', 'last_created'], ['id'=>self::$ID]);
 
 		// Data found in database
 		if($data !== false){
 			if(!empty(self::$data_)) return $false;
 
 			// Check creation date
-			if(!isset(self::$sify['@created']) || $data['lastcreated'] !== self::$sify['@created']){
+			if(!isset(self::$sify['@created']) || $data['last_created'] !== self::$sify['@created']){
 				self::destroyCookies();
 				self::$started = false;
 				$temp = self::load($return);
@@ -226,15 +233,15 @@ class Session{
 			self::$data_ = self::$data; // Just for comparing when shutdown
 
 			// Reset after 15 seconds and update some information
-			if(time()-15 >= $data['lastrecordedtime'])
+			if(time()-15 >= $data['last_recorded_time'])
 			{
-				if($_SERVER['REMOTE_ADDR'] !== $data['ipaddress'])
-					self::$oldIPAddress = $data['ipaddress'];
+				if($_SERVER['REMOTE_ADDR'] !== $data['ip_address'])
+					self::$oldIPAddress = $data['ip_address'];
 
 				$database->update(self::$table, [
-					'lastrecordedtime' => time(),
-					'lasturlaccess' => $_SERVER['REQUEST_URI'],
-					'ipaddress' => $_SERVER['REMOTE_ADDR'],
+					'last_recorded_time' => time(),
+					'last_url_access' => $_SERVER['REQUEST_URI'],
+					'ip_address' => $_SERVER['REMOTE_ADDR'],
 				], ['id' => self::$ID]);
 			}
 
@@ -250,7 +257,7 @@ class Session{
 		return $false;
 	}
 
-	public static function save($new = false){
+	public static function &save($new = false){
 		// Update session on the database
 		if($new === false){
 			self::$database->update(self::$table, [
@@ -273,20 +280,22 @@ class Session{
 				'id' => $rawID,
 				'session' => $newID,
 				'data' => json_encode(self::$data),
-				'lasturlaccess' => $_SERVER['REQUEST_URI'],
-				'ipaddress' => $_SERVER['REMOTE_ADDR'],
-				'lastcreated' => $created
+				'last_url_access' => $_SERVER['REQUEST_URI'],
+				'ip_address' => $_SERVER['REMOTE_ADDR'],
+				'last_created' => $created
 			]);
 
 			self::$sify = ['@created' => $created];
-
-			// Save sifyData
-			self::saveSifyData(true);
-			return [$newID, self::$sify];
 		}
+
+		// Save sifyData
+		if(headers_sent() === false)
+			self::saveSify(true);
+
+		return self::$TextID;
 	}
 
-	public static function destroyCookies($justCookies=false){
+	public static function destroy($justCookies=false){
 		if(isset($_SERVER['HTTP_COOKIE'])){
 			$expires = time()-3600;
             $cookies = explode(';', $_SERVER['HTTP_COOKIE']);
@@ -326,7 +335,7 @@ class Session{
 			if(empty(self::$data))
 				$data = false;
 			else
-				$data = self::save(true);
+				$data = [self::save(true), self::$sify];
 			return $data;
 		}
 

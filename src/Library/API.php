@@ -3,20 +3,19 @@ namespace Scarlets\Library;
 use \Scarlets\Route\Serve;
 
 class API{
-	public static function fields(&$from, $array){
+	public static function fields(&$default, $available){
 		if(isset($_REQUEST['fields'])){
 			$requested = explode(',', str_replace(' ', '', $_REQUEST['fields']));
 			for ($i=0; $i < count($requested); $i++) {
-				if(!in_array($requested[$i], $array))
+				if(!in_array($requested[$i], $available))
 					array_splice($requested, $i, 1);
 			}
 
 			$array = &$requested;
 		}
 
-		if(!$from)
-			$from = $array;
-		else $from = array_flip(array_flip(array_merge($from, $array)));
+		if(!$default) $default = $array;
+		else $default = array_flip(array_flip(array_merge($default, $available)));
 	}
 
 	public static function &request($field, $default = null){
@@ -62,28 +61,29 @@ class API{
 		Serve::end("{\"error\":\"'$field' are required\"}");
 	}
 
-	public static function alias(&$store, $fields, $sanitizer = false){
-		if(!$store)
-			$store = [];
+	public static function alias(&$data, $fields, $sanitizer = false){
+		if($data === null) $data = [];
 
-		foreach ($fields as $key => $value) {
+		foreach ($fields as $key => &$value) {
+			if(is_int($key) === true)
+				$key = &$value;
+
 			if(isset($_REQUEST[$key])){
 				if($sanitizer === false)
-					$store[$value] = &$_REQUEST[$key];
-				else $store[$value] = $sanitizer($_REQUEST[$key]);
+					$data[$value] = &$_REQUEST[$key];
+				else $data[$value] = $sanitizer($_REQUEST[$key]);
 			}
 		}
 	}
 
-	public static function obtain(&$store, $fields, $sanitizer = false){
-		if(!$store)
-			$store = [];
+	public static function obtain(&$data, $fields, $sanitizer = false){
+		if($data === null) $data = [];
 
 		foreach ($fields as &$key) {
 			if(isset($_REQUEST[$key])){
 				if($sanitizer === false)
-					$store[$key] = &$_REQUEST[$key];
-				else $store[$key] = $sanitizer($_REQUEST[$key]);
+					$data[$key] = &$_REQUEST[$key];
+				else $data[$key] = $sanitizer($_REQUEST[$key]);
 			}
 		}
 	}

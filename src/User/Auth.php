@@ -29,6 +29,19 @@ class Auth{
 
 		if(!Session::$started)
 			Session::load();
+
+		// If the table was not found
+		self::$database->onTableMissing(self::$table, function(){
+			self::$database->createTable(self::$table, [
+				'user_id' => ['bigint(19)', 'primary', 'key', 'AUTO_INCREMENT'],
+				'username' => ['text', 'COLLATE', 'latin1_swedish_ci'],
+				'password' => ['text', 'COLLATE', 'latin1_swedish_ci'],
+				'email' => ['text', 'COLLATE', 'latin1_swedish_ci'],
+				'failed_login' => ['tinyint(10)', 'default', 0],
+				'login_time' => ['int(11)', 'default', 0],
+				'last_created' => ['int(11)', 'default', 0]
+			]);
+		});
 	}
 
 	public static function logout(){
@@ -44,7 +57,7 @@ class Auth{
 		$data = [];
 		$_COOKIE = [];
 		$_SESSION = [];
-		Session::saveSifyData();
+		Session::saveSify();
 	}
 
 	// $data = [username=>'', password=>'']
@@ -53,7 +66,7 @@ class Auth{
 	// if beforeVerify return true, then the login will failed
 	// Return true if success, false if the login was failed, or a message if something invalid
 	public static function login($data, $where = false, $beforeVerify = false, $onSuccess = false){
-		$username = strtolower($data['email']);
+		$username = strtolower($data['username']);
 		$column = ['user_id', 'password', 'username'];
 		$where_ = [];
 
@@ -107,7 +120,7 @@ class Auth{
 			$sify['username'] = &$row['username'];
 			$sify['userID'] = &$row['user_id'];
 
-			Session::saveSifyData();
+			Session::saveSify();
 			return true;
 		}
 		return false;
@@ -146,8 +159,8 @@ class Auth{
 	// $data = [email, username, password]
 	// If you want to insert more data, you can update
 	// the rows with user_id after this return true
-	// return [true, user_id]
-	// return [false, 'error message']
+	// return intval(user_id)
+	// return 'error message'
 	public static function register($data){
 		// Validate email
 		if(!filter_var($data['email'], FILTER_VALIDATE_EMAIL))

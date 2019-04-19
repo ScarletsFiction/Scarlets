@@ -21,6 +21,7 @@ class Scarlets{
 	public static $isConsole = false;
 	public static $isWebsite = false;
 	public static $interactiveCLI = false;
+	public static $maintenance = false;
 	
 	/*
 		> Website Initialization
@@ -82,9 +83,18 @@ class Scarlets{
 			}
 		}
 
+		if(file_exists(self::$registry['path.maintenance_file']) === true){
+			Route\Serve::status(503, true);
+			self::$maintenance = true;
+		}
+
 		try{
 			// Include required router
 			include_once self::$registry['path.app']."/routes/status.php";
+
+			if(self::$maintenance === true && self::$isConsole === false)
+				Route\Serve::maintenance();
+
 			include_once self::$registry['path.app']."/routes/api.php";
 			include_once self::$registry['path.app']."/routes/web.php";
 		} catch(Internal\ExecutionFinish $f) {
@@ -198,10 +208,7 @@ class Scarlets{
 		$reg['path.views'] = "$path/resources/views";
 		$reg['path.lang'] = "$path/resources/lang";
 		$reg['path.plate'] = "$path/resources/plate";
-		$reg['path.app.storage'] = "$path/storage/app";
-		$reg['path.cache'] = "$path/storage/framework/cache";
-		$reg['path.sessions'] = "$path/storage/framework/sessions";
-		$reg['path.view_cache'] = "$path/storage/framework/views";
+		$reg['path.maintenance_file'] = "$path/config/_maintenance.mode";
 		$reg['path.logs'] = "$path/storage/logs";
 
 		$reg['path.framework.src'] = __DIR__.'/src';

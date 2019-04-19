@@ -31,7 +31,7 @@ class Config{
 			}
 		}
 
-		$loaded[] = &$filename;
+		self::$loaded[] = &$filename;
 		return $config;
 	}
 
@@ -43,7 +43,7 @@ class Config{
 		if(!in_array($file, self::$loaded))
 			self::load($file);
 
-		return self::$data['$file.$key'];
+		return self::$data["$file.$key"];
 	}
 }
 
