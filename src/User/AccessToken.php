@@ -45,8 +45,8 @@ class AccessToken{
 		self::$config['app_table'] = &$config['app_table'];
 
 		// If the token_table was not found
-		self::$database->onTableMissing($config['token_table'], function(){
-			self::$database->createTable($config['token_table'], [
+		self::$db->onTableMissing($config['token_table'], function(){
+			self::$db->createTable($config['token_table'], [
 				'token_id' => ['bigint(19)', 'primary', 'key', 'AUTO_INCREMENT'],
 				'app_id' => 'int(11)',
 				'user_id' => 'int(11)',
@@ -56,8 +56,8 @@ class AccessToken{
 		});
 
 		// If the app_table was not found
-		self::$database->onTableMissing($config['app_table'], function(){
-			self::$database->createTable($config['app_table'], [
+		self::$db->onTableMissing($config['app_table'], function(){
+			self::$db->createTable($config['app_table'], [
 				'app_id' => ['bigint(19)', 'primary', 'key', 'AUTO_INCREMENT'],
 				'app_secret' => ['text', 'COLLATE', 'latin1_swedish_ci']
 			]);

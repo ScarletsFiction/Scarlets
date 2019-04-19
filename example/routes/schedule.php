@@ -6,7 +6,7 @@
 |--------------------------------------------------------------------------
 |
 | Here you can automate your task on your machine. But you should turn on
-| Scarlets Scheduler by using 'php scarlets schedule start'. It would
+| Scarlets Scheduler by using '$ scarlets schedule install'. It would
 | create new process for running your task, and it would check this file
 | for new update every minute.
 | But if you're on shared hosting, you can use EasyCron on the internet
