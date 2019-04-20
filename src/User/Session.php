@@ -169,15 +169,18 @@ class Session{
 	}
 
 	// Save sifyData to cookie
-	public static function saveSify($force=false){
+	public static function saveSify($force = false){
 		if(!Scarlets::$isConsole && headers_sent()){
 			trigger_error('Couldn\'t save sifyData because header already sent. Make sure you save it before any body content being sent');
 			return;
 		}
 
 		if(serialize(self::$sify_) !== serialize(self::$sify) || $force){
-			self::$FullTextID = 
-			$sified = self::compileSifyData(self::$TextID, self::$sify);
+			// Create new session in database first
+			if(self::$TextID === '')
+				self::save(true);
+
+			self::$FullTextID = $sified = self::compileSifyData(self::$TextID, self::$sify);
 
 			$ref = &self::$domain;
 			if(strpos($ref, '@host') !== false){
@@ -214,6 +217,9 @@ class Session{
 			return $false;
 		$database = &self::$database;
 
+		// \Scarlets\log(self::$ID."zx");
+		// return $false;
+
 		// Search session in database
 		$data = $database->get(self::$table, ['data', 'last_access_time', 'blocked', 'ip_address', 'last_created'], ['id'=>self::$ID]);
 
@@ -233,7 +239,7 @@ class Session{
 			self::$data_ = self::$data; // Just for comparing when shutdown
 
 			// Reset after 15 seconds and update some information
-			if(time()-15 >= $data['last_access_time'])
+			if(time() - 15 >= $data['last_access_time'])
 			{
 				if($_SERVER['REMOTE_ADDR'] !== $data['ip_address'])
 					self::$oldIPAddress = $data['ip_address'];
@@ -247,6 +253,9 @@ class Session{
 
 			if($data['blocked'] === 1)
 				die('Too many request coming from your IP Address. Please verify if you\'re not a bot..');
+
+			// Session load complete
+			return $false;
 		}
 		else {
 			self::destroy();
@@ -254,7 +263,6 @@ class Session{
 			$temp = self::load($return);
 			return $temp;
 		}
-		return $false;
 	}
 
 	public static function &save($new = false){
@@ -263,6 +271,10 @@ class Session{
 			self::$database->update(self::$table, [
 				'data' => json_encode(self::$data)
 			], ['id' => self::$ID]);
+
+			// Save sifyData
+			if(headers_sent() === false)
+				self::saveSify();
 		}
 
 		// Write new session to browser and database
@@ -274,6 +286,9 @@ class Session{
 			// Convert ID to text
 			$newID = Crypto::Sify($rawID);
 			self::$TextID = $newID;
+
+			// Create a copy to avoid multiple check on shutdown
+			self::$data_ = self::$data;
 
 			// Save the session to the database
 			self::$database->insert(self::$table, [
@@ -287,10 +302,6 @@ class Session{
 
 			self::$sify = ['@created' => $created];
 		}
-
-		// Save sifyData
-		if(headers_sent() === false)
-			self::saveSify(true);
 
 		return self::$TextID;
 	}
@@ -334,8 +345,7 @@ class Session{
 		if(!isset($_COOKIE['SFSessions'])){
 			if(empty(self::$data))
 				$data = false;
-			else
-				$data = [self::save(true), self::$sify];
+			else $data = [self::save(true), self::$sify];
 			return $data;
 		}
 
