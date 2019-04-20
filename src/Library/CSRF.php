@@ -6,16 +6,18 @@ use \Scarlets\Library\Extend\Strings;
 class CSRF{
 	public static $token = '';
 	public static function init(){
-		if(isset(Session::$sify['csrf']) === false){
-			Session::$sify['csrf'] = Strings::random([30, 40], true);
-			Session::saveSify();
-		}
-
-		self::$token = &Session::$sify['csrf'];
+		if(isset(Session::$sify['csrf']) === false)
+			regenerate();
+		else self::$token = &Session::$sify['csrf'];
 	}
 
 	public static function hiddenInput(){
 		return '<input name="CSRFToken" type="hidden" value="'.self::$token.'">';
+	}
+
+	public static function regenerate(){
+		self::$token = Session::$sify['csrf'] = Strings::random([30, 40], true);
+		Session::saveSify();
 	}
 
 	public static function isRequestValid(){
@@ -33,6 +35,7 @@ class CSRF{
 
             if(isset($requestHeaders['CSRFToken']))
                 $token = &$requestHeaders['CSRFToken'];
+            else return false;
         }
         else return false;
 

@@ -11,11 +11,6 @@ use \Scarlets;
 |
 */
 
-// Shortcut for logging
-function log($msg){
-	Log::message($msg);
-}
-
 class Log{
 	public static $path = '';
 	public static $type = '';

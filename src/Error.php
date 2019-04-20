@@ -179,6 +179,11 @@ class Error{
 	}
 }
 
+// Shortcut for logging
+function log($msg){
+	Log::message($msg);
+}
+
 // Always show error on travis
 if(getenv('CI'))
 	ini_set('display_errors', 1);
