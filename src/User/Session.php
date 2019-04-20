@@ -159,7 +159,7 @@ class Session{
 
 		// If integrity was different, then destroy it
 		// if(isset($ref['integrity']) && $ref['integrity'] !== $_COOKIE['integrity']){
-		// 	self::destroyCookies();
+		// 	self::destroy();
 		// 	return;
 		// }
 
@@ -215,7 +215,7 @@ class Session{
 		$database = &self::$database;
 
 		// Search session in database
-		$data = $database->get(self::$table, ['data', 'last_recorded_time', 'blocked', 'ip_address', 'last_created'], ['id'=>self::$ID]);
+		$data = $database->get(self::$table, ['data', 'last_access_time', 'blocked', 'ip_address', 'last_created'], ['id'=>self::$ID]);
 
 		// Data found in database
 		if($data !== false){
@@ -223,7 +223,7 @@ class Session{
 
 			// Check creation date
 			if(!isset(self::$sify['@created']) || $data['last_created'] !== self::$sify['@created']){
-				self::destroyCookies();
+				self::destroy();
 				self::$started = false;
 				$temp = self::load($return);
 				return $temp;
@@ -233,13 +233,13 @@ class Session{
 			self::$data_ = self::$data; // Just for comparing when shutdown
 
 			// Reset after 15 seconds and update some information
-			if(time()-15 >= $data['last_recorded_time'])
+			if(time()-15 >= $data['last_access_time'])
 			{
 				if($_SERVER['REMOTE_ADDR'] !== $data['ip_address'])
 					self::$oldIPAddress = $data['ip_address'];
 
 				$database->update(self::$table, [
-					'last_recorded_time' => time(),
+					'last_access_time' => time(),
 					'last_url_access' => $_SERVER['REQUEST_URI'],
 					'ip_address' => $_SERVER['REMOTE_ADDR'],
 				], ['id' => self::$ID]);
@@ -249,7 +249,7 @@ class Session{
 				die('Too many request coming from your IP Address. Please verify if you\'re not a bot..');
 		}
 		else {
-			self::destroyCookies();
+			self::destroy();
 			self::$started = false;
 			$temp = self::load($return);
 			return $temp;
