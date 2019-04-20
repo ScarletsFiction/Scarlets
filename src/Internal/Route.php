@@ -205,15 +205,14 @@ class Serve{
 		self::$pendingLevel = 0;
 	}
 	
-	// $http = http status like 301 or redirect method
-	public static function redirect($to, $http = 301, $data = false){
+	// $http = http status like 302 or redirect method like POST
+	public static function redirect($to, $http = 302, $data = false){
 		if(!is_numeric($http)){
 			// GET method
-			if(strtolower($method) === 'get'){
+			if(strtolower($http) !== 'post'){
 				if($data)
 					header('Location: '.explode('?', $to)[0].'?'.http_build_query($data));
-				else
-					header("Location: $to");
+				else header("Location: $to");
 			}
 
 			// POST method
