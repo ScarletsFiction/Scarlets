@@ -196,6 +196,9 @@ class Session{
 				call_user_func_array('setcookie', $cookieData);
 			else
 				call_user_func_array('Scarlets\Library\Server::setCookie', $cookieData);
+
+			// Make a copy to avoid multiple check
+			self::$sify_ = self::$sify;
 		}
 	}
 
@@ -300,7 +303,7 @@ class Session{
 				'last_created' => $created
 			]);
 
-			self::$sify = ['@created' => $created];
+			self::$sify['@created'] = $created;
 		}
 
 		return self::$TextID;

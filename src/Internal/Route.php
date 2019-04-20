@@ -205,8 +205,8 @@ class Serve{
 		self::$pendingLevel = 0;
 	}
 	
-	// $http = http status like 302 or redirect method like POST
-	public static function redirect($to, $http = 302, $data = false){
+	// $http = http status like 307 or redirect method like POST
+	public static function redirect($to, $http = 307, $data = false){
 		if(!is_numeric($http)){
 			// GET method
 			if(strtolower($http) !== 'post'){

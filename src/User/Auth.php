@@ -111,15 +111,8 @@ class Auth{
 			if(is_callable($onSuccess) && $onSuccess($row))
 				return true;
 
-			$sify = &Session::$sify;
-			$data = &Session::$data;
-
-			$data['username'] = &$row['username'];
-			$data['userID'] = &$row['user_id'];
-
-			$sify['username'] = &$row['username'];
-			$sify['userID'] = &$row['user_id'];
-
+			Session::$data['username'] = Session::$sify['username'] = &$row['username'];
+			Session::$data['userID'] = Session::$sify['userID'] = &$row['user_id'];
 			Session::saveSify();
 			return true;
 		}
