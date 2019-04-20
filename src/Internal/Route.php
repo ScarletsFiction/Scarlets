@@ -75,6 +75,7 @@ class Serve{
 		// Class reference
 		$serve = 'Scarlets\Route\Serve';
 		$lang = 'Scarlets\Library\Language';
+		$csrf = 'Scarlets\Library\CSRF';
 		$q = 'Scarlets\Route\Query';
 
 		// User defined variable
