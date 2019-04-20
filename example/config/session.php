@@ -82,8 +82,8 @@ return [
 |
 | By setting this value to true, it will block JavaScript from accessing
 | cookie value and cookie will only be accessible through the server.
-|
+| This is very recommended to prevent XSS attack.
 */
-'http_only' => false,
+'http_only' => true,
 
 ];

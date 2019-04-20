@@ -93,7 +93,7 @@ class Auth{
 		// Get data from database
 		$row = self::$database->get(self::$table, $column, $where_);
 		if($row === false)
-			return 'Failed to verify account condition';
+			return 'Username not found';
 
 		$passwordHash = &$row['password'];
 		unset($row['password']);

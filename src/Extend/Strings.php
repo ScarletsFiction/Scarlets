@@ -61,6 +61,9 @@ class Strings{
 			'%', '^', '&', '*', '(', ')', '_', '-', '+', '=', '{', '[', '}', 
 		':', ';', '|', '\\', '"', '\'', '<', ',', '>', '.', '/', '?', ' ']);
 
+		if(is_array($length) === true)
+			$length = rand($length[0], $length[1]);
+
 		$max = count($characters) - 1;
 		for($i = 0; $i < $length; $i++){
 			$rand = mt_rand(0, $max);
