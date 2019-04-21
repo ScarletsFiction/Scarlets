@@ -16,7 +16,7 @@ class CSRF{
 	}
 
 	public static function regenerate(){
-		self::$token = Session::$sify['csrf'] = Strings::random([30, 40], true);
+		self::$token = Session::$sify['csrf'] = str_replace(['"', "'", '`'], '', Strings::random([30, 40], true));
 		Session::saveSify();
 	}
 
