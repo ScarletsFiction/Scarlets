@@ -23,16 +23,15 @@ return [
 |
 */
 'storage' => [
-    /*
-    | Redis Connection are managed by PHPRedis Extension on your server.
-    | Make sure you have installed it on your PHP.
-    */
-    'test1' => [
-        'driver' => 'redis',
-        'host' => '127.0.0.1',
-        'password' => '',
-        'post' => 6379,
-        'database' => 0
+    'app' => [
+        'driver' => 'localfile',
+        'path' => $frame['path.app'].'/storage/app/cache'
+    ],
+
+    // Required by framework
+    'framework' => [
+        'driver' => 'localfile',
+        'path' => $frame['path.app'].'/storage/framework/cache'
     ],
 ],
 

@@ -6,6 +6,14 @@ use \Scarlets\Route\Serve;
 use \Scarlets\Library\Cache;
 use \Scarlets\Library\Server;
 use \Scarlets\Route\Middleware as Mainware;
+use \App\Auth\User;
+
+// Database shortcut
+class DB{
+	/** @var \Scarlets\Library\Database\SQL */
+	public static $scarlets = false;
+}
+DB::$scarlets = Database::connect('scarletsfiction');
 
 class Middleware{
 	public static function register(){
@@ -14,11 +22,11 @@ class Middleware{
 		$list = get_class_methods($currentClass);
 
 		// Register functions on route middleware
-		foreach ($list as $function) {
+		foreach ($list as &$function) {
 			if($function === 'register')
 				continue;
 
-			Mainware::$register[$function] = $currentClass.'::'.$function;
+			Mainware::$register[$function] = "$currentClass::$function";
 		}
 	}
 
@@ -35,11 +43,11 @@ class Middleware{
 			// Only authenticated user who can access
 			if($scope === 'private'){
 				// Handle user access token here
-				Auth\User::init();
+				User::init();
 				self::origin('*');
 
 				// Prevent further execution if not authenticated
-				if(!Auth\User::$data || Auth\User::$data['userID'] === false)
+				if(User::$id === false)
 					Serve::end('{"error":"Authentication failed"}', 401);
 			}
 
@@ -75,11 +83,10 @@ class Middleware{
 	            $elapsed = 1;
 	            if(\Scarlets::$isConsole)
 	            	$elapsed = round(microtime(true) - Server::$requestMicrotime, 5);
-
 	            else
 	            	$elapsed = round(microtime(true) - $GLOBALS['startupWebsiteTime'], 5);
 
-        		Serve::raw("\n<benchmark><!-- Dynamic page generated in ".$elapsed." seconds. --></benchmark>");
+        		Serve::raw("\n<benchmark><!-- Dynamic page generated in $elapsed seconds. --></benchmark>");
 
 	            // Skip other routes
 	            Serve::end();
@@ -98,30 +105,31 @@ class Middleware{
 		    else
 		    	exit;
 
-		    Header::set('Access-Control-Allow-Origin: '.$_SERVER['HTTP_ORIGIN']);
+		    Header::set("Access-Control-Allow-Origin: $_SERVER[HTTP_ORIGIN]");
 		    Header::set('Access-Control-Allow-Credentials: true');
 		    Header::set('Access-Control-Max-Age: 86400');
 
 			if(isset($_SERVER['HTTP_ACCESS_CONTROL_REQUEST_METHOD']))
 			    Header::set('Access-Control-Allow-Methods: PUT, DELETE, GET, POST, OPTIONS');
 			if(isset($_SERVER['HTTP_ACCESS_CONTROL_REQUEST_HEADERS']))
-			    Header::set('Access-Control-Allow-Headers: '.$_SERVER['HTTP_ACCESS_CONTROL_REQUEST_HEADERS']);
+			    Header::set("Access-Control-Allow-Headers: $_SERVER[HTTP_ACCESS_CONTROL_REQUEST_HEADERS]");
 
 			// Skip server process if it's only send options header
-			if($_SERVER['REQUEST_METHOD'] == 'OPTIONS')
+			if($_SERVER['REQUEST_METHOD'] === 'OPTIONS')
 			    exit;
 		}
 	}
 
 	public static function limit($request = 2, $seconds = 30){
-	    $total = Cache::get('request.limit', 0);
+		$cache = Cache::connect('framework');
+	    $total = $cache->get('request.limit', 0);
 
 	    if($total < $request){
 	        // Set expiration when it's the first request only ($total == 0)
 	        $expire = $total === 0 ? $seconds : 0;
 
 	        // Put the request count on cache
-	        Cache::set('request.limit', $total + 1, $expire);
+	        $cache->set('request.limit', $total + 1, $expire);
 
 	        // Continue request
 	        return false;
