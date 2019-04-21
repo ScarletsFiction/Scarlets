@@ -12,7 +12,7 @@ Scarlets is a web framework for PHP that can help you build a website with API a
 
 ## Installation instruction
 
-Clone/download this repository and put it on a folder
+Clone/download this repository and put it on a folder.<br>
 Then copy the example folder and edit the framework path on `root.php`
 
 ### Install by using command prompt
@@ -41,12 +41,12 @@ $ php scarlets upgrade
 ```
 
 But if there are any error and the framework was unable to be loaded<br>
-Please clone this repository and extract it to `vendor/scarletsfiction/scarlets`
+Please clone this repository and extract it to `/vendor/scarletsfiction/scarlets`
 
 ## Getting Started
 
 ### Setup your custom website domain
-Before we started, we need to setup Apache or Nginx to route every HTTP request into `project/public/` directory.
+Before we started, we need to setup Apache or Nginx to route every HTTP request into `/public/` directory.
  - On Apache, you could setup [VirtualHost](https://gist.github.com/hoandang/8066175).
  - On Nginx, you will need to add [new site configuration](http://blog.manugarri.com/how-to-easily-set-up-subdomain-routing-in-nginx/).
 
@@ -71,22 +71,11 @@ You can also create your own command for your project
 The user defined command are editable on `/routes/console.php`<br>
 
 ### Documentation
-The usage on how to use this framework is in the Wiki
+The usage on how to use this framework is in the [Wiki](https://github.com/ScarletsFiction/Scarlets/wiki)
 
 ## Contribution
 If you want to help in Scarlets framework, please fork this project and edit on your repository, then make a pull request to here.
 
-Keep the code simple and clear.
-
-## Support
-If you have any question please ask on stackoverflow with tags 'scarlets-php'.<br>
-But if you found bug or feature request, you post an issue on this repository.
-
-For any private support, you can contact the author of this framework:<br>
-StefansArya (Indonesia, English)<br>
-stefansarya1 at gmail
-
 ## License
-Scarlets is under the MIT license.
-
+Scarlets is under the MIT license.<br>
 Help improve this framework by support the author ＼(≧▽≦)／
