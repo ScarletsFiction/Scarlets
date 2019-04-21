@@ -5,15 +5,16 @@ use \Scarlets\Error;
 use \Scarlets\Route\Serve;
 use \Scarlets\Library\Cache;
 use \Scarlets\Library\Server;
+use \Scarlets\Library\Database;
 use \Scarlets\Route\Middleware as Mainware;
 use \App\Auth\User;
 
 // Database shortcut
 class DB{
 	/** @var \Scarlets\Library\Database\SQL */
-	public static $scarlets = false;
+	public static $myDB = false;
 }
-DB::$scarlets = Database::connect('scarletsfiction');
+// DB::$myDB = Database::connect('scarletsfiction');
 
 class Middleware{
 	public static function register(){
