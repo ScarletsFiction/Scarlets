@@ -232,8 +232,11 @@ class Serve{
 
 	public static function maintenance(){
 		$status = &Scarlets::$registry['Route']['STATUS'];
-		if(isset($status[503]) && $status[503]() !== true)
-			Serve::end();
+		if(isset($status[503])){
+			if($status[503]() !== true)
+				Serve::end(false, 503);
+		}
+		else Serve::end("There are some maintenance", 503);
 		self::$headerSent = false;
 	}
 }
