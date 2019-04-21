@@ -46,6 +46,9 @@ class User{
 
 			AccessToken::$data['permissions'] = '|*|';
 			AccessToken::$data['expiration'] = 'never';
+
+			// Validate CSRF with this
+			self::$isSession = true;
 		}
 
 		self::$id = $user['userID'];

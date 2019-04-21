@@ -4,6 +4,7 @@ use \Scarlets\Route;
 use \Scarlets\Error;
 use \Scarlets\Route\Serve;
 use \Scarlets\Library\Cache;
+use \Scarlets\Library\CSRF;
 use \Scarlets\Library\Server;
 use \Scarlets\Library\Database;
 use \Scarlets\Route\Middleware as Mainware;
@@ -47,8 +48,8 @@ class Middleware{
 				User::init();
 				self::origin('*');
 
-				// Prevent further execution if not authenticated
-				if(User::$id === false)
+				// Prevent further execution if not authenticated and avoid CSRF attack
+				if(User::$id === false || (User::$isSession === true && CSRF::isRequestValid() === false))
 					Serve::end('{"error":"Authentication failed"}', 401);
 			}
 

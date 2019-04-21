@@ -1,13 +1,13 @@
 <?php
 namespace Scarlets\Library;
-use \Scarlets\Library\User\Session;
-use \Scarlets\Library\Extend\Strings;
+use \Scarlets\User\Session;
+use \Scarlets\Extend\Strings;
 
 class CSRF{
 	public static $token = '';
 	public static function init(){
 		if(isset(Session::$sify['csrf']) === false)
-			regenerate();
+			self::regenerate();
 		else self::$token = &Session::$sify['csrf'];
 	}
 
