@@ -315,8 +315,11 @@ class Route{
 			$temp = explode($url[0], $requestURI, 2);
 			if($temp[0] !== '')
 				return false;
+
+			// Remove first match
 			$requestURI = $temp[1];
 			unset($url[0]);
+
 
 			// Check all {param}
 			foreach ($url as &$matches) {
@@ -329,14 +332,10 @@ class Route{
 					if(count($current) === 1)
 						return false;
 
-					$left = substr($current[1], 0, 1);
-					if($left !== '' && $left !== '/')
-						return false;
-
 					$requestURI = $current[1];
 					$current = $current[0]; // Extracted from RequestURI
-				} else
-					$current = $requestURI;
+				}
+				else $current = $requestURI;
 				
 				// Find param number
 				$argNumber = '';
@@ -356,14 +355,14 @@ class Route{
 					$argNumber = intval($argNumber);
 				$argData = null;
 
-				// Optional
+				// Optional Pattern
 				$optional = false;
 				if(substr($matches, 0, 1) === '?'){
 					$matches = substr($matches, 1);
 					$optional = true;
 				}
 
-				// Regex
+				// Regex Pattern
 				if(substr($matches, 0, 1) === ':'){
 					$matches = substr($matches, 1);
 
