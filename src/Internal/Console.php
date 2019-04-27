@@ -24,12 +24,20 @@ Console::command(['maintenance {0}', 'maintenance'], function($action = ''){
 	$path = &\Scarlets::$registry['path.maintenance_file'];
 	if($action === '')
 		return file_exists($path) ? "Status: On" : "Status: Off";
-	elseif($action === 'on'){
-		file_put_contents($path, '');
+
+	if(function_exists('opcache_reset')){
+		opcache_reset();
+		echo("Opcache flushed\n");
+	}
+
+	if($action === 'on'){
+		if(file_exists($path) === false)
+			file_put_contents($path, '');
 		return "Maintenance: On";
 	}
 	elseif($action === 'off'){
-		unlink($path);
+		if(file_exists($path))
+			unlink($path);
 		return "Maintenance: Off";
 	}
 }, 'Switch maintenance mode');
