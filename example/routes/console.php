@@ -10,7 +10,14 @@
 |
 */
 use \Scarlets\Console;
-use \App\Console\Controllers\YourController;
+// use \App\Console\Controllers\YourController;
+
+// Zip any changed files
+Console::command('publish', function(){
+	if(file_exists(__DIR__.'/cli_publish.php'))
+		include __DIR__.'/cli_publish.php';
+	else return "Command not available";
+});
 
 Console::command('countdown {0} {1}', function($start, $end){
 	while ($start >= $end) {
