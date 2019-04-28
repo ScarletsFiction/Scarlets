@@ -89,7 +89,9 @@ if(count($zipList) === 0){
 use \Scarlets\Library\FileSystem\Localfile;
 echo("Zipping ".count($zipList)." files\n");
 
-unlink($zipPath);
+if(file_exists($zipPath))
+	unlink($zipPath);
+
 $zip = new ZipArchive();
 $res = $zip->open($zipPath, ZIPARCHIVE::CREATE | ZIPARCHIVE::OVERWRITE);
 if($res !== true){
