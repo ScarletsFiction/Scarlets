@@ -23,9 +23,6 @@ use \Scarlets\Console;
 
 $project = &\Scarlets::$registry['path.app'];
 
-$zipPath = $project.'/publish.zip';
-$deleteList = $project.'/publish_delete.json';
-
 $time = $project.'/storage/framework/publish_time.json';
 $oldList = $project.'/storage/framework/publish_last.json';
 $scanFolder = ['/app', '/public', '/resources', '/routes'];
@@ -34,8 +31,8 @@ $GMT = 7;
 
 // Check last scan list
 if(file_exists($oldList))
-	$lastList = json_decode(file_get_contents($oldList), true);
-else $lastList = [];
+	$deleteList = json_decode(file_get_contents($oldList), true);
+else $deleteList = [];
 
 // ===== Collect Files =====
 $lastTimestamp = 0;
@@ -52,9 +49,11 @@ foreach ($scanFolder as &$value) {
 	$iterator->append(new RecursiveIteratorIterator($dir));
 }
 
+$project .= DIRECTORY_SEPARATOR;
+
 // Scan for new and deleted list
 $newList = [];
-$zipList = [];
+$changedList = [];
 foreach ($iterator as $filename => $cur) {
 	if(!$cur->isDir()){
 		$pathname = $cur->getPathname();
@@ -64,64 +63,95 @@ foreach ($iterator as $filename => $cur) {
 		$newList[] = $pathname;
 
 		if($cur->getMTime() > $lastTimestamp)
-    		$zipList[] = $pathname;
+    		$changedList[] = str_replace($project, '', $pathname);
 
     	// Remove from delete list
-    	$i = array_search($pathname, $lastList);
+    	$i = array_search($pathname, $deleteList);
     	if($i !== false)
-	    	array_splice($lastList, $i, 1);
+	    	array_splice($deleteList, $i, 1);
 	}
-}
-
-// Replace slashes
-$winSlash = strpos($newList[0], '\\') !== false;
-if($winSlash === true)
-	$project .= '\\';
-else $project .= '/';
-
-foreach ($lastList as &$del) {
-	$del = str_replace($project, '', $del);
 }
 
 // Save list for the next scan
 file_put_contents($oldList, json_encode($newList));
-if(count($lastList) !== 0)
-	file_put_contents($deleteList, json_encode($lastList));
-else if(file_exists($deleteList))
-	unlink($deleteList);
 
-if(file_exists($zipPath))
-	unlink($zipPath);
-
-$deleteCount = count($lastList);
+$updatedCount = count($changedList);
+$deleteCount = count($deleteList);
+if($updatedCount !== 0)
+	echo("There are ".Console::chalk($updatedCount, 'green')." files to be updated\n");
 if($deleteCount !== 0)
-	echo("There are ".$deleteCount." files to be deleted\n");
+	echo("There are ".Console::chalk($deleteCount, 'yellow')." files to be deleted\n");
 
-if(count($zipList) === 0){
-	echo("Nothing to publish");
+if($updatedCount === 0 && $deleteCount === 0){
+	echo("Nothing changed");
 	return;
 }
 
-
-// ===== Zipping files =====
-use \Scarlets\Library\FileSystem\Localfile;
-echo("Zipping ".count($zipList)." files\n");
-
-$zip = new ZipArchive();
-$res = $zip->open($zipPath, ZIPARCHIVE::CREATE | ZIPARCHIVE::OVERWRITE);
-if($res !== true){
-	echo(Console::chalk("ZipArchive error code: ".$res, 'red'));
-	return;
+foreach ($deleteList as &$del) {
+    $del = str_replace($project, '', $del);
 }
 
-// Add file to zip
-foreach ($zipList as &$value) {
-	$zip->addFile($value, str_replace($project, '', $value));
-}
-$zip->close();
+// ===== Function: Zip files =====
+$zipFiles = function() use(&$project, &$changedList, &$deleteList){
+	$zipPath = $project.'/publish.zip';
+	file_put_contents($project.'/publish_delete.json', $deleteList);
 
-echo(Console::chalk("Zipping finished\n", 'green'));
+	echo("Zipping ".count($changedList)." files\n");
+
+	$zip = new ZipArchive();
+	$res = $zip->open($zipPath, ZIPARCHIVE::CREATE | ZIPARCHIVE::OVERWRITE);
+	if($res !== true){
+		echo(Console::chalk("ZipArchive error code: ".$res, 'red'));
+		return;
+	}
+
+	// Add file to zip
+	foreach ($changedList as &$value) {
+		$zip->addFile($value, str_replace($project, '', $value));
+	}
+	$zip->close();
+
+	echo(Console::chalk("Zipping finished\n", 'green'));
+};
+
+// ===== Function: Sync files to the server via FTP Bridge =====
+$FTPSync = function() use(&$project, &$changedList, &$deleteList){
+	$remotePath = '/home/websites/my-project/';
+	$localPath = $project;
+
+	// Always use FTP to SFTP Bridge or another secure protocol
+	echo("Connecting to FTP\n");
+	$conn = ftp_connect('127.0.0.1', 2135);
+	if(!ftp_login($conn, 'yourUser', 'yourPass')){
+		echo(Console::chalk("Login was failed to the FTP", 'red'));
+		return;
+	}
+
+	foreach ($changedList as &$value){
+		if(ftp_put($conn, $remotePath.$value, $localPath.$value, FTP_BINARY))
+			echo Console::chalk("+ $value\n", 'green');
+		else echo Console::chalk("+ $value\n", 'red');
+	}
+
+	foreach ($deleteList as &$value){
+		if(ftp_delete($conn, $remotePath.$value))
+			echo Console::chalk("- $value\n", 'green');
+		else echo Console::chalk("- $value\n", 'red');
+	}
+
+	ftp_close($conn);
+
+	// Flush opcache and check server
+	$res = \Scarlets\Library\WebRequest::loadURL('https://example.com/api/opcache_reset');
+	if($res === '[1]')
+		echo("\n Server opcache was flushed!\n");
+
+	$res = \Scarlets\Library\WebRequest::loadURL('https://example.com/api/ping');
+	if($res !== '[1]')
+		echo("\n Something was wrong with last update!\n");
+};
+
+// ===== There are many method that you can implement for publishing changes =====
+$zipFiles(); // $FTPSync();
 file_put_contents($time, time());
-
-// ===== Your next code here =====
-echo("You need to upload and extract the zipped files to your server\n");
+echo("Publish Finished!");
