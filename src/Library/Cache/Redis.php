@@ -13,8 +13,10 @@
 */
 namespace Scarlets\Library\Cache;
 
-class Redis extends \Redis{
+class Redis{
+	/** @var \Redis PHPRedis Library */
 	public $connection;
+
 	public $type = 'Redis';
 	private $database = '';
 
@@ -27,13 +29,57 @@ class Redis extends \Redis{
 		if(!isset($options['database'])) trigger_error('Redis database index was not specified');
 		$this->database = $options['database'];
 
-		$this->connection = $this;
-		$this->connection->connect($options['host'], $options['port']);
-		$this->connection->select($this->database);
-		$this->connection->auth($options['password']);
-		$this->connection->setOption(\Redis::OPT_SCAN, \Redis::SCAN_RETRY);
+		$this->connection = new \Redis();
+		try{
+			$this->connection->connect($options['host'], $options['port']);
+			$this->connection->select($this->database);
+			$this->connection->auth($options['password']);
+			$this->connection->setOption(\Redis::OPT_SCAN, \Redis::SCAN_RETRY);
 
-		if(isset($options['prefix']) && $options['prefix'] != false)
-			$this->connection->setOption(\Redis::OPT_PREFIX, $options['prefix']);
+			if(isset($options['prefix']) && $options['prefix'] != false)
+				$this->connection->setOption(\Redis::OPT_PREFIX, $options['prefix']);
+		}catch(\RedisException $e){
+			trigger_error($e->getMessage());
+		}
+	}
+
+	public function get($key, $default=false){
+		return $this->connection->get($key) ?: $default;
+	}
+
+	public function set($key, $value, $seconds=0){
+		$this->connection->set($key, $value);
+		if($seconds !== 0)
+			$this->connection->expireAt($key, time()+$seconds);
+	}
+
+	public function has($key){
+		return $this->connection->exists($key);
+	}
+
+	public function &pull($key, $default=false){
+		$data = $this->connection->get($key);
+		$this->connection->delete($key);
+		if($data === false) return $default;
+	}
+
+	public function forget($key){
+		$this->connection->delete($key);
+	}
+
+	public function flush($key="*"){
+		if($key === '*')
+			$this->connection->flushDb();
+	}
+
+	public function extendTime($key, $seconds){
+		if($seconds === 0)
+			return $this->connection->persist($key);
+		$this->connection->expireAt($key, time()+$seconds);
+	}
+
+	public function &select($database){
+		$this->connection->select($database);
+		return $this;
 	}
 }
