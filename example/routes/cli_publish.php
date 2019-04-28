@@ -22,10 +22,12 @@
 use \Scarlets\Console;
 
 $project = &\Scarlets::$registry['path.app'];
+
+$zipPath = $project.'/publish.zip';
+$deleteList = $project.'/publish_delete.json';
+
 $time = $project.'/storage/framework/publish_time.json';
-$zipPath = $project.'/storage/framework/publish.zip';
 $oldList = $project.'/storage/framework/publish_last.json';
-$deleteList = $project.'/storage/framework/publish_delete.json';
 $scanFolder = ['/app', '/public', '/resources', '/routes'];
 $ignoreFiles = ['cli_publish.php']; // Always ignore this file
 $GMT = 7;
@@ -61,7 +63,7 @@ foreach ($iterator as $filename => $cur) {
 
 		$newList[] = $pathname;
 
-		if($cur->getATime() > $lastTimestamp)
+		if($cur->getMTime() > $lastTimestamp)
     		$zipList[] = $pathname;
 
     	// Remove from delete list
@@ -71,9 +73,25 @@ foreach ($iterator as $filename => $cur) {
 	}
 }
 
+// Replace slashes
+$winSlash = strpos($newList[0], '\\') !== false;
+if($winSlash === true)
+	$project .= '\\';
+else $project .= '/';
+
+foreach ($lastList as &$del) {
+	$del = str_replace($project, '', $del);
+}
+
 // Save list for the next scan
 file_put_contents($oldList, json_encode($newList));
-file_put_contents($deleteList, json_encode($lastList));
+if(count($lastList) !== 0)
+	file_put_contents($deleteList, json_encode($lastList));
+else if(file_exists($deleteList))
+	unlink($deleteList);
+
+if(file_exists($zipPath))
+	unlink($zipPath);
 
 $deleteCount = count($lastList);
 if($deleteCount !== 0)
@@ -89,21 +107,12 @@ if(count($zipList) === 0){
 use \Scarlets\Library\FileSystem\Localfile;
 echo("Zipping ".count($zipList)." files\n");
 
-if(file_exists($zipPath))
-	unlink($zipPath);
-
 $zip = new ZipArchive();
 $res = $zip->open($zipPath, ZIPARCHIVE::CREATE | ZIPARCHIVE::OVERWRITE);
 if($res !== true){
 	echo(Console::chalk("ZipArchive error code: ".$res, 'red'));
 	return;
 }
-
-// Replace slashes
-$winSlash = strpos($zipList[0], '\\') !== false;
-if($winSlash === true)
-	$project .= '\\';
-else $project .= '/';
 
 // Add file to zip
 foreach ($zipList as &$value) {
