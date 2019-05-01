@@ -19,7 +19,7 @@ return [
 |
 | Here you can to configure many cache storage with different driver.
 |
-| Supported Drivers: "localfile"
+| Supported Drivers: localfile, redis
 |
 */
 'storage' => [
@@ -33,13 +33,13 @@ return [
     | Make sure you have installed it on your PHP.
     | https://github.com/phpredis/phpredis/blob/develop/INSTALL.markdown
     */
-    'redis' => [
+    'sessions' => [
         'driver' => 'redis',
         'host' => '127.0.0.1',
         'username' => 'root',
         'password' => '',
         'post' => 6379,
-        'database' => 0
+        'database' => 1
     ],
 ],
 

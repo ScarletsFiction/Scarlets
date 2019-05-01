@@ -36,7 +36,8 @@ return [
 	|
 	*/
 	'access_token' => [
-		'database' => 'scarletsfiction',
+		'driver' => 'database', # Supported: redis, database
+		'database' => 'scarletsfiction', # redis-> cache.php, database-> database.php
 
 		# User token table
 		'token_table' => 'access_token',

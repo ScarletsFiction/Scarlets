@@ -25,8 +25,9 @@ return [
 */
 
 'credentials' => [
-    // 'scarletsfiction' is required for session manager and other
-    // framework controller
+    # 'scarletsfiction' is required for session manager and other
+    # framework controller, or you can use Redis by changing 'session'
+    # and 'auth' configuration
     'scarletsfiction' => [
         'driver' => 'mysql',
         'host' => '127.0.0.1',

@@ -128,13 +128,13 @@ $FTPSync = function() use(&$project, &$changedList, &$deleteList){
 	}
 
 	foreach ($changedList as &$value){
-		if(ftp_put($conn, $remotePath.$value, $localPath.$value, FTP_BINARY))
+		if(ftp_put($conn, $remotePath.str_replace('\\', '/', $value), $localPath.$value, FTP_BINARY))
 			echo Console::chalk("+ $value\n", 'green');
 		else echo Console::chalk("+ $value\n", 'red');
 	}
 
 	foreach ($deleteList as &$value){
-		if(ftp_delete($conn, $remotePath.$value))
+		if(ftp_delete($conn, $remotePath.str_replace('\\', '/', $value)))
 			echo Console::chalk("- $value\n", 'green');
 		else echo Console::chalk("- $value\n", 'red');
 	}

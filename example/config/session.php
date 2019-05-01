@@ -11,7 +11,7 @@ return [
 | every requests. By default, it will use the default PHP session driver but
 | you can also save the session to another places.
 |
-| Supported: "cache", "database"
+| Supported: "redis", "database"
 |
 */
 'driver' => 'database',
@@ -26,7 +26,7 @@ return [
 | immediately expire when user closed their browser.
 |
 */
-'lifetime' => 120,
+'lifetime' => 43200,
 'expire_on_close' => false,
 
 /*
@@ -39,6 +39,7 @@ return [
 |
 */
 'credential' => 'scarletsfiction',
+'table' => 'sessions',
 
 /*
 |--------------------------------------------------------------------------
@@ -62,7 +63,7 @@ return [
 | asterisk symbol (*.website.com). Or use the current host with (@host)
 |
 */
-'domain' => '@host',
+'domain' => '.@host',
 
 /*
 |--------------------------------------------------------------------------
