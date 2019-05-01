@@ -341,7 +341,7 @@ class Session{
 		return self::$TextID;
 	}
 
-	public static function destroy($justCookies=false){\Scarlets\Log::trace('wew');exit;
+	public static function destroy($justCookies=false){
 		if(isset($_SERVER['HTTP_COOKIE'])){
 			$expires = time()-3600;
             $cookies = explode(';', $_SERVER['HTTP_COOKIE']);
