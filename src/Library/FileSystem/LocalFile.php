@@ -286,9 +286,9 @@ class LocalFile{
 		foreach ($fileList as &$value) {
 			if(is_dir($value)){
 				$currentDir = str_replace($dirName, '', $value);
-				$zip->addEmptyDir($currentDir);
+				$zipFile->addEmptyDir($currentDir);
 			}
-			else $zip->addFile($value, $currentDir);
+			else $zipFile->addFile($value, $currentDir);
 		}
 		$zip->close();
 		return true;
