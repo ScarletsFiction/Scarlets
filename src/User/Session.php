@@ -4,7 +4,9 @@ use \Scarlets;
 use \Scarlets\Config;
 use \Scarlets\Library\Crypto;
 use \Scarlets\Library\Server;
+use \Scarlets\Library\Cache;
 use \Scarlets\Library\Database;
+use \Scarlets\Extend\Arrays;
 
 /*
 ---------------------------------------------------------------------------
@@ -51,6 +53,7 @@ class Session{
 	private static $expire_on_close = false;
 	private static $secure = false;
 	private static $http_only = false;
+	private static $driver = false;
 
 	public static function init(){
 		// If the client was unable to send cookies but able to send from other way
@@ -84,9 +87,10 @@ class Session{
 		self::$expire_on_close = &$config['session.expire_on_close'];
 		self::$secure = &$config['session.secure'];
 		self::$http_only = &$config['session.http_only'];
+		self::$driver = &$config['session.driver'];
 
 		// Register database
-		if($config['session.driver'] === 'database'){
+		if(self::$driver === 'database'){
 			self::$database = Database::connect($config['session.credential']);
 			self::$table = &$config['session.table'];
 
@@ -104,6 +108,10 @@ class Session{
 					'blocked' => ['tinyint(1)', 'default', 0]
 				]);
 			});
+		}
+		elseif(self::$driver === 'redis'){
+			self::$database = Cache::connect($config['session.credential'])->connection;
+			self::$table = $config['session.table'].':';
 		}
 
 		// Execute Session Handler
@@ -224,11 +232,17 @@ class Session{
 		// return $false;
 
 		// Search session in database
-		$data = $database->get(self::$table, ['data', 'last_access_time', 'blocked', 'ip_address', 'last_created'], ['id'=>self::$ID]);
+		if(self::$driver === 'database')
+			$data = $database->get(self::$table, ['data', 'last_access_time', 'blocked', 'ip_address', 'last_created'], ['id'=>self::$ID]);
+		elseif(self::$driver === 'redis')
+			$data = $database->hmGet(self::$table.self::$TextID, ['data', 'last_access_time', 'blocked', 'ip_address', 'last_created']);
 
 		// Data found in database
 		if($data !== false){
 			if(!empty(self::$data_)) return $false;
+
+			if(self::$driver === 'redis')
+				Arrays::typeChanges($data, ['number'=>['last_access_time', 'blocked', 'last_created']]);
 
 			// Check creation date
 			if(!isset(self::$sify['@created']) || $data['last_created'] !== self::$sify['@created']){
@@ -247,11 +261,18 @@ class Session{
 				if($_SERVER['REMOTE_ADDR'] !== $data['ip_address'])
 					self::$oldIPAddress = $data['ip_address'];
 
-				$database->update(self::$table, [
+				$obj = [
 					'last_access_time' => time(),
 					'last_url_access' => $_SERVER['REQUEST_URI'],
 					'ip_address' => $_SERVER['REMOTE_ADDR'],
-				], ['id' => self::$ID]);
+				];
+
+				if(self::$driver === 'database')
+					$database->update(self::$table, $obj, ['id' => self::$ID]);
+				elseif(self::$driver === 'redis'){
+					$database->hmSet(self::$table.self::$TextID, $obj);
+					$database->expireAt(self::$table.self::$TextID, time()+self::$lifetime*60);
+				}
 			}
 
 			if($data['blocked'] === 1)
@@ -269,11 +290,16 @@ class Session{
 	}
 
 	public static function &save($new = false){
+		$database = &self::$database;
+
 		// Update session on the database
 		if($new === false){
-			self::$database->update(self::$table, [
-				'data' => json_encode(self::$data)
-			], ['id' => self::$ID]);
+			if(self::$driver === 'database')
+				$database->update(self::$table, ['data' => json_encode(self::$data)], ['id' => self::$ID]);
+			elseif(self::$driver === 'redis'){
+				$database->hmSet(self::$table.self::$TextID, ['data' => json_encode(self::$data)]);
+				$database->expireAt(self::$table.self::$TextID, time()+self::$lifetime*60);
+			}
 
 			// Save sifyData
 			if(headers_sent() === false)
@@ -293,15 +319,21 @@ class Session{
 			// Create a copy to avoid multiple check on shutdown
 			self::$data_ = self::$data;
 
-			// Save the session to the database
-			self::$database->insert(self::$table, [
+			$obj = [
 				'id' => $rawID,
 				'session' => $newID,
 				'data' => json_encode(self::$data),
 				'last_url_access' => $_SERVER['REQUEST_URI'],
 				'ip_address' => $_SERVER['REMOTE_ADDR'],
 				'last_created' => $created
-			]);
+			];
+
+			if(self::$driver === 'database')
+				$database->insert(self::$table, $obj);
+			elseif(self::$driver === 'redis'){
+				$database->hmSet(self::$table.$newID, $obj);
+				$database->expireAt(self::$table.$newID, time()+self::$lifetime*60);
+			}
 
 			self::$sify['@created'] = $created;
 		}
@@ -309,7 +341,7 @@ class Session{
 		return self::$TextID;
 	}
 
-	public static function destroy($justCookies=false){
+	public static function destroy($justCookies=false){\Scarlets\Log::trace('wew');exit;
 		if(isset($_SERVER['HTTP_COOKIE'])){
 			$expires = time()-3600;
             $cookies = explode(';', $_SERVER['HTTP_COOKIE']);
@@ -334,7 +366,11 @@ class Session{
             }
 		}
 
-		self::$database->delete(self::$table, ['id' => self::$ID]);
+		if(self::$driver === 'database')
+			self::$database->delete(self::$table, ['id' => self::$ID]);
+		elseif(self::$driver === 'redis')
+			self::$database->delete(self::$table.self::$TextID);
+
 		$_COOKIE = [];
 		self::$data = [];
 		self::$data_ = [];

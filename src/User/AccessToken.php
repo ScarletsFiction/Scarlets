@@ -10,6 +10,7 @@
 
 namespace Scarlets\User;
 use Scarlets\Library\Crypto;
+use Scarlets\Library\Cache;
 use Scarlets\Library\Database;
 use Scarlets\Config;
 
@@ -34,34 +35,49 @@ class AccessToken{
 	// Database config reference
 	public static $db = false;
 	public static $config = false;
+	private static $driver = 'database';
+	private static $token_table = '';
+	private static $app_table = '';
 
 	public static function init(){
 		$config = &Config::load('auth')['auth.access_token'];
-		self::$db = Database::connect($config['database']);
+		if(isset($config['driver']) === true)
+			self::$driver = &$config['driver'];
+
+		if(self::$driver === 'database'){
+			self::$db = Database::connect($config['database']);
+
+			// If the token_table was not found
+			self::$db->onTableMissing($config['token_table'], function(){
+				self::$db->createTable($config['token_table'], [
+					'token_id' => ['bigint(19)', 'primary', 'key', 'AUTO_INCREMENT'],
+					'app_id' => 'int(11)',
+					'user_id' => 'int(11)',
+					'expiration' => 'int(11)',
+					'permissions' => ['text', 'COLLATE', 'latin1_swedish_ci']
+				]);
+			});
+
+			// If the app_table was not found
+			self::$db->onTableMissing($config['app_table'], function(){
+				self::$db->createTable($config['app_table'], [
+					'app_id' => ['bigint(19)', 'primary', 'key', 'AUTO_INCREMENT'],
+					'app_secret' => ['text', 'COLLATE', 'latin1_swedish_ci']
+				]);
+			});
+
+			self::$token_table = &$config['token_table'];
+			self::$app_table = &$config['app_table'];
+		}
+
+		elseif(self::$driver === 'redis'){
+			self::$db = Cache::connect($config['database']);
+			self::$token_table = $config['token_table'].':';
+			self::$app_table = $config['app_table'].':';
+		}
 
 		// permissions: '|0|12|2|5|' - Must be started and closed with '|'
 		self::$config['permissions'] = &$config['permissions'];
-		self::$config['token_table'] = &$config['token_table'];
-		self::$config['app_table'] = &$config['app_table'];
-
-		// If the token_table was not found
-		self::$db->onTableMissing($config['token_table'], function(){
-			self::$db->createTable($config['token_table'], [
-				'token_id' => ['bigint(19)', 'primary', 'key', 'AUTO_INCREMENT'],
-				'app_id' => 'int(11)',
-				'user_id' => 'int(11)',
-				'expiration' => 'int(11)',
-				'permissions' => ['text', 'COLLATE', 'latin1_swedish_ci']
-			]);
-		});
-
-		// If the app_table was not found
-		self::$db->onTableMissing($config['app_table'], function(){
-			self::$db->createTable($config['app_table'], [
-				'app_id' => ['bigint(19)', 'primary', 'key', 'AUTO_INCREMENT'],
-				'app_secret' => ['text', 'COLLATE', 'latin1_swedish_ci']
-			]);
-		});
 	}
 
 	public static function parseAvailableToken(){
@@ -101,7 +117,11 @@ class AccessToken{
 		self::$userID = $temp[2]+0;
 		self::$expiration = $temp[3]+0;
 
-		$expiration = self::$db->get(self::$config['token_table'], ['user_id', 'expiration', 'permissions'], ['token_id'=>self::$tokenID]);
+		if(self::$driver === 'redis')
+			$expiration = self::$db->hmGetAll(self::$token_table."$temp[0]:$temp[2]");
+		else 
+			$expiration = self::$db->get(self::$token_table, ['user_id', 'expiration', 'permissions'], ['token_id'=>self::$tokenID]);
+
 		if(!$expiration || $expiration['expiration'] <= time() || self::$userID != $expiration['user_id']){
 			self::$error = 'expired';
 			return false;
@@ -143,10 +163,18 @@ class AccessToken{
 
 		self::$expiration = time() + $expires_in;
 
-		self::$db->update(self::$config['token_table'], [
+		$obj = [
 			'expiration'=>self::$expiration,
 			'permissions'=>self::$permissions
-		], ['token_id'=>self::$tokenID]);
+		];
+
+		if(self::$driver === 'redis'){
+			$key = self::$token_table.self::$appID.':'.self::$userID;
+			self::$db->hmSet($key, $obj);
+			self::$db->setTimeout($key, self::$expiration);
+		}
+		else 
+			self::$db->update(self::$token_table, $obj, ['token_id'=>self::$tokenID]);
 
 		// Simplify structure
 		return Crypto::encrypt(implode('|', [
@@ -161,11 +189,18 @@ class AccessToken{
 	// $userData = {userID, username, permissions}
 	public static function create($appID, $appSecret, $userData){
 		// Verify AppID and Secret Token
-		$app = self::$db->get(self::$config['app_table'], ['app_id'], ['app_id'=>$appID, 'app_secret'=>$appSecret]);
+		if(self::$driver === 'redis'){
+			$app = self::$db->hmGet(self::$app_table.$appID, ['app_secret']);
+			if($appSecret !== $app['app_secret'])
+				return;
+		}
+		else $app = self::$db->get(self::$app_table, ['app_id'], ['app_id'=>$appID, 'app_secret'=>$appSecret]);
+
 		if(!$app) return false;
 
 		// Clean old access token
-		self::$db->delete(self::$config['token_table'], ['app_id'=>$appID, 'user_id'=>$userData['userID']]);
+		if(self::$driver === 'database')
+			self::$db->delete(self::$token_table, ['app_id'=>$appID, 'user_id'=>$userData['userID']]);
 
 		self::$appID = &$appID;
 		self::$tokenID = 0;
@@ -173,12 +208,22 @@ class AccessToken{
 		self::$expiration = time() + 86400;
 		self::$permissions = &$userData['permissions'];
 
-		self::$tokenID = self::$db->insert(self::$config['token_table'], [
-			'app_id'=>self::$appID,
-			'user_id'=>self::$userID,
-			'expiration'=>self::$expiration,
-			'permissions'=>self::$permissions
-		], true);
+		if(self::$driver === 'redis'){
+			$key = self::$token_table."$appID:$userData[userID]";
+			self::$db->hmSet($key, [
+				'expiration'=>self::$expiration,
+				'permissions'=>self::$permissions
+			]);
+			self::$db->setTimeout($key, self::$expiration);
+		}
+		else {
+			self::$tokenID = self::$db->insert(self::$token_table, [
+				'app_id'=>self::$appID,
+				'user_id'=>self::$userID,
+				'expiration'=>self::$expiration,
+				'permissions'=>self::$permissions
+			], true);
+		}
 
 		// Simplify structure
 		return Crypto::encrypt(implode('|', [
@@ -190,9 +235,16 @@ class AccessToken{
 	}
 
 	// Delete access token from database
-	public static function revoke($tokenID = false){
-		$tokenID = self::$tokenID;
-		self::$db->delete(self::$config['token_table'], ['token_id'=>$tokenID]);
+	public static function revoke($appID = false, $userID = false){
+		if($appID === false && $userID === false){
+			$appID = self::$appID;
+			$userID = self::$userID;
+		}
+
+		if(self::$driver === 'redis')
+			self::$db->remove(self::$token_table."$appID:$userID", $obj);
+		else 
+			self::$db->delete(self::$token_table, ['app_id'=>$appID, 'user_id'=>$userID]);
 	}
 }
 

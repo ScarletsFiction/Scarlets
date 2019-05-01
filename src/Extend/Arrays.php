@@ -2,6 +2,23 @@
 namespace Scarlets\Extend;
 
 class Arrays{
+	public static function typeChanges(&$arr, $which){
+		foreach ($which as $key => &$value) {
+			if($key === 'number')
+				foreach ($value as &$val) {
+					$arr[$val] = $arr[$val]+0;
+				}
+			elseif($key === 'bool' || $key === 'boolean')
+				foreach ($value as &$val) {
+					$arr[$val] = (boolean)$arr[$val];
+				}
+			else
+				foreach ($value as &$val) {
+					$arr[$val] = (string)$arr[$val];
+				}
+		}
+	}
+
 	public static function &sortByKey($array, $key, $ascending = true, $caseinsensitive = false){
 		$sort = $ascending ? SORT_ASC : SORT_DESC;
 		$temp = [];

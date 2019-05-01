@@ -112,7 +112,7 @@ class Auth{
 				return true;
 
 			Session::$data['username'] = Session::$sify['username'] = &$row['username'];
-			Session::$data['userID'] = Session::$sify['userID'] = &$row['user_id'];
+			Session::$data['userID'] = Session::$sify['userID'] = (int)$row['user_id'];
 			Session::saveSify();
 			return true;
 		}
@@ -129,7 +129,7 @@ class Auth{
 		{
 			// Check if exist but different userID
 			if($data['userID'] && $sify['userID'] && $data['userID'] !== $sify['userID']){
-				Session::destroyCookies();
+				Session::destroy();
 				return false;
 			}
 
