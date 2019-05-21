@@ -52,7 +52,7 @@ class Scarlets{
 				if(substr($requestURI[0], -1, 1) === '/' && $requestURI[0] !== '/'){
 					$matched = true;
 					$_SERVER['REQUEST_URI'] = substr($requestURI[0], 0, -1);
-					
+
 					if(isset($requestURI[1]))
 						$_SERVER['REQUEST_URI'] .= "?$requestURI[1]";
 				}

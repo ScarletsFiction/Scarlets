@@ -14,7 +14,12 @@ class API{
 			$array = &$requested;
 		}
 
-		if(!$default) $default = $array;
+		if($default === null){
+			if(isset($array) === false)
+				$array = $available;
+
+			$default = $array;
+		}
 		else $default = array_flip(array_flip(array_merge($default, $available)));
 	}
 
