@@ -119,10 +119,12 @@ class AccessToken{
 
 		if(self::$driver === 'redis')
 			$expiration = self::$db->hGetAll(self::$token_table."$temp[0]:$temp[2]");
-		else 
-			$expiration = self::$db->get(self::$token_table, ['user_id', 'expiration', 'permissions'], ['token_id'=>self::$tokenID]);
+		else
+			$expiration = self::$db->get(self::$token_table, ['expiration', 'permissions'], [
+				'token_id'=>self::$tokenID, 'user_id'=>self::$userID
+			]);
 
-		if(!$expiration || $expiration['expiration'] <= time() || self::$userID != $expiration['user_id']){
+		if(!$expiration || $expiration['expiration'] <= time()){
 			self::$error = 'expired';
 			return false;
 		}
