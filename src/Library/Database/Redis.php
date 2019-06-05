@@ -247,9 +247,9 @@ class Redis{
 
 		if(count($found) === 0) return $found;
 
-		// Return true if without fields
+		// Return current result if without fields
 		if($withFields === false)
-			return true;
+			return $found;
 
 		$found_ = [];
 		if(is_string($withFields)){
@@ -301,11 +301,14 @@ class Redis{
 	}
 
 	public function count($tableName, $where = false){
-
+		return count($this->doSearch($tableName, $where));
 	}
 
 	public function select($tableName, $select = '*', $where = false, $fetchUnique = false){
-
+		if(is_string($select))
+			$select = [$select];
+		$value = $this->doSearch($tableName, $where, $select);
+		return $value;
 	}
 
 	public function get($tableName, $select = '*', $where = false){
@@ -319,11 +322,12 @@ class Redis{
 			return $value;
 		}
 
-		return $value;
+		return $value[0];
 	}
 
 	public function has($tableName, $where){
-
+		$where['LIMIT'] = 1;
+		return count($this->doSearch($tableName, $where)) === 1;
 	}
 
 	public function predict($tableName, $id = 'id', $where, &$cache = false){
@@ -335,7 +339,13 @@ class Redis{
 	}
 
 	public function delete($tableName, $where){
-
+		$count = 0;
+		$found = $this->doSearch($tableName, $where);
+		foreach ($found as $key => &$value) {
+		    $this->conn->del($key);
+		    $count++;
+		}
+		return $count;
 	}
 
 	public function insert($tableName, $object, $getInsertID = false){
@@ -347,6 +357,17 @@ class Redis{
 	}
 
 	public function drop($tableName){
+		$it = null;
+		$conn = &$this->conn;
+		$tableName = "$tableName:*";
 
+		$count = 0;
+		while($keys = $conn->scan($it, $tableName)){
+		    foreach($keys as &$key){
+		    	$conn->del($key);
+		    	$count++;
+		    }
+		}
+		return $count;
 	}
 }
