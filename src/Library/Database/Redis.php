@@ -251,35 +251,49 @@ class Redis{
 		if($withFields === false)
 			return true;
 
-		// Get obtained property from first result
-		foreach($found as &$value){
-			$have = array_keys($value);
-			break;
-		}
-		$n = count($have);
-
+		$found_ = [];
 		if(is_string($withFields)){
-			$n--;
-			$found_ = [];
-
 			// Obtain required value only
 			foreach ($found as &$value) {
 				if(isset($value[$withFields])){
-					$found_[] = $value[$withFields];
+					$found_[] = &$value[$withFields];
 					continue;
 				}
 
-				die("ToDo: Get property from db");
+				$found_[] = $this->conn->hget($key, $withFields);
 			}
+
 			return $found_;
 		}
 
-		elseif($n !== count($withFields)){
-			die("ToDo: Get multiple property from db2");
+		// Get sample of one result and get missing fields
+		$missing = [];
+		foreach ($found as &$sample) {
+			for($i = count($withFields)-1; $i >= 0; $i--){ 
+				if(isset($sample[$withFields[$i]]) === false)
+					$missing[] = &$withFields[$i];
+			}
+
+			break;
 		}
 
-		// All data ready
-		return $found;
+		// Fill missing value
+		if(count($missing) !== 0){
+			foreach ($found as $key => &$value) {
+				$value = array_merge($value, $this->conn->hmget($key, $missing));
+			}
+		}
+
+		// Obtain required value only
+		foreach ($found as &$temp) {
+			$row = [];
+			foreach ($withFields as &$field) {
+				$row[$field] = isset($temp[$field]) ? $temp[$field] : null;
+			}
+			$found_[] = $row;
+		}
+
+		return $found_;
 	}
 
 	public function &holes($tableName, $column, $length = 0, $offset = 0){
