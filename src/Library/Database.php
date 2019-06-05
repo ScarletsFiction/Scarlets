@@ -3,6 +3,7 @@ namespace Scarlets\Library;
 use \Scarlets;
 use \Scarlets\Config;
 use \Scarlets\Library\Database\SQL;
+use \Scarlets\Library\Database\Redis;
 
 class Database{
 	public static $connectedDB = [];
@@ -66,6 +67,8 @@ class Database{
 				// Remove prefix
 				self::$connectedDB[$credential]->change(false);
 			}
+			elseif($driver === 'redis')
+				self::$connectedDB[$credential] = new Redis($options);
 			
 			// Else ...
 		}

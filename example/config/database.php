@@ -41,15 +41,31 @@ return [
     ],
 
     'yourdatabasename' => [
-        'driver' => 'mysql',
-        'host' => '127.0.0.1',
-        'port' => '3306', // MySQL (3306), Postgre (5432), SQLServer (1433)
+        // Use same connection and credentials
+        'connection' => 'scarletsfiction',
+
+        // Use different settings for the connection
         'table_prefix' => '',
-        'database' => 'mydatabase',
+        'database' => 'anisics'
+    ],
+
+    'redis_db' => [
+        'driver' => 'redis',
+        'host' => '127.0.0.1',
+        'port' => 6379,
+        'database' => 2,
         'username' => 'root',
         'password' => '',
-        'charset' => 'utf8',
-        'collation' => 'utf8_unicode_ci',
+
+        // This important if you want to use search feature
+        'structure' => [
+            'table1' => [
+                // Choose your key indexes, keep it short for better performance
+                // Don't choose key that have long value
+                // The first key will have auto_increment and unique if value is null
+                'user_id', 'username', 'age', 'privilege'
+            ]
+        ]
     ]
 ],
 
