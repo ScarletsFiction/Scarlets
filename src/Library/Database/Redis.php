@@ -280,7 +280,7 @@ class Redis{
 		// Fill missing value
 		if(count($missing) !== 0){
 			foreach ($found as $key => &$value) {
-				$value = array_merge($value, $this->conn->hmget($key, $missing));
+				$value = array_replace($value, $this->conn->hmget($key, $missing));
 			}
 		}
 
@@ -339,21 +339,87 @@ class Redis{
 	}
 
 	public function delete($tableName, $where){
-		$count = 0;
 		$found = $this->doSearch($tableName, $where);
 		foreach ($found as $key => &$value) {
 		    $this->conn->del($key);
-		    $count++;
 		}
-		return $count;
+		return count($found);
 	}
 
-	public function insert($tableName, $object, $getInsertID = false){
+	public function &insert($tableName, $object){
+		$conn = &$this->conn;
+		$struct = &$this->structure[$tableName];
 
+		// Check if multiple
+		$multiple = false;
+		if(isset($object[0]) === false){
+			$object = [$object];
+			$multiple = [];
+		}
+
+		foreach ($object as &$row) {
+			if(isset($row[$struct[0]]) === false)
+				$insertID = $conn->incr("$tableName:_internal_:auto_inc");
+			else $insertID = &$row[$struct[0]];
+
+			// Create key first
+			$key = $tableName;
+			foreach($struct as &$indexes){
+				if(isset($row[$indexes]) === false)
+					throw new \Exception("`$indexes` index value is missing", 1);
+
+				$key .= ":$row[$indexes]";
+				unset($row[$indexes]);
+			}
+
+			// Insert to database
+			$conn->hmset($key, $row);
+
+			if($multiple === false)
+				return $insertID;
+
+			$multiple[] = $insertID;
+		}
+
+		return $multiple;
 	}
 
 	public function update($tableName, $object, $where = false){
+		$tableName_ = $tableName;
+		$found = $this->doSearch($tableName, $where);
+		$conn = &$this->conn;
 
+		foreach ($found as $key => &$row) {
+			$copy = array_replace([], $object);
+
+			// Check first if the key would be renamed
+			$keyRename = false;
+			foreach ($row as $prop => &$val) {
+				if(isset($copy[$prop])){
+					$val = $copy[$prop];
+					$keyRename = true;
+					unset($copy[$prop]);
+				}
+			}
+
+			// Change key first
+			if($keyRename){
+				$key_ = $tableName_;
+				foreach ($row as $prop => &$val) {
+					$key_ .= ":".str_replace(':', '_', $val);
+				}
+				$conn->rename($key, $key_);
+				$key = &$key_;
+			}
+
+			// Check if no other update needed
+			if(count($copy) === 0) continue;
+
+			// Update multiple hash value
+			$conn->hmset($key, $copy);
+		}
+
+		return count($found);
 	}
 
 	public function drop($tableName){
