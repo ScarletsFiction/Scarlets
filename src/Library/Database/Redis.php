@@ -53,11 +53,11 @@ class Redis{
 
 			$operationCondition = true;
 
-			// Recurse again
+			// Recursion again
 			if($prop === 'AND')
 				$operationCondition = $this->operation($data, $rule, false, $key);
 
-			// Recurse again
+			// Recursion again
 			else if($prop === 'OR')
 				$operationCondition = $this->operation($data, $rule, true, $key);
 
@@ -142,7 +142,7 @@ class Redis{
 						$temp = substr($temp, 0, -1);
 					}
 
-					$temp = $temp.replace(regexEscape, '\\$&');
+					$temp = preg_replace('/[-\/\\^$*+?.()|[\]{}]/g', '\\$&', $temp);
 
 					if($likeCode === 2)
 						$temp = "$temp$";
@@ -162,7 +162,7 @@ class Redis{
 					$operationCondition = false; // When "not match"
 			}
 
-			if($ORCondition)// OR
+			if($ORCondition) // OR
 				$currentCondition = $currentCondition || $operationCondition;
 
 			else if($operationCondition === false){ // AND
