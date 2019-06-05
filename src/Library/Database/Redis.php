@@ -386,8 +386,9 @@ class Redis{
 
 	public function update($tableName, $object, $where = false){
 		$tableName_ = $tableName;
-		$found = $this->doSearch($tableName, $where);
+		$struct = &$this->structure[$tableName];
 		$conn = &$this->conn;
+		$found = $this->doSearch($tableName, $where);
 
 		foreach ($found as $key => &$row) {
 			$copy = array_replace([], $object);
@@ -405,8 +406,8 @@ class Redis{
 			// Change key first
 			if($keyRename){
 				$key_ = $tableName_;
-				foreach ($row as $prop => &$val) {
-					$key_ .= ":".str_replace(':', '_', $val);
+				foreach ($struct as &$val) {
+					$key_ .= ":".str_replace(':', '_', $row[$val]);
 				}
 				$conn->rename($key, $key_);
 				$key = &$key_;
