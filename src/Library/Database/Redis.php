@@ -10,6 +10,8 @@
 | from redis. It would be a good choice for caching realtime data
 | instead be the main database.
 |
+| ToDo: OFFSET, ORDER
+|
 */
 namespace Scarlets\Library\Database;
 
@@ -58,114 +60,120 @@ class Redis{
 				$operationCondition = $this->operation($data, $rule, false, $key);
 
 			// Recursion again
-			else if($prop === 'OR')
+			elseif($prop === 'OR')
 				$operationCondition = $this->operation($data, $rule, true, $key);
 
-			else if($oper === false){ // Equal to
-				if(is_array($rule)){
-					if(strpos($rule, $data[$prop]) === false)
-						$operationCondition = false; // When nothing match
-				}
-				else if($data[$prop] != $rule)
-					$operationCondition = false; // When "not equal to"
-			}
+			else{
+				// Get missing data first if it was not found
+				if(isset($data[$prop]) === false)
+					$data[$prop] = $this->conn->hget($key, $prop);
 
-			else if($oper === '!'){ // Not equal to
-				if(is_array($rule)){
-					if(strpos($rule, $data[$prop]) !== false)
-						$operationCondition = false; // When something match
-				}
-				else if($data[$prop] == $rule)
-					$operationCondition = false; // When "equal to"
-			}
-
-			else if($oper === '>'){ // Greater than
-				if($data[$prop] <= $rule)
-					$operationCondition = false; // When "lower or equal to"
-			}
-
-			else if($oper === '>='){ // Greater or equal
-				if($data[$prop] < $rule)
-					$operationCondition = false; // When "lower than"
-			}
-
-			else if($oper === '<'){ // Lower than
-				if($data[$prop] >= $rule)
-					$operationCondition = false; // When "more than or equal"
-			}
-
-			else if($oper === '<='){ // Lower or equal
-				if($data[$prop] > $rule)
-					$operationCondition = false; // When "more than"
-			}
-
-			else if($oper === '><'){ // Between 2 value
-				if($data[$prop] <= $rule[0] || $data[$prop] >= $rule[1])
-					$operationCondition = false; // When "not between 2 value or equal"
-			}
-
-			else if($oper === '=><='){ // Between 2 value
-				if($data[$prop] < $rule[0] || $data[$prop] > $rule[1])
-					$operationCondition = false; // When "not between 2 value"
-			}
-
-			else if($oper === '<>'){ // Not between than 2  value
-				if($data[$prop] >= $rule[0] || $data[$prop] <= $rule[1])
-					$operationCondition = false; // When "between 2 value or equal"
-			}
-
-			else if($oper === '<=>'){ // Not between than 2  value
-				if($data[$prop] > $rule[0] || $data[$prop] < $rule[1])
-					$operationCondition = false; // When "between 2 value"
-			}
-
-			else if(strpos($oper, '~') !== false){ // Data likes
-				$likeCode = 1; // 1 = %value%, 2 = %value, 3 = value%
-				$regexed = [];
-
-				if(is_array($rule) === false)
-					$rule = [$rule];
-
-				foreach($rule as &$temp){
-					if($temp[0] === '%' && substr($temp, -1) === '%'){
-						$likeCode = 1;
-						$temp = substr($temp, 1, -1);
+				if($oper === false){ // Equal to
+					if(is_array($rule)){
+						if(strpos($rule, $data[$prop]) === false)
+							$operationCondition = false; // When nothing match
 					}
-
-					else if($temp[0] === '%'){
-						$likeCode = 2;
-						$temp = substr($temp, 1);
-					}
-
-					else if(substr($temp, -1) === '%'){
-						$likeCode = 3;
-						$temp = substr($temp, 0, -1);
-					}
-
-					$temp = preg_replace('/[-\/\\^$*+?.()|[\]{}]/g', '\\$&', $temp);
-
-					if($likeCode === 2)
-						$temp = "$temp$";
-
-					else if($likeCode === 3)
-						$temp = "^$temp";
-
-					$regexed[] = $temp;
+					elseif($data[$prop] != $rule)
+						$operationCondition = false; // When "not equal to"
 				}
 
-				$exist = preg_match('/'.implode('|', $regexed).'/i', $data[$prop]) !== false;
+				elseif($oper === '!'){ // Not equal to
+					if(is_array($rule)){
+						if(strpos($rule, $data[$prop]) !== false)
+							$operationCondition = false; // When something match
+					}
+					elseif($data[$prop] == $rule)
+						$operationCondition = false; // When "equal to"
+				}
 
-				if(strpos($oper, '!') !== false) // Data not like
-					if($exist) $operationCondition = false; // When "have match"
+				elseif($oper === '>'){ // Greater than
+					if($data[$prop] <= $rule)
+						$operationCondition = false; // When "lower or equal to"
+				}
 
-				else if(!$exist) // Data like
-					$operationCondition = false; // When "not match"
+				elseif($oper === '>='){ // Greater or equal
+					if($data[$prop] < $rule)
+						$operationCondition = false; // When "lower than"
+				}
+
+				elseif($oper === '<'){ // Lower than
+					if($data[$prop] >= $rule)
+						$operationCondition = false; // When "more than or equal"
+				}
+
+				elseif($oper === '<='){ // Lower or equal
+					if($data[$prop] > $rule)
+						$operationCondition = false; // When "more than"
+				}
+
+				elseif($oper === '><'){ // Between 2 value
+					if($data[$prop] <= $rule[0] || $data[$prop] >= $rule[1])
+						$operationCondition = false; // When "not between 2 value or equal"
+				}
+
+				elseif($oper === '=><='){ // Between 2 value
+					if($data[$prop] < $rule[0] || $data[$prop] > $rule[1])
+						$operationCondition = false; // When "not between 2 value"
+				}
+
+				elseif($oper === '<>'){ // Not between than 2  value
+					if($data[$prop] >= $rule[0] || $data[$prop] <= $rule[1])
+						$operationCondition = false; // When "between 2 value or equal"
+				}
+
+				elseif($oper === '<=>'){ // Not between than 2  value
+					if($data[$prop] > $rule[0] || $data[$prop] < $rule[1])
+						$operationCondition = false; // When "between 2 value"
+				}
+
+				elseif(strpos($oper, '~') !== false){ // Data likes
+					$likeCode = 1; // 1 = %value%, 2 = %value, 3 = value%
+					$regexed = [];
+
+					if(is_array($rule) === false)
+						$rule = [$rule];
+
+					foreach($rule as &$temp){
+						if($temp[0] === '%' && substr($temp, -1) === '%'){
+							$likeCode = 1;
+							$temp = substr($temp, 1, -1);
+						}
+
+						elseif($temp[0] === '%'){
+							$likeCode = 2;
+							$temp = substr($temp, 1);
+						}
+
+						elseif(substr($temp, -1) === '%'){
+							$likeCode = 3;
+							$temp = substr($temp, 0, -1);
+						}
+
+						$temp = preg_replace('/[-\/\\^$*+?.()|[\]{}]/g', '\\$&', $temp);
+
+						if($likeCode === 2)
+							$temp = "$temp$";
+
+						elseif($likeCode === 3)
+							$temp = "^$temp";
+
+						$regexed[] = $temp;
+					}
+
+					$exist = preg_match('/'.implode('|', $regexed).'/i', $data[$prop]) !== false;
+
+					if(strpos($oper, '!') !== false) // Data not like
+						if($exist) $operationCondition = false; // When "have match"
+
+					elseif(!$exist) // Data like
+						$operationCondition = false; // When "not match"
+				}
 			}
 
 			if($ORCondition) // OR
 				$currentCondition = $currentCondition || $operationCondition;
 
-			else if($operationCondition === false){ // AND
+			elseif($operationCondition === false){ // AND
 				$currentCondition = false;
 				break;
 			}
@@ -199,9 +207,20 @@ class Redis{
 		foreach($structure as &$value){
 			$pattern .= ":".(isset($where[$value]) ? $where[$value] : '*');
 		}
-		echo("Pattern: $pattern\n");
 
 		$found = [];
+		$LIMIT = $OFFSET = false;
+
+		if(isset($where['LIMIT'])){
+			if(is_array($where['LIMIT'])){
+				$LIMIT = &$where['LIMIT'][1];
+				$OFFSET = &$where['LIMIT'][0];
+			}
+			else $LIMIT = &$where['LIMIT'];
+
+			$z = 0;
+			unset($where['LIMIT']);
+		}
 
 		$it = null;
 		while($keys = $conn->scan($it, $pattern)){
@@ -217,7 +236,11 @@ class Redis{
 		    	// Test if indexes meets conditions
 		    	if($this->operation($obj, $where, false, $key)){
 		    		$found[$key] = $obj;
-		    		continue;
+
+		    		if($LIMIT !== false){
+		    			$z++;
+		    			if($LIMIT <= $z) break 2;
+		    		}
 		    	}
 		    }
 		}
@@ -272,12 +295,14 @@ class Redis{
 	}
 
 	public function get($tableName, $select = '*', $where = false){
+		$where['LIMIT'] = 1;
+
 		$value = $this->doSearch($tableName, $where, $select);
 
 		if(is_string($select)){
 			if(count($value) === 1)
 				return $value[0];
-			return false;
+			return $value;
 		}
 
 		return $value;
