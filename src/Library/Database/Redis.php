@@ -127,46 +127,53 @@ class Redis{
 				}
 
 				elseif(strpos($oper, '~') !== false){ // Data likes
-					$likeCode = 1; // 1 = %value%, 2 = %value, 3 = value%
-					$regexed = [];
-
 					if(is_array($rule) === false)
 						$rule = [$rule];
 
+					$likeCode = 0; // 0 = %value%, 1 = %value, 2 = value%
+					$like = [[],[],[]];
+
 					foreach($rule as &$temp){
-						if($temp[0] === '%' && substr($temp, -1) === '%'){
-							$likeCode = 1;
-							$temp = substr($temp, 1, -1);
-						}
+						// Escape symbol
+						$temp = preg_replace('/[-\/\\^$*+?.()|[\]{}]/', '\\$&', $temp);
 
-						elseif($temp[0] === '%'){
-							$likeCode = 2;
-							$temp = substr($temp, 1);
-						}
+						if($temp[0] === '%' && substr($temp, -1) === '%')
+							$like[0][] = substr($temp, 1, -1);
 
-						elseif(substr($temp, -1) === '%'){
-							$likeCode = 3;
-							$temp = substr($temp, 0, -1);
-						}
+						elseif($temp[0] === '%')
+							$like[1][] = substr($temp, 1);
 
-						$temp = preg_replace('/[-\/\\^$*+?.()|[\]{}]/g', '\\$&', $temp);
+						elseif(substr($temp, -1) === '%')
+							$like[2][] = substr($temp, 0, -1);
 
-						if($likeCode === 2)
-							$temp = "$temp$";
-
-						elseif($likeCode === 3)
-							$temp = "^$temp";
-
-						$regexed[] = $temp;
+						else $like[0][] = $temp;
 					}
 
-					$exist = preg_match('/'.implode('|', $regexed).'/i', $data[$prop]) !== false;
+					$exist = false;
+					foreach ($like[0] as &$value) { // %value%
+						if(stripos($data[$prop], $value) !== false)
+							$exist = true;
+					}
+
+					if($exist === false)
+						foreach ($like[2] as &$value) {// value%
+							if(stripos($data[$prop], $value) === 0)
+								$exist = true;
+						}
+
+					if($exist === false && count($like[1]) !== 0){
+						$k = strlen($data[$prop]);
+						foreach ($like[1] as &$value) {// %value
+							if(stripos($data[$prop], $value) === $k - strlen($value))
+								$exist = true;
+						}
+					}
 
 					if(strpos($oper, '!') !== false) // Data not like
-						if($exist) $operationCondition = false; // When "have match"
+						$operationCondition = $exist === false; // Is not exist?
 
-					elseif(!$exist) // Data like
-						$operationCondition = false; // When "not match"
+					else // Data like
+						$operationCondition = $exist; // When "not match"
 				}
 			}
 
