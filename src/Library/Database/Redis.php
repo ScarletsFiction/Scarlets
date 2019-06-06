@@ -233,27 +233,41 @@ class Redis{
 			unset($where['LIMIT']);
 		}
 
-		$it = null;
-		while($keys = $conn->scan($it, $pattern)){
-		    foreach($keys as &$key){
-		    	$index = explode(':', $key);
+		if($LIMIT === 1 && strpos($pattern, '*') === false){
+			if($conn->exists($pattern) === 1){
+				$obj = [];
 
-		    	// Create object from indexes
-		    	$obj = [];
-		    	for ($i = 0, $n = count($index) - 1; $i < $n; $i++) { 
-		    		$obj[$indexes[$i]] = &$index[$i + 1];
-		    	}
+			    $index = explode(':', $pattern);
+			    for ($i = 0, $n = count($index) - 1; $i < $n; $i++) { 
+			    	$obj[$indexes[$i]] = &$index[$i + 1];
+			    }
 
-		    	// Test if indexes meets conditions
-		    	if($this->operation($obj, $where, false, $key)){
-		    		$found[$key] = $obj;
+				$found[$pattern] = $obj;
+			}
+		}
+		else {
+			$it = null;
+			while($keys = $conn->scan($it, $pattern)){
+			    foreach($keys as &$key){
+			    	$index = explode(':', $key);
 
-		    		if($LIMIT !== false){
-		    			$z++;
-		    			if($LIMIT <= $z) break 2;
-		    		}
-		    	}
-		    }
+			    	// Create object from indexes
+			    	$obj = [];
+			    	for ($i = 0, $n = count($index) - 1; $i < $n; $i++) { 
+			    		$obj[$indexes[$i]] = &$index[$i + 1];
+			    	}
+
+			    	// Test if indexes meets conditions
+			    	if($this->operation($obj, $where, false, $key)){
+			    		$found[$key] = $obj;
+
+			    		if($LIMIT !== false){
+			    			$z++;
+			    			if($LIMIT <= $z) break 2;
+			    		}
+			    	}
+			    }
+			}
 		}
 
 		if(count($found) === 0) return $found;
