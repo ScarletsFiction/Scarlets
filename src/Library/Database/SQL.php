@@ -142,6 +142,7 @@ class SQL{
 
 	// The code below could be similar with Javascript version
 	// But the PHP version doesn't include preprocessData
+
 	private $escapes = '`';
 	private function validateColumn($text){
 		return $this->escapes.preg_replace('/[^a-zA-Z0-9_\.]+/m', '', $text).$this->escapes;
@@ -168,6 +169,7 @@ class SQL{
 
 	// ex: ['AND'=>['id'=>12, 'OR'=>['name'=>'myself', 'name'=>'himself']], 'LIMIT'=>1]
 		// Select one where (id == 12 && (name == 'myself' || name == 'himself'))
+	private $operMoreLess = ['>', '>=', '<', '<='];
 	private function makeWhere($object, $comparator=false, $children=false){
 		if(!$object) return ['', []];
 		$wheres = [];
@@ -187,18 +189,28 @@ class SQL{
 			if(!$children && in_array($check, $specialList) !== false) continue;
 
 			if(isset($matches[1])){
-				if(in_array($matches[1], ['>', '>=', '<', '<=']))
-				{
-					if(!is_nan($value))
-					{
-						$wheres[] = $this->validateColumn($matches[0]) . ' ' . $matches[1] . ' ?';
+				if(in_array($matches[1], $this->operMoreLess)){
+					if(is_nan($value) === false){
+						$wheres[] = $this->validateColumn($matches[0]) . " $matches[1] ?";
 						$objectData[] = $value;
 						continue;
 					}
 					trigger_error('SQL where: value of ' . $this->validateColumn($matches[0]) . ' is non-numeric and can\'t be accepted');
 				}
-				elseif($matches[1] === '!')
-				{
+
+				elseif($matches[1] === '<>' || $matches[1] === '><'){
+					$NOT = $matches[1] === '<>' ? 'NOT' : '';
+
+					if(count($value) === 2){
+						$wheres[] = $this->validateColumn($matches[0]) . " $NOT BETWEEN $matches[1] ? AND ?";
+						$objectData[] = &$value[0];
+						$objectData[] = &$value[1];
+						continue;
+					}
+					trigger_error('SQL where: value of ' . $this->validateColumn($matches[0]) . ' must have 2 numeric value');
+				}
+
+				elseif($matches[1] === '!'){
 					$type = gettype($value);
 					if(!$type)
 						$wheres[] = $this->validateColumn($matches[0]) . ' IS NOT NULL';
@@ -227,8 +239,8 @@ class SQL{
 							trigger_error('SQL where: value of' . $this->validateColumn($matches[0]) . ' with type ' . $type . ' can\'t be accepted');
 					}
 				}
-				elseif(substr($matches[1], -1) === '~')
-				{
+
+				elseif(substr($matches[1], -1) === '~'){
 					if(gettype($value) !== 'array')
 						$value = [$value];
 
@@ -244,6 +256,7 @@ class SQL{
 
                     $wheres[] = '('.implode($OR, $likes).')';
 				}
+
 				elseif(substr($matches[1], -1) === ','){
 					$NOT = strpos($matches[1], '!') === 0 ? ' NOT' : '';
 					$OR = strpos($matches[1], '&') === false ? ' OR ' : ' AND ';
@@ -282,9 +295,15 @@ class SQL{
 					$matches[1] = strtoupper($matches[1]);
 
 					if(strpos($matches[1], 'LENGTH') !== false){
-						if(preg_match('/[<>=]+/', $matches[1], $op))
-							$op = $op[0];
-						else $op = '=';
+						$op = explode('(', $matches[1]);
+						if(count($op) === 1)
+							$op = '=';
+						else{
+							$op = str_replace(')', '', $op[0]);
+
+							if(in_array($op, $this->operMoreLess) === false && $op !== '!=')
+								trigger_error("SQL where: operation $op is not recognized");
+						}
 
 						$wheres[] = "CHAR_LENGTH(".$this->validateColumn($matches[0]).") $op ?";
 						$objectData[] = $value;
@@ -323,17 +342,17 @@ class SQL{
 					}
 
 					elseif($type==='integer' || $type==='double' || $type==='boolean' || $type==='string'){
-						$wheres[] = $this->validateColumn($matches[0]) . ' = ?';
+						$wheres[] = $this->validateColumn($matches[0]).' = ?';
 						$objectData[] = $value;
 					}
 
-					else trigger_error('SQL where: value ' . $this->validateColumn($matches[0]) . ' with type ' . $type . ' can\'t be accepted');
+					else trigger_error('SQL where: value '.$this->validateColumn($matches[0]).' with type '.$type.' can\'t be accepted');
 				}
 			}
 		}
 
 		for ($i = 0; $i < count($columns); $i++) {
-			if($columns[$i]==='ORDER'||$columns[$i]==='LIMIT')
+			if($columns[$i] === 'ORDER' || $columns[$i] === 'LIMIT')
                 continue;
 
 			$test = explode('AND', $columns[$i]);

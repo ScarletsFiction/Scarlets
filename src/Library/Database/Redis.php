@@ -111,19 +111,9 @@ class Redis{
 						$operationCondition = false; // When "not between 2 value or equal"
 				}
 
-				elseif($oper === '=><='){ // Between 2 value
-					if($data[$prop] < $rule[0] || $data[$prop] > $rule[1])
-						$operationCondition = false; // When "not between 2 value"
-				}
-
-				elseif($oper === '<>'){ // Not between than 2  value
+				elseif($oper === '<>'){ // Not between than 2 value
 					if($data[$prop] >= $rule[0] || $data[$prop] <= $rule[1])
 						$operationCondition = false; // When "between 2 value or equal"
-				}
-
-				elseif($oper === '<=>'){ // Not between than 2  value
-					if($data[$prop] > $rule[0] || $data[$prop] < $rule[1])
-						$operationCondition = false; // When "between 2 value"
 				}
 
 				elseif(strpos($oper, '~') !== false){ // Data likes
@@ -132,10 +122,11 @@ class Redis{
 
 					$likeCode = 0; // 0 = %value%, 1 = %value, 2 = value%
 					$like = [[],[],[]];
+					$testData = strtolower($data[$prop]);
 
 					foreach($rule as &$temp){
 						// Escape symbol
-						$temp = preg_replace('/[-\/\\^$*+?.()|[\]{}]/', '\\$&', $temp);
+						$temp = strtolower($temp);
 
 						if($temp[0] === '%' && substr($temp, -1) === '%')
 							$like[0][] = substr($temp, 1, -1);
@@ -151,25 +142,25 @@ class Redis{
 
 					$exist = false;
 					foreach ($like[0] as &$value) { // %value%
-						if(stripos($data[$prop], $value) !== false)
+						if(stripos($testData, $value) !== false)
 							$exist = true;
 					}
 
 					if($exist === false)
 						foreach ($like[2] as &$value) {// value%
-							if(stripos($data[$prop], $value) === 0)
+							if(stripos($testData, $value) === 0)
 								$exist = true;
 						}
 
 					if($exist === false && count($like[1]) !== 0){
-						$k = strlen($data[$prop]);
+						$k = strlen($testData);
 						foreach ($like[1] as &$value) {// %value
-							if(stripos($data[$prop], $value) === $k - strlen($value))
+							if(stripos($testData, $value) === $k - strlen($value))
 								$exist = true;
 						}
 					}
 
-					if(strpos($oper, '!') !== false) // Data not like
+					if($oper[0] === '!') // Data not like
 						$operationCondition = $exist === false; // Is not exist?
 
 					else // Data like
