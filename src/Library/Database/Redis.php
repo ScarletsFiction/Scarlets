@@ -19,6 +19,7 @@ class Redis{
 	public $connection;
 	public $type = 'Redis';
 	public $debug = false;
+	private $indexes = null;
 	private $structure = null;
 	private $conn;
 
@@ -29,8 +30,17 @@ class Redis{
 		if(!isset($options['password'])) $options['password'] = '';
 		if(!isset($options['port'])) $options['port'] = 6379;
 		if(!isset($options['database'])) trigger_error('Redis database index was not specified');
+		if(!isset($options['indexes'])) trigger_error('Redis table indexes was not defined');
 		if(!isset($options['structure'])) trigger_error('Redis table structure was not defined');
+		$this->indexes = &$options['indexes'];
+
+		// Convert datatype to lowercase
 		$this->structure = &$options['structure'];
+		foreach ($this->structure as &$table) {
+			foreach ($table as &$val) {
+				$val = strtolower($val);
+			}
+		}
 
 		$this->connection = new \Redis;
 		$this->conn = &$this->connection;
@@ -183,26 +193,26 @@ class Redis{
 	private $noCache = false;
 	private function &doSearch(&$pattern, &$where, $withFields = false){
 		$conn = &$this->conn;
-		$structure = &$this->structure[$pattern];
+		$indexes = &$this->indexes[$pattern];
 
 		// Reduce some pattern by OR operation
 		if(isset($where['OR'])){
-			$struct = $structure;
+			$indexs = $indexes;
 			$OR = json_encode($where['OR']);
 
-			for($i = count($struct)-1; $i >= 0; $i--){
+			for($i = count($indexs)-1; $i >= 0; $i--){
 				// false === false
-				if(strpos($OR, '"'.$struct[$i]."[") === strpos($OR, '"'.$struct[$i].'"'))
+				if(strpos($OR, '"'.$indexs[$i]."[") === strpos($OR, '"'.$indexs[$i].'"'))
 					continue;
 
 				// Remove from pattern if found
-				unset($struct[$i]);
+				unset($indexs[$i]);
 			}
 		}
-		else $struct = &$structure;
+		else $indexs = &$indexes;
 
 		// Build pattern to get indexes
-		foreach($structure as &$value){
+		foreach($indexes as &$value){
 			$pattern .= ":".(isset($where[$value]) ? $where[$value] : '*');
 		}
 
@@ -223,12 +233,12 @@ class Redis{
 		$it = null;
 		while($keys = $conn->scan($it, $pattern)){
 		    foreach($keys as &$key){
-		    	$indexes = explode(':', $key);
+		    	$index = explode(':', $key);
 
 		    	// Create object from indexes
 		    	$obj = [];
-		    	for ($i = 0, $n = count($indexes) - 1; $i < $n; $i++) { 
-		    		$obj[$structure[$i]] = &$indexes[$i + 1];
+		    	for ($i = 0, $n = count($index) - 1; $i < $n; $i++) { 
+		    		$obj[$indexes[$i]] = &$index[$i + 1];
 		    	}
 
 		    	// Test if indexes meets conditions
@@ -302,25 +312,47 @@ class Redis{
 		return count($this->doSearch($tableName, $where));
 	}
 
-	public function select($tableName, $select = '*', $where = false, $fetchUnique = false){
+	public function &select($tableName, $select = '*', $where = false, $fetchUnique = false){
 		if(is_string($select))
 			$select = [$select];
+
+		$struct = &$this->structure;
+		$struct = isset($struct[$tableName]) ? $struct[$tableName] : null;
+
 		$value = $this->doSearch($tableName, $where, $select);
+
+		if($struct !== null){
+			foreach ($select as &$field) {
+				if(isset($struct[$field]) === false)
+					continue;
+
+				if($struct[$field] === 'number'){
+					foreach ($value as &$row) {
+						$row[$field] = $row[$field]+0;
+					}
+				}
+
+				elseif($struct[$field] === 'json')
+					foreach ($value as &$row) {
+						$row[$field] = @json_decode($row[$field], true);
+					}
+			}
+		}
+
 		return $value;
 	}
 
-	public function get($tableName, $select = '*', $where = false){
+	public function &get($tableName, $select = '*', $where = false){
 		$where['LIMIT'] = 1;
-
-		$value = $this->doSearch($tableName, $where, $select);
-
+		$value = $this->select($tableName, $select, $where);
+		
 		if(is_string($select)){
 			if(count($value) === 1)
 				return $value[0];
 			return $value;
 		}
 
-		return $value[0];
+		return $value;
 	}
 
 	public function has($tableName, $where){
@@ -346,7 +378,7 @@ class Redis{
 
 	public function &insert($tableName, $object){
 		$conn = &$this->conn;
-		$struct = &$this->structure[$tableName];
+		$indexs = &$this->indexes[$tableName];
 
 		// Check if multiple
 		$multiple = false;
@@ -355,14 +387,29 @@ class Redis{
 			$multiple = [];
 		}
 
+		$struct = &$this->structure;
+		if(isset($struct[$tableName])){
+			$struct = &$struct[$tableName];
+
+			// Encode JSON if exist
+			foreach ($struct as $key => &$value) {
+				if($value === 'json')
+					foreach ($object as &$row) {
+						foreach ($row as &$val) {
+							$val = json_encode($val);
+						}
+					}
+			}
+		}
+
 		foreach ($object as &$row) {
-			if(isset($row[$struct[0]]) === false)
+			if(isset($row[$indexs[0]]) === false)
 				$insertID = $conn->incr("$tableName:_internal_:auto_inc");
-			else $insertID = &$row[$struct[0]];
+			else $insertID = &$row[$indexs[0]];
 
 			// Create key first
 			$key = $tableName;
-			foreach($struct as &$indexes){
+			foreach($indexs as &$indexes){
 				if(isset($row[$indexes]) === false)
 					throw new \Exception("`$indexes` index value is missing", 1);
 
@@ -383,8 +430,20 @@ class Redis{
 	}
 
 	public function update($tableName, $object, $where = false){
+		$struct = &$this->structure;
+
+		// Encode JSON if exist
+		if(isset($struct[$tableName])){
+			$struct = &$struct[$tableName];
+
+			foreach ($struct as $key => &$value) {
+				if($value === 'json')
+					$object[$key] = json_encode($object[$key]);
+			}
+		}
+
 		$tableName_ = $tableName;
-		$struct = &$this->structure[$tableName];
+		$indexs = &$this->indexes[$tableName];
 		$conn = &$this->conn;
 		$found = $this->doSearch($tableName, $where);
 
@@ -404,7 +463,7 @@ class Redis{
 			// Change key first
 			if($keyRename){
 				$key_ = $tableName_;
-				foreach ($struct as &$val) {
+				foreach ($indexs as &$val) {
 					$key_ .= ":".str_replace(':', '_', $row[$val]);
 				}
 				$conn->rename($key, $key_);

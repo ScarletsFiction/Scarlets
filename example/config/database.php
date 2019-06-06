@@ -57,13 +57,22 @@ return [
         'username' => 'root',
         'password' => '',
 
-        // This important if you want to use search feature
-        'structure' => [
+        // This is important for better search performance
+        'indexes' => [
             'table1' => [
                 // Choose your key indexes, keep it short for better performance
-                // Don't choose key that have long value
                 // The first key will have auto_increment and unique if value is null
                 'user_id', 'username', 'age', 'privilege'
+            ]
+        ],
+
+        // Define your table structure and data type here
+        // Available data type: number, json
+        // Other than that (or not defined) will be evaluated as string
+        'structure' => [
+            'table1' => [
+                'user_id'=>'number',
+                'age'=>'number'
             ]
         ]
     ]
