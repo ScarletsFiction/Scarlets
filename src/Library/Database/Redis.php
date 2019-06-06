@@ -345,10 +345,11 @@ class Redis{
 	public function &get($tableName, $select = '*', $where = false){
 		$where['LIMIT'] = 1;
 		$value = $this->select($tableName, $select, $where);
-		
+		$value = count($value) !== 0 ? $value[0] : null;
+
 		if(is_string($select)){
 			if(count($value) === 1)
-				return $value[0];
+				return $value[$select];
 			return $value;
 		}
 
