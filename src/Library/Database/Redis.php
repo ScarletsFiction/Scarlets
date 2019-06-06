@@ -192,6 +192,9 @@ class Redis{
 
 	private $noCache = false;
 	private function &doSearch(&$pattern, &$where, $withFields = false){
+		if($where === false)
+			$where = [];
+
 		$conn = &$this->conn;
 		$indexes = &$this->indexes[$pattern];
 
