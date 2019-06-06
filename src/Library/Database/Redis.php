@@ -316,11 +316,21 @@ class Redis{
 	}
 
 	public function &select($tableName, $select = '*', $where = false, $fetchUnique = false){
-		if(is_string($select))
-			$select = [$select];
-
 		$struct = &$this->structure;
 		$struct = isset($struct[$tableName]) ? $struct[$tableName] : null;
+
+		if(is_string($select)){
+			if($select === '*'){
+				$select = [];
+
+				if($struct !== null)
+					$select = array_keys($struct);
+
+				if(isset($this->indexes[$tableName]))
+					$select = array_values(array_flip(array_flip(array_merge($select, $this->indexes[$tableName]))));
+			}
+			else $select = [$select];
+		}
 
 		$value = $this->doSearch($tableName, $where, $select);
 
