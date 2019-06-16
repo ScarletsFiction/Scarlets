@@ -171,12 +171,11 @@ class AccessToken{
 		];
 
 		if(self::$driver === 'redis'){
-			$key = self::$token_table.self::$appID.':'.self::$userID;
+			$key = self::$token_table.self::$appID.':'.self::$userID.':'.self::$tokenID;
 			self::$db->hmSet($key, $obj);
-			self::$db->setTimeout($key, self::$expiration);
+			self::$db->expire($key, $expires_in);
 		}
-		else 
-			self::$db->update(self::$token_table, $obj, ['token_id'=>self::$tokenID]);
+		else self::$db->update(self::$token_table, $obj, ['token_id'=>self::$tokenID]);
 
 		// Simplify structure
 		return Crypto::encrypt(implode('|', [
@@ -211,12 +210,13 @@ class AccessToken{
 		self::$permissions = &$userData['permissions'];
 
 		if(self::$driver === 'redis'){
-			$key = self::$token_table."$appID:$userData[userID]";
+			self::$tokenID = $tokenID = time();
+			$key = self::$token_table."$appID:$userData[userID]:$tokenID";
 			self::$db->hmSet($key, [
 				'expiration'=>self::$expiration,
 				'permissions'=>self::$permissions
 			]);
-			self::$db->setTimeout($key, self::$expiration);
+			self::$db->expire($key, self::$expiration);
 		}
 		else {
 			self::$tokenID = self::$db->insert(self::$token_table, [
@@ -237,16 +237,21 @@ class AccessToken{
 	}
 
 	// Delete access token from database
-	public static function revoke($appID = false, $userID = false){
+	public static function revoke($appID, $userID = '*', $tokenID = '*'){
 		if($appID === false && $userID === false){
 			$appID = self::$appID;
 			$userID = self::$userID;
 		}
 
 		if(self::$driver === 'redis')
-			self::$db->remove(self::$token_table."$appID:$userID", $obj);
-		else 
-			self::$db->delete(self::$token_table, ['app_id'=>$appID, 'user_id'=>$userID]);
+			self::$db->unlink(self::$token_table."$appID:$userID:$tokenID", $obj);
+		else {
+			$where = ['app_id'=>$appID, 'user_id'=>$userID];
+			if($tokenID !== '*')
+				$where['token_id'] = &$tokenID;
+
+			self::$db->delete(self::$token_table, $where);
+		}
 	}
 }
 
