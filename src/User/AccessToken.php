@@ -118,13 +118,13 @@ class AccessToken{
 		self::$expiration = $temp[3]+0;
 
 		if(self::$driver === 'redis')
-			$expiration = self::$db->hGetAll(self::$token_table."$temp[0]:$temp[2]:$temp[1]");
+			$permissions = self::$db->hmGet(self::$token_table."$temp[0]:$temp[2]:$temp[1]", ['permissions']);
 		else
-			$expiration = self::$db->get(self::$token_table, ['expiration', 'permissions'], [
+			$permissions = self::$db->get(self::$token_table, 'permissions', [
 				'token_id'=>self::$tokenID, 'user_id'=>self::$userID
 			]);
 
-		if(!$expiration || $expiration['expiration'] <= time()){
+		if(!$permissions || self::$expiration <= time()){
 			self::$error = 'expired';
 			return false;
 		}
@@ -165,17 +165,17 @@ class AccessToken{
 
 		self::$expiration = time() + $expires_in;
 
-		$obj = [
-			'expiration'=>self::$expiration,
-			'permissions'=>self::$permissions
-		];
-
 		if(self::$driver === 'redis'){
 			$key = self::$token_table.self::$appID.':'.self::$userID.':'.self::$tokenID;
-			self::$db->hmSet($key, $obj);
+			self::$db->hmSet($key, [
+				'permissions'=>self::$permissions
+			]);
 			self::$db->expire($key, $expires_in);
 		}
-		else self::$db->update(self::$token_table, $obj, ['token_id'=>self::$tokenID]);
+		else self::$db->update(self::$token_table, [
+			'expiration'=>self::$expiration,
+			'permissions'=>self::$permissions
+		], ['token_id'=>self::$tokenID]);
 
 		// Simplify structure
 		return Crypto::encrypt(implode('|', [
@@ -213,7 +213,6 @@ class AccessToken{
 			self::$tokenID = $tokenID = time();
 			$key = self::$token_table."$appID:$userData[userID]:$tokenID";
 			self::$db->hmSet($key, [
-				'expiration'=>self::$expiration,
 				'permissions'=>self::$permissions
 			]);
 			self::$db->expire($key, self::$expiration);
