@@ -264,6 +264,8 @@ class WebRequest{
 			return [[$parts, $fh, $path], $ch];
 		};
 
+		$getRequest = isset($options_['data']);
+
 		$reqs = []; $ch = [];
 		foreach ($path as $url => &$path) {
 			if($getRequest === true)

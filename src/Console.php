@@ -401,25 +401,29 @@ class Console{
 
 	public static function table($data){
 		$spacing = [0,0,0,0,0,0];
-		$len = count($data[0]) - 1; // We don't need to calculate the last column
+		$len = count(reset($data)) - 1; // We don't need to calculate the last column
 
 		// Find longest text
 		foreach($data as &$value){
-			for($i=0; $i < $len; $i++){
-				if($spacing[$i] < strlen($value[$i]))
-					$spacing[$i] = strlen($value[$i]) + 2;
+			$i = 0;
+			foreach($value as &$space){
+				if($spacing[$i] < strlen($space))
+					$spacing[$i] = strlen($space) + 2;
+				$i++;
 			}
 		}
 
 		$len++;
 		// Give spacing and print
 		foreach($data as &$value){
-			for($i=0; $i < $len; $i++){
-				print($value[$i]);
+			$i = 0;
+			foreach($value as &$space){
+				print($space);
 				if($i != $len-1)
-					for ($a=0; $a < $spacing[$i] - strlen($value[$i]); $a++) { 
+					for ($a=0; $a < $spacing[$i] - strlen($space); $a++) { 
 						print ' ';
 					}
+				$i++;
 			}
 			print("\n");
 		}
