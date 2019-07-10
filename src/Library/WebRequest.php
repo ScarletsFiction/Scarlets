@@ -214,9 +214,10 @@ class WebRequest{
 
 		$options_ = ['connection' => 4];
 		if($options !== false)
-			$options_ = array_merge($options, $options_);
+			$options_ = array_merge($options_, $options);
 		
 		$connection = &$options_['connection'];
+		$connection--;
 
 		$mh = curl_multi_init();
 		$options = [
@@ -242,8 +243,12 @@ class WebRequest{
 
 		$addRequest = function(&$url, &$path) use(&$mh, &$options, &$connection) {
 			$size = self::contentSize($url);
-			$splits = range(0, $size, round($size / $connection));
-			$splitSize = count($splits);
+
+			if($connection > 0){
+				$splits = range(0, $size, round($size / $connection));
+				$splitSize = count($splits);
+			}
+			else $splits = $splitSize = 1;
 
 			$parts = []; $fh = []; $ch = [];
 			for ($i = 0; $i < $splitSize; $i++) {
@@ -255,8 +260,10 @@ class WebRequest{
 			    $fh[$i] = fopen($parts[$i], 'w+');
 			    curl_setopt($ch[$i], CURLOPT_FILE, $fh[$i]);
 
-			    $range = ($i === 0 ? 0 : $splits[$i] + 1).'-'.($i === $splitSize - 1 ? $size : $splits[$i + 1]);
-			    curl_setopt($ch[$i], CURLOPT_RANGE, $range);
+			    if($connection > 0){
+				    $range = ($i === 0 ? 0 : $splits[$i] + 1).'-'.($i === $splitSize - 1 ? $size : $splits[$i + 1]);
+				    curl_setopt($ch[$i], CURLOPT_RANGE, $range);
+				}
 
 			    curl_multi_add_handle($mh, $ch[$i]); 
 			}
