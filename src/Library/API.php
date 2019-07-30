@@ -13,6 +13,7 @@ class API{
 
 			$array = &$requested;
 		}
+		else $array = [];
 
 		if($default === null){
 			if(isset($array) === false)
@@ -20,7 +21,7 @@ class API{
 
 			$default = $array;
 		}
-		else $default = array_flip(array_flip(array_merge($default, $available)));
+		else $default = array_flip(array_flip(array_merge($default, $array)));
 	}
 
 	public static function &request($field, $default = null){
