@@ -22,6 +22,8 @@ class API{
 		}
 		elseif(isset($array))
 			$default = array_flip(array_flip(array_merge($default, $array)));
+		elseif($default !== null)
+			$default = array_merge($default, $available);
 	}
 
 	public static function &request($field, $default = null){
