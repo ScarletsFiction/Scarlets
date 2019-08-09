@@ -86,16 +86,19 @@ class AccessToken{
 
 		$headers = '';
         if(isset($_SERVER['HTTP_AUTHORIZATION'])) // Nginx or FastCGI
-            $headers = $_SERVER['HTTP_AUTHORIZATION'];
+            $headers = &$_SERVER['HTTP_AUTHORIZATION'];
 
-		elseif(isset($_SERVER['Authorization']))
-            $headers = $_SERVER['Authorization'];
+        elseif(isset($_SERVER['HTTP_X_AUTHORIZATION'])) // Alternative for missing auth header for apache
+            $headers = &$_SERVER['HTTP_X_AUTHORIZATION'];
 
         elseif(function_exists('apache_request_headers')){
             $requestHeaders = apache_request_headers();
 
             if(isset($requestHeaders['Authorization']))
-                $headers = $requestHeaders['Authorization'];
+                $headers = &$requestHeaders['Authorization'];
+
+	        elseif(isset($_SERVER['X-Authorization'])) // Alternative for missing auth header for apache
+	            $headers = &$requestHeaders['X-Authorization'];
         }
 
         if(stripos($headers, 'bearer ') === 0)
