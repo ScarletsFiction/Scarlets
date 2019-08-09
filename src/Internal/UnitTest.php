@@ -14,23 +14,39 @@ use \Scarlets\Extend\Strings;
 */
 
 class UnitTest{
+	private static $currentStatus = true;
 	public static function it($desc, $func){
 		self::desc($desc);
+		self::$currentStatus = true;
+
 		$memory = memory_get_usage();
-		$start = microtime(true);
-		$func('\Scarlets\Internal\UnitTest');
-		echo "    ~".round((microtime(true) - $start) * 1000).' ms';
-		echo "    Mem:".Strings::formatBytes(memory_get_peak_usage()-$memory);
+		$time = microtime(true);
+
+		try{
+			$func('\Scarlets\Internal\UnitTest');
+		} catch(UnitTestFailed $e){}
+
+		$time = round((microtime(true) - $time) * 1000);
+		$mem = Strings::formatBytes(memory_get_peak_usage()-$memory);
+
+		if(self::$currentStatus === true)
+			$status = Console::chalk("Success", 'green');
+		elseif(self::$currentStatus === false)
+			$status = Console::chalk("Failed", 'red');
+		else
+			$status = Console::chalk(self::$currentStatus, 'yellow');
+
+		echo "\n    $status    ~$time ms    Mem:$mem";
 	}
 
 	private static function finish($type){
-		if($type === false)
-			$ret = Console::chalk("Failed", 'red');
+		if($type === false){
+			self::$currentStatus = false;
+			throw new UnitTestFailed();
+		}
 		elseif($type === true)
-			$ret = Console::chalk("Success", 'green');
-		else $ret = Console::chalk($type, 'yellow');
-
-		echo "\n    $ret";
+			self::$currentStatus = true;
+		else self::$currentStatus = $type;
 	}
 
 	private static function desc(&$text){
@@ -61,3 +77,6 @@ class UnitTest{
 		else self::finish(false);
 	}
 }
+
+// For throwing an failed event on the middle of execution
+class UnitTestFailed extends \Exception{}
