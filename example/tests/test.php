@@ -14,6 +14,8 @@
 |
 */
 
+$describe("This is an example test");
+
 $it("compare number and string", function($assert){
 	$assert::equal(1, "1");
 });

@@ -39,6 +39,10 @@ class UnitTest{
 		echo "\n    $status    ~$time ms    Mem:$mem";
 	}
 
+	public static function describe($text){
+		echo "\n".Console::chalk($text, 'cyan');
+	}
+
 	private static function finish($type){
 		if($type === false){
 			self::$currentStatus = false;
