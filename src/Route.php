@@ -317,13 +317,13 @@ class Route{
 				return false;
 
 			// Remove first match
-			$requestURI = $temp[1];
+			$requestURI = &$temp[1];
 			unset($url[0]);
-
 
 			// Check all {param}
 			foreach ($url as &$matches) {
 				$matches = explode('}', $matches);
+				$param_obtained = false;
 
 				// Replace temporary URL
 				if($matches[1] !== ''){
@@ -332,11 +332,13 @@ class Route{
 					if(count($current) === 1)
 						return false;
 
-					$requestURI = $current[1];
-					$current = $current[0]; // Extracted from RequestURI
+					$param_obtained = true;
+
+					$requestURI = &$current[1];
+					$current = &$current[0]; // Extracted from RequestURI
 				}
-				else $current = $requestURI;
-				
+				else $current = &$requestURI;
+
 				// Find param number
 				$argNumber = '';
 				for ($i=0; $i < strlen($matches[0]); $i++) {
@@ -368,25 +370,24 @@ class Route{
 
 					if(strpos($current, '/') !== false) return false; // Strict
 					if(preg_match("/$matches/", $current, $match)){
-						$argData = $match;
+						$argData = &$match;
+						unset($match);
 					} else return false;
 				}
 
 				// Match after
 				elseif(substr($matches, 0, 1) === '*'){
 					$haveMatchAll = true;
-					$argData = $current;
+					$argData = &$current;
 				}
 
-				// Argument Match
-				elseif(substr($matches, 0, 1) === '.'){
-					// ToDo
-				}
+				// ToDo: Argument Match
+				// elseif(substr($matches, 0, 1) === '.'){}
 
 				// No options
 				else{ // if($matches === false || $matches === ''){
 					if(strpos($current, '/') !== false) return false; // Strict
-					$argData = $current;
+					$argData = &$current;
 				}
 
 				// Prepare the argument data
@@ -398,10 +399,7 @@ class Route{
 				// Check if the required param was not found
 				if(!$optional && $argData === null)
 					return false;
-				else {
-					if(is_array($argData))
-						$argData = $argData[0];
-
+				elseif($param_obtained === false) {
 					$split = explode($argData, $requestURI, 2);
 					$requestURI = isset($split[1]) ? $split[1] : $split[0];
 				}
