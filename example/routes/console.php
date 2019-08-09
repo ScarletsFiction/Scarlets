@@ -40,7 +40,7 @@ Console::command('echo alex {*}', function($message){
 Console::command('echo {*}', function($all){
 
 	// Split the arguments again
-	Console::args("{0} {1}", function($name, $text){
+	Console::args("{0} {*}", function($name, $text){
 		echo "$name> $text";
 	});
 

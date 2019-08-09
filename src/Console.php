@@ -40,7 +40,7 @@ class Console{
 		else{
 			if(in_array($argv[1], ['/h', '/?', '-h', '--help']))
 				$argv = ['help'];
-			self::interpreter(implode(' ', $argv));
+			self::interpreter(array_values($argv));
 		}
 	}
 
@@ -92,14 +92,18 @@ class Console{
 		return $result;
 	}
 
-	private static function interpreter($line){
-		if($line === ''){
-			echo("\r");
-			return;
+	private static function interpreter($pattern){
+		if(\Scarlets::$interactiveCLI === true){ // parse line
+			if($pattern === ''){
+				echo("\r");
+				return;
+			}
+
+			preg_match_all('/"(?:\\\\.|[^\\\\"])*"|\S+/', $pattern, $pattern);
+			$pattern = &$pattern[0];
 		}
 
-		$pattern = explode(' ', $line);
-		$firstword = $pattern[0];
+		$firstword = &$pattern[0];
 		unset($pattern[0]);
 		$pattern = array_values(array_filter($pattern));
 		$argsLen = count($pattern);
@@ -157,8 +161,8 @@ class Console{
 						$uniqueCheck++;
 					} else {
 
-						// Check for static argument patterns
-						if(isset($args[$i]) && isset($pattern[$i]) && $args[$i] === $pattern[$i])
+						// true if all argument index exist, and true if it's dynamic args or static args was equal
+						if(isset($args[$i]) && isset($pattern[$i]) && ($args[$i][0] === '{' || $args[$i] === $pattern[$i]))
 							$matched = true;
 
 						else{
@@ -175,19 +179,30 @@ class Console{
 					// Process the unique arguments
 					$arguments = [];
 					for ($i=0; $i < count($uniques); $i++) {
-						$number = str_replace(['{', '}'], '', $args[$uniques[$i]]);
+						$index = &$uniques[$i];
+
+						$number = str_replace(['{', '}'], '', $args[$index]);
 						if($number === '*'){
 							self::$args = [];
 
 							// Merge left arguments
 							$number = count($arguments);
 							$arguments[$number] = '';
-							self::$args = array_slice($pattern, $i);
+							self::$args = array_slice($pattern, $index);
 							$arguments[$number] = implode(' ', self::$args);
 							break;
 						}
-						$arguments[$number] = $pattern[$number];
+
+						if(!is_numeric($number)){
+							echo(self::chalk("Parameter index should be a numeric value but got `$number`", 'red'));
+							return;
+						}
+
+						$arguments[$number] = $pattern[$index];
 					}
+
+					ksort($arguments);
+
 					$return = call_user_func_array($command[2], $arguments);
 					if($return){
 						if(is_array($return) === true)
@@ -212,7 +227,7 @@ class Console{
 			return;
 		}
 
-		echo("$firstword command with $argsLen argument was not registered\n");
+		echo(self::chalk($firstword, 'yellow')." command with $argsLen argument was not registered\n");
 		return;
 	}
 
@@ -225,7 +240,8 @@ class Console{
 			return;
 		}
 
-		$pattern = explode(' ', $pattern);
+		preg_match_all('/"(?:\\\\.|[^\\\\"])*"|\S+/', $pattern, $pattern);
+		$pattern = &$pattern[0];
 		$patternLen = count($pattern);
 
 		if(in_array('{*}', $pattern) === false && count(self::$args) !== $patternLen)
@@ -237,8 +253,7 @@ class Console{
 				$number = explode('{', $pattern[$i]);
 				if($number[0] !== '') continue;
 
-				$number = $number[1];
-				$number = explode('}', $number);
+				$number = explode('}', $number[1]);
 				if($number[1] !== '') continue;
 
 				if($number[0] === '*'){
@@ -250,8 +265,10 @@ class Console{
 					$arguments[$number] = implode(' ', self::$args);
 					break;
 				}
-				elseif(!is_numeric($number[0]))
-					continue;
+				elseif(!is_numeric($number[0])){
+					echo(self::chalk("Parameter index should be a numeric value but got `$number[0]`", 'red'));
+					return;
+				}
 
 				$arguments[$number[0]] = &self::$args[$i];
 			}
@@ -260,6 +277,8 @@ class Console{
 					return;
 			}
 		}
+
+		ksort($arguments);
 
 		$return = call_user_func_array($callback, $arguments);
 		self::$found = true;
@@ -280,19 +299,19 @@ class Console{
 			}
 
 			if($description)
-				self::$commandsDescription[explode(' ', $pattern[0])[0]] = $description;
+				self::$commandsDescription[explode(' ', $pattern[0])[0]] = &$description;
 			return;
 		}
 
 		$special = strpos($pattern, '{*}') !== false;
 		$pattern = explode(' ', $pattern);
-		$key = $pattern[0];
+		$key = &$pattern[0];
 		unset($pattern[0]);
 		$pattern = array_values(array_filter($pattern));
 		$patternLen = count($pattern);
 
 		if($description)
-			self::$commandsDescription[$key] = $description;
+			self::$commandsDescription[$key] = &$description;
 
 		if($special)
 			$key = "$key.s";
@@ -305,12 +324,14 @@ class Console{
 				$number = explode('{', $pattern[$i]);
 				if($number[0] !== '') continue;
 
-				$number = $number[1];
+				$number = &$number[1];
 				$number = explode('}', $number);
 				if($number[1] !== '') continue;
 
-				if(!is_numeric($number[0]) && !$number[0] === '*') continue;
-				$uniqueIndex[] = $i;
+				if(is_numeric($number[0]))
+					$uniqueIndex[] = &$number[0];
+				elseif($number[0] === '*')
+					$uniqueIndex[] = $i;
 			}
 		}
 
