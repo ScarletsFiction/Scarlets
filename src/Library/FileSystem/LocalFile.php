@@ -21,6 +21,9 @@ class LocalFile{
 	}
 
 	private static function realpath(&$path){
+		if($path[0] !== '{')
+			return;
+
 		$path = explode('}', $path);
 		$ref = &self::$storage[substr($path[0], 1)];
 		$path = preg_replace('/(?:\/|^)\.+?(?:\/|$)/', '/', $ref['path'].$path[1]);

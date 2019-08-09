@@ -20,6 +20,22 @@ Console::command('cls', function(){
 	Console::clear();
 }, 'Clear console');
 
+Console::command('test', function(){
+	$testsPath = Scarlets::$registry['path.app'].'/tests';
+	$tests = Scarlets\Library\FileSystem\LocalFile::contents($testsPath);
+
+	echo "Current memory allocation: ";
+	echo \Scarlets\Extend\Strings::formatBytes(memory_get_usage());
+	echo "\n";
+
+	if(!$tests) return "No tests found";
+
+	$it = '\Scarlets\Internal\UnitTest::it';
+	foreach ($tests as &$file) {
+		require_once "$testsPath/$file";
+	}
+});
+
 Console::command(['maintenance {0}', 'maintenance'], function($action = ''){
 	$path = &\Scarlets::$registry['path.maintenance_file'];
 	if($action === '')
