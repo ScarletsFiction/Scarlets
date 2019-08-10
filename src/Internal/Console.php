@@ -31,6 +31,7 @@ Console::command('test', function(){
 	if(!$tests) return "No tests found";
 
 	$it = '\Scarlets\Internal\UnitTest::it';
+	$describe = '\Scarlets\Internal\UnitTest::describe';
 	foreach ($tests as &$file) {
 		require_once "$testsPath/$file";
 	}
