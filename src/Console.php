@@ -400,24 +400,44 @@ class Console{
 		return $list;
 	}
 
-	public static function chalk($text, $color = 'green'){
-		$color_ = '37m';
+	public static function chalk($text, $color = 'green', $lighter = false, $background = null){
 		if($color === 'black')
-			$color_ = '30m';
-		else if($color === 'red')
-			$color_ = '31m';
-		else if($color === 'green')
-			$color_ = '32m';
-		else if($color === 'yellow')
-			$color_ = '33m';
-		else if($color === 'blue')
-			$color_ = '34m';
-		else if($color === 'magenta')
-			$color_ = '35m';
-		else if($color === 'cyan')
-			$color_ = '36m';
+			$color = '30';
+		elseif($color === 'red')
+			$color = '31';
+		elseif($color === 'green')
+			$color = '32';
+		elseif($color === 'yellow')
+			$color = '33';
+		elseif($color === 'blue')
+			$color = '34';
+		elseif($color === 'magenta')
+			$color = '35';
+		elseif($color === 'cyan')
+			$color = '36';
+		else $color = '37';
 
-		return sprintf("\x1b[%s%s\x1b[0m", $color_, $text);
+		if($background !== null){
+			if($background === true)
+				$color .= ";4$color[1]";
+			elseif($background === 'black')
+				$color .= ';40';
+			elseif($background === 'red')
+				$color .= ';41';
+			elseif($background === 'green')
+				$color .= ';42';
+			elseif($background === 'yellow')
+				$color .= ';43';
+			elseif($background === 'blue')
+				$color .= ';44';
+			elseif($background === 'magenta')
+				$color .= ';45';
+			elseif($background === 'cyan')
+				$color .= ';46';
+			else $color .= ';47';
+		}
+
+		return sprintf("\x1b[%s;%sm%s\x1b[0m", $lighter ? 1 : 0, $color, $text);
 	}
 
 	public static function table($data){
