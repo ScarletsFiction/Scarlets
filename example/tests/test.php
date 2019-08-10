@@ -16,8 +16,11 @@
 
 $describe("This is an example test");
 
+// This test will return partial because 1 !== "1" but 1 == "1"
 $it("compare number and string", function($assert){
 	$assert::equal(1, "1");
+
+	echo "henlo";
 });
 
 $it("doing calculation", function($assert){
@@ -26,6 +29,10 @@ $it("doing calculation", function($assert){
 
 $it("some condition", function($assert){
 	$assert::true("human" === "human");
+
+	// This will throw error and this test will fail
+	$z = 234;
+	$z*[12, 43];
 });
 
 $it("dummy stuff", function($assert){

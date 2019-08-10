@@ -49,20 +49,19 @@ class UnitTest{
 		$contents = ob_get_contents();
 		ob_end_clean();
 
-		if($error !== null){
+		if($error !== null)
 			$contents .= "$error";
-		}
 
 		$mem = Strings::formatBytes(memory_get_peak_usage()-$memory);
 
 		$s = &self::$symbol;
 
 		if(self::$currentStatus === true)
-			$status = Console::chalk("$s[0] Success", 'green', true);
+			$status = Console::style("<b><green lighter>$s[0] Success</green></b>");
 		elseif(self::$currentStatus === false)
-			$status = Console::chalk("$s[1] Failed", 'red', true);
+			$status = Console::style("<b><red lighter>$s[1] Failed</red></b>");
 		else
-			$status = Console::chalk("$s[2] ".self::$currentStatus, 'yellow', true);
+			$status = Console::style("<b><yellow lighter>$s[2] ".self::$currentStatus.'</yellow></b>');
 
 		echo "\n    $status    ~$time ms    Mem:$mem";
 
