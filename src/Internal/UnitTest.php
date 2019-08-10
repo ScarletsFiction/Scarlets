@@ -16,6 +16,8 @@ use \Scarlets\Extend\Strings;
 class UnitTest{
 	private static $currentStatus = true;
 	private static $statusMessage = null;
+	public static $symbol = null;
+
 	public static function it($desc, $func){
 		self::desc($desc);
 		self::$currentStatus = true;
@@ -34,8 +36,12 @@ class UnitTest{
 			self::$currentStatus = false;
 			$error = \Scarlets\Error::simplifyErrorMessage(E_ERROR, $e->__toString(), $e->getFile(), $e->getLine(), $before, $after);
 			$error = str_replace('Message: Error: ', 'Message: ', $error);
+			$error = str_replace("\nURL: Startup Handler", '', $error);
+			$error = str_replace("Scarlets\Internal\UnitTest", 'UnitTest', $error);
+			$error = str_replace(".php;\nLine: ", ':', $error);
 		} catch(\Exception $e){
 			self::$statusMessage = $e->getMessage();
+			self::$currentStatus = false;
 		}
 
 		$time = round((microtime(true) - $time) * 1000);
@@ -44,22 +50,24 @@ class UnitTest{
 		ob_end_clean();
 
 		if($error !== null){
-			$contents .= "\n$error";
+			$contents .= "$error";
 		}
 
 		$mem = Strings::formatBytes(memory_get_peak_usage()-$memory);
 
+		$s = &self::$symbol;
+
 		if(self::$currentStatus === true)
-			$status = Console::chalk("✔ Success", 'green', true);
+			$status = Console::chalk("$s[0] Success", 'green', true);
 		elseif(self::$currentStatus === false)
-			$status = Console::chalk("✘ Failed", 'red', true);
+			$status = Console::chalk("$s[1] Failed", 'red', true);
 		else
-			$status = Console::chalk('⣿ '.self::$currentStatus, 'yellow', true);
+			$status = Console::chalk("$s[2] ".self::$currentStatus, 'yellow', true);
 
 		echo "\n    $status    ~$time ms    Mem:$mem";
 
 		if(self::$statusMessage !== null)
-			echo "   ➜ ".Console::chalk(self::$statusMessage, self::$currentStatus === false ? 'red' : 'yellow', true);
+			echo "   $s[3] ".Console::chalk(self::$statusMessage, self::$currentStatus === false ? 'red' : 'yellow', true);
 
 		if($contents !== ''){
 			echo Console::chalk("\n  ░▒▓█►  There are some outputted message for the above test:", 'cyan');
@@ -121,6 +129,13 @@ class UnitTest{
 			self::finish(false, '%s != false', $what);
 	}
 }
+
+if(\Scarlets::$isConsole === false)
+	die("Unit test can be accessed from console only");
+
+if(strpos(cli_get_process_title(), 'cmd - scarlets') !== false)
+	UnitTest::$symbol =  ['✔', '✘', '҂', '➜'];
+else UnitTest::$symbol = ['√', 'Χ', '҂', '»'];
 
 // For throwing an failed event on the middle of execution
 class UnitTestFailed extends \Exception{}
