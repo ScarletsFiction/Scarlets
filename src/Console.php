@@ -440,6 +440,60 @@ class Console{
 		return sprintf("\x1b[%s;%sm%s\x1b[0m", $lighter ? 1 : 0, $color, $text);
 	}
 
+	private static function rebuildCLIStyle(){
+		$config = [
+			' bg-black>'=>">\x1b[40m",
+			' bg-red>'=>">\x1b[41m",
+			' bg-green>'=>">\x1b[42m",
+			' bg-yellow>'=>">\x1b[43m",
+			' bg-blue>'=>">\x1b[44m",
+			' bg-magenta>'=>">\x1b[43m",
+			' bg-cyan>'=>">\x1b[46m",
+			' bg-gray>'=>">\x1b[47m",
+
+			'<black>'=>"\x1b[30m",		'</black>'=>"\x1b[0m",
+			'<red>'=>"\x1b[31m",		'</red>'=>"\x1b[0m",
+			'<green>'=>"\x1b[32m",		'</green>'=>"\x1b[0m",
+			'<yellow>'=>"\x1b[33m",		'</yellow>'=>"\x1b[0m",
+			'<blue>'=>"\x1b[34m",		'</blue>'=>"\x1b[0m",
+			'<magenta>'=>"\x1b[33m",	'</magenta>'=>"\x1b[0m",
+			'<cyan>'=>"\x1b[36m",		'</cyan>'=>"\x1b[0m",
+			'<gray>'=>"\x1b[37m",		'</gray>'=>"\x1b[0m",
+
+			'<black lighter>'=>"\x1b[1;30m",
+			'<red lighter>'=>"\x1b[1;31m",
+			'<green lighter>'=>"\x1b[1;32m",
+			'<yellow lighter>'=>"\x1b[1;33m",
+			'<blue lighter>'=>"\x1b[1;34m",
+			'<magenta lighter>'=>"\x1b[1;33m",
+			'<cyan lighter>'=>"\x1b[1;36m",
+			'<gray lighter>'=>"\x1b[1;37m",
+
+			'<b>'=>"\x1b[1m",			'</b>'=>"\x1b[22m",
+			'<d>'=>"\x1b[2m",			'</d>'=>"\x1b[22m",
+			'<i>'=>"\x1b[3m",			'</i>'=>"\x1b[23m",
+			'<u>'=>"\x1b[4m",			'</u>'=>"\x1b[24m",
+			'<uu>'=>"\x1b[21m",			'</uu>'=>"\x1b[24m",
+			'<cu>'=>"\x1b[4:3m",		'</cu>'=>"\x1b[4:0m",
+			'<blink>'=>"\x1b[5m",		'</blink>'=>"\x1b[25m",
+			'<r>'=>"\x1b[7m",			'</r>'=>"\x1b[27m",
+			'<invisible>'=>"\x1b[8m",	'</invisible>'=>"\x1b[28m",
+			'<st>'=>"\x1b[9m",			'</st>'=>"\x1b[29m",
+			'<ol>'=>"\x1b[53m",			'</ol>'=>"\x1b[55m",
+			'<link '=>"\x1b]8;;",		' src="'=>"", '">'=>"\x1b[m",	'</link>'=>"\x1b]8;;\x1b\\",
+		];
+
+		self::$style = [array_keys($config), array_values($config)];
+	}
+
+	private static $style = null;
+	public static function style($text){
+		if(self::$style === null)
+			self::rebuildCLIStyle();
+
+		return str_replace(self::$style[0], self::$style[1], $text);
+	}
+
 	public static function table($data){
 		$spacing = [0,0,0,0,0,0];
 		$len = count(reset($data)) - 1; // We don't need to calculate the last column
@@ -468,5 +522,43 @@ class Console{
 			}
 			print("\n");
 		}
+	}
+
+	# ref: http://tldp.org/HOWTO/Bash-Prompt-HOWTO/x361.html
+	public static function resetLine($text){
+		echo "\033[K\r$text";
+	}
+
+	public static function saveCursor(){
+		echo "\033[s";
+	}
+
+	public static function loadCursor(){
+		echo "\033[u";
+	}
+
+	public static function hideCursor(){
+		echo "\e[?25l";
+	}
+
+	public static function showCursor(){
+		echo "\e[?25h";
+	}
+
+	public static function size(){
+		$line = explode("\n    ", `mode`);
+		$found = ['lines'=>0, 'columns'=>0];
+		foreach ($line as &$value) {
+			if(strpos($value, 'Lines:') !== false)
+				$found['lines'] = trim(explode(':', $value)[1]);
+			elseif(strpos($value, 'Columns:') !== false)
+				$found['columns'] = trim(explode(':', $value)[1]);
+		}
+		return $found;
+	}
+
+	private static $oldConsoleContent = '';
+	public static function rewrite($content){
+		
 	}
 }
