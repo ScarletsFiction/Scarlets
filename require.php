@@ -99,6 +99,8 @@ class Scarlets{
 			include_once self::$registry['path.app']."/routes/web.php";
 		} catch(Internal\ExecutionFinish $f) {
 			echo($f->data);
+		} catch(\Error $e){
+			Scarlets\Error::handleError($e);
 		}
 	}
 
