@@ -117,9 +117,6 @@ class Error{
 		while(ob_get_level())
 			ob_get_clean();
 
-	    if(!(error_reporting() & $severity))
-	        return; // This error code is not included in error_reporting
-
 	    self::$hasError = true;
 
 	    // Send error status if it's a website
@@ -135,7 +132,7 @@ class Error{
 	    	array_shift(self::$lastError);
 
 	    // Save to last error
-	    self::$lastError[] = $file.$line;
+	    self::$lastError[] = "$file$line";
 	    $reg = &Scarlets::$registry;
 	    
 	    if(isset($reg['error']) && $reg['error']) return;
@@ -196,6 +193,14 @@ class Error{
 		$error = error_get_last();
 	    if($error && (!isset(Scarlets::$registry['error']) || !Scarlets::$registry['error']))
 			self::ErrorHandler($error['type'], $error['message'], $error['file'], $error['line']);
+	}
+
+	public static function handleError(&$Error){
+		$code = $Error->getCode();
+		$file = $Error->getFile();
+		$line = $Error->getLine();
+		$message = $Error->getMessage();
+		self::ErrorHandler($type, $message, $file, $line);
 	}
 }
 
