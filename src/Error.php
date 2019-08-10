@@ -31,41 +31,7 @@ class Error{
 
 	}
 
-	// Error handler, passes flow over the exception logger with new ErrorException.
-	public static function ErrorHandler($severity, $message, $file, $line){
-		if(E_RECOVERABLE_ERROR === $severity){
-		    throw new \ErrorException($message, $severity, 0, $file, $line);
-		    return;
-		}
-
-		while(ob_get_level())
-			ob_get_clean();
-
-	    if(!(error_reporting() & $severity))
-	        return; // This error code is not included in error_reporting
-
-	    self::$hasError = true;
-
-	    // Send error status if it's a website
-	    if(Scarlets::$isWebsite)
-	    	Serve::status(500, true);
-
-	    // Check if Error already processed
-	    if(in_array($file.$line, self::$lastError))
-	    	return;
-
-	    // Check if error over limit
-	    if(count(self::$lastError)==2)
-	    	array_shift(self::$lastError);
-
-	    // Save to last error
-	    self::$lastError[] = $file.$line;
-	    
-	    if(isset(Scarlets::$registry['error']) && Scarlets::$registry['error']) return;
-	    $reg = &Scarlets::$registry;
-	    
-	    if(!Scarlets::$isConsole) $reg['error'] = true;
-	    
+	public static function simplifyErrorMessage($severity, $message, $file, $line, $before = null, $after = null){
 	    $trace = explode("\nStack trace:", $message);
 	    if(count($trace) === 1){
 			$exception = new \ErrorException($message, 0, $severity, $file, $line);
@@ -75,14 +41,31 @@ class Error{
 	    	$trace = $trace[1];
 	    }
 
+	    $reg = &Scarlets::$registry;
 		$appConfig = &\Scarlets\Config::$data;
 
 	    if($appConfig['app.simplify_trace']){
 	    	$trace = str_replace($reg['path.framework'], '{Framework}', $trace);
 	    	$file = str_replace($reg['path.framework'], '{Framework}', $file);
+	    	$message = str_replace($reg['path.framework'], '{Framework}', $message);
 	    	$trace = str_replace($reg['path.app'], '{AppRoot}', $trace);
 	    	$file = str_replace($reg['path.app'], '{AppRoot}', $file);
+	    	$message = str_replace($reg['path.app'], '{AppRoot}', $message);
 	    	$trace = str_replace('[internal function]', '{System}', $trace);
+	    }
+
+	    if($before !== null){
+	    	$trace = explode($before, $trace);
+			$trace[0] = $trace[0].$before;
+
+	    	if(count($trace) === 1)
+		    	$trace = $trace[0];
+		    else $trace = $trace[0].explode(':', $trace[1])[0];
+	    }
+
+	    if($after !== null){
+		    $trace = explode($after, $trace);
+		    $trace = count($trace) === 1 ? $trace[0] : $trace[1];
 	    }
 
 	    $trace = explode('Scarlets\Error::ErrorHandler', $trace);
@@ -116,18 +99,55 @@ class Error{
 	    else if(isset($_SERVER['REQUEST_URI']))
 	    	$url = 'http'.(isset($_SERVER['HTTPS'])?'s':'').'://'.$_SERVER['SERVER_NAME'].$_SERVER['REQUEST_URI'];
 
-		$message = 'Exception type: '.self::ErrorType($severity).";\n".
+		return 'Exception type: '.self::ErrorType($severity).";\n".
 		"Message: $message;\n".
 		"File: $file;\n".
 		"Line: $line;\n".
 		"URL: $url".
 		($trace != '' ? "\nTrace: \n$trace;" : ';');
+	}
 
-		self::$currentError[] = $message;
+	// Error handler, passes flow over the exception logger with new ErrorException.
+	public static function ErrorHandler(&$severity, &$message, &$file, &$line){
+		if(E_RECOVERABLE_ERROR === $severity){
+		    throw new \ErrorException($message, $severity, 0, $file, $line);
+		    return;
+		}
+
+		while(ob_get_level())
+			ob_get_clean();
+
+	    if(!(error_reporting() & $severity))
+	        return; // This error code is not included in error_reporting
+
+	    self::$hasError = true;
+
+	    // Send error status if it's a website
+	    if(Scarlets::$isWebsite)
+	    	Serve::status(500, true);
+
+	    // Check if Error already processed
+	    if(in_array($file.$line, self::$lastError))
+	    	return;
+
+	    // Check if error over limit
+	    if(count(self::$lastError)==2)
+	    	array_shift(self::$lastError);
+
+	    // Save to last error
+	    self::$lastError[] = $file.$line;
+	    $reg = &Scarlets::$registry;
+	    
+	    if(isset($reg['error']) && $reg['error']) return;
+	    
+	    if(!Scarlets::$isConsole) $reg['error'] = true;
+
+		$message = self::simplifyErrorMessage($severity, $message, $file, $line);
+		self::$currentError[] = &$message;
 
 		// die($message);
 
-		if(!$appConfig['app.debug'] && Scarlets::$isWebsite){
+		if(!\Scarlets\Config::$data['app.debug'] && Scarlets::$isWebsite){
 			Log::message($message);
 			if(!self::$triggerErrorPage) exit;
 
