@@ -72,7 +72,7 @@ class ProgressBar{
 		// Generate bar
 		$render = '';
 		$n = &$this->barLength;
-		$completed = round(($value/$current[1])*$n);
+		$completed = (int)round(($value/$current[1])*$n);
 
 		for ($i=0; $i < $n; $i++) { 
 			if($i < $completed)
