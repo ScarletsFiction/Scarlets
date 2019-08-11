@@ -53,9 +53,12 @@ class ProgressBar{
 		}
 	}
 
-	public function add($name, $maxValue, $currentValue = 0){
-		// [name, mavValue, currentValue, processedBar]
-		$this->lists[] = [Console::chalk($name, 'green', true), &$maxValue, &$currentValue, '', ''];
+	public function add($name, $maxValue, $currentValue = 0, $customWrap = false){
+		if(!is_string($name))
+			$this->lists[] = ['', &$name, &$currentValue, '', $maxValue];
+		else
+			$this->lists[] = [Console::chalk($name, 'green', true), &$maxValue, &$currentValue, '', $customWrap];
+
 		return count($this->lists)-1;
 	}
 
@@ -95,7 +98,10 @@ class ProgressBar{
 		$render_ .= Console::style(sprintf($style[2], mb_substr($render, $completed+1))); // Waiting bar
 
 		$current[3] = str_replace($this->character_, $this->character, $render_);
-		$current[4] = &$endText;
+
+		if($current[4] !== false)
+			$current[3] = sprintf($current[4], $current[3]);
+		else $current[3] = "$current[0] \t[$current[3]] $endText      $this->endOfLine";
 
 		// Check for user defined styles
 		if(Console::$customStyle !== null && strlen(str_replace(Console::$customStyle, '', $current[3])) !== strlen($current[3]))
@@ -111,7 +117,7 @@ class ProgressBar{
 		// Create progress from the beginning
 		Console::loadCursor();
 		foreach ($lists as &$list) {
-			echo "$list[0] \t[$list[3]] $list[4]      $this->endOfLine";
+			echo $list[3];
 		}
 	}
 }
