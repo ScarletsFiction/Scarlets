@@ -60,13 +60,13 @@ $ php scarlets serve (port) (address) (options)
 > Address: localhost, network, IPAddress<br>
 > Options: --log, --verbose<br>
 
-![alt text](https://raw.githubusercontent.com/ScarletsFiction/Scarlets/master/images/serve_command.webp)
+![serve_command](https://user-images.githubusercontent.com/11073373/62832370-f5e2c680-bc56-11e9-9693-932e2b910f21.png)
 
 Even the build-in server was blazingly fast, it still have some problem because it's running in a single thread for every request. So it's very recommended to setup your website using Nginx. But if you want to deploy a small server into Raspberry PI, Android, or other linux devices it may be better to use the build-in server.
 
 You can also create your own command for your project
 
-![alt text](https://raw.githubusercontent.com/ScarletsFiction/Scarlets/master/images/interactive_console.webp)
+![interactive_console](https://user-images.githubusercontent.com/11073373/62832369-f54a3000-bc56-11e9-829e-0c7cca9b8a40.png)
 
 The user defined command are editable on `/routes/console.php`<br>
 

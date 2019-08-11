@@ -14,6 +14,7 @@ class ProgressBar{
 
 	public $endOfLine = "\n";
 	public $barLength = 26;
+	public $manual = false;
 
 	public function __construct(){
 		$this->style = ["<cyan>%s</cyan>", '%s', '%s'];
@@ -106,6 +107,9 @@ class ProgressBar{
 		// Check for user defined styles
 		if(Console::$customStyle !== null && strlen(str_replace(Console::$customStyle, '', $current[3])) !== strlen($current[3]))
 			Console::implementCustomStyle($current[3]);
+
+		if($this->manual === true)
+			return $current[3];
 
 		// Check first draw
 		if($this->firstDraw === false){
