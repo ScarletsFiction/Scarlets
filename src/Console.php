@@ -487,7 +487,7 @@ class Console{
 	}
 
 	private static $style = null;
-	private static $customStyle = null;
+	public static $customStyle = null;
 	public static function &style($text){
 		if(self::$style === null)
 			self::rebuildCLIStyle();
@@ -502,7 +502,7 @@ class Console{
 	}
 
 	private static $customStyles = null;
-	private static function implementCustomStyle(&$text){
+	public static function implementCustomStyle(&$text){
 		foreach (self::$customStyles as $search => &$rep) {
 			if(is_array($rep)){
 				$text = preg_replace_callback('/'.preg_quote($search, '/').'/', function()use(&$rep){

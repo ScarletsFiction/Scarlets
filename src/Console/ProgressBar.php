@@ -97,6 +97,10 @@ class ProgressBar{
 		$current[3] = str_replace($this->character_, $this->character, $render_);
 		$current[4] = &$endText;
 
+		// Check for user defined styles
+		if(Console::$customStyle !== null && strlen(str_replace(Console::$customStyle, '', $current[3])) !== strlen($current[3]))
+			Console::implementCustomStyle($current[3]);
+
 		// Check first draw
 		if($this->firstDraw === false){
 			echo "\n";
