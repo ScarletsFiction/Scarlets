@@ -480,18 +480,49 @@ class Console{
 			'<invisible>'=>"\x1b[8m",	'</invisible>'=>"\x1b[28m",
 			'<st>'=>"\x1b[9m",			'</st>'=>"\x1b[29m",
 			'<ol>'=>"\x1b[53m",			'</ol>'=>"\x1b[55m",
-			'<link '=>"\x1b]8;;",		' src="'=>"", '">'=>"\x1b[m",	'</link>'=>"\x1b]8;;\x1b\\",
+			'<link '=>"\x1b]8;;",		' src="'=>"%%z$", '%%z$">'=>"\x1b[m",	'</link>'=>"\x1b]8;;\x1b\\",
 		];
 
 		self::$style = [array_keys($config), array_values($config)];
 	}
 
 	private static $style = null;
-	public static function style($text){
+	private static $customStyle = null;
+	public static function &style($text){
 		if(self::$style === null)
 			self::rebuildCLIStyle();
 
-		return str_replace(self::$style[0], self::$style[1], $text);
+		$text = str_replace(self::$style[0], self::$style[1], $text);
+
+		// Check for user defined styles
+		if(self::$customStyle !== null && strlen(str_replace(self::$customStyle, '', $text)) !== strlen($text))
+			self::implementCustomStyle($text);
+
+		return $text;
+	}
+
+	private static $customStyles = null;
+	private static function implementCustomStyle(&$text){
+		foreach (self::$customStyles as $search => &$rep) {
+			if(is_array($rep)){
+				$text = preg_replace_callback('/'.preg_quote($search, '/').'/', function()use(&$rep){
+					return $rep[0][mt_rand(0, $rep[1])];
+				}, $text);
+			}
+			else $text = str_replace($search, $rep, $text);
+		}
+	}
+
+	public static function customStyle($data){
+		self::$customStyle = array_keys($data);
+
+		foreach (self::$customStyle as &$tag) {
+			if(isset($data[$tag]['replacement'])){
+				$rep = &$data[$tag]['replacement'];
+				$tag = "<$tag/>";
+				self::$customStyles[$tag] = [&$rep, count($rep) - 1];
+			}
+		}
 	}
 
 	public static function table($data){
