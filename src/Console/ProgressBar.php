@@ -62,7 +62,7 @@ class ProgressBar{
 		return count($this->lists)-1;
 	}
 
-	public function update($index, $value, $barText = false, $endText = false){
+	public function update($index, $value, $barText = false, $endText = null){
 		$lists = &$this->lists;
 
 		$current = &$lists[$index];
@@ -100,7 +100,7 @@ class ProgressBar{
 		$current[3] = str_replace($this->character_, $this->character, $render_);
 
 		if($current[4] !== false)
-			$current[3] = sprintf($current[4], $current[3]);
+			$current[3] = sprintf($current[4], $current[3], $endText);
 		else $current[3] = "$current[0] \t[$current[3]] $endText      $this->endOfLine";
 
 		// Check for user defined styles
