@@ -4,7 +4,7 @@ use \Scarlets;
 use \Scarlets\Extend\Strings;
 
 class WebRequest{
-	public static $userAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Safari/537.36';
+	public static $userAgent = 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Safari/537.36';
 	public static function &loadURL($url, $options = false){
 		$options_ = [
 			CURLOPT_ENCODING=>'gzip',
@@ -212,15 +212,16 @@ class WebRequest{
 	public static function download($path, $options = false){
 		$onProgress = false;
 
-		$options_ = ['connection' => 4];
+		$options_default = ['connection' => 4];
 		if($options !== false)
-			$options_ = array_merge($options_, $options);
-		
-		$connection = &$options_['connection'];
+			$options = array_merge($options_default, $options);
+		else $options = &$options_default;
+
+		$connection = &$options['connection'];
 		$connection--;
 
 		$mh = curl_multi_init();
-		$options = [
+		$options_ = [
 			CURLOPT_FOLLOWLOCATION => 1,
 			CURLOPT_SSL_VERIFYPEER => 0,
 			CURLOPT_SSL_VERIFYHOST => 0,
@@ -241,7 +242,7 @@ class WebRequest{
 			$header[] = "$key: $value";
 		$options_[CURLOPT_HTTPHEADER] = &$header;
 
-		$addRequest = function(&$url, &$path) use(&$mh, &$options, &$connection) {
+		$addRequest = function(&$url, &$path) use(&$mh, &$options_, &$connection) {
 			$size = self::contentSize($url);
 
 			if($connection > 0){
@@ -255,7 +256,7 @@ class WebRequest{
 			    $parts[$i] = $path."$i.tmp";
 
 			    $ch[$i] = curl_init($url);
-			    curl_setopt_array($ch[$i], $options);
+			    curl_setopt_array($ch[$i], $options_);
 
 			    $fh[$i] = fopen($parts[$i], 'w+');
 			    curl_setopt($ch[$i], CURLOPT_FILE, $fh[$i]);
@@ -271,12 +272,12 @@ class WebRequest{
 			return [[$parts, $fh, $path], $ch];
 		};
 
-		$getRequest = isset($options_['data']);
+		$getRequest = isset($options['data']);
 
 		$reqs = []; $ch = [];
 		foreach ($path as $url => &$path) {
 			if($getRequest === true)
-				$url .= '?'.http_build_query($options_['data']);
+				$url .= '?'.http_build_query($options['data']);
 
 			$tmp = $addRequest($url, $path);
 			$reqs[] = $tmp[0];
@@ -397,15 +398,25 @@ class WebRequest{
 			$options_[CURLOPT_COOKIE] = &$options['cookie'];
 
 		if(isset($options['limitSize'])){ # in KB
-			$options_[CURLOPT_BUFFERSIZE] = 128; // more progress info
 			$options_[CURLOPT_NOPROGRESS] = false;
 			$options_[CURLOPT_PROGRESSFUNCTION] = function(
-				$DownloadSize, $Downloaded, $UploadSize, $Uploaded
-			) use($options) {
+				$resource, $DownloadSize, $Downloaded, $UploadSize, $Uploaded
+			) use(&$options) {
 				// If $Downloaded exceeds 1KB, returning non-0 breaks the connection!
 				return ($Downloaded > ($options['limitSize'] * 1024)) ? 1 : 0;
+
+				if(isset($options['progress']))
+					$options['progress']($DownloadSize, $Downloaded, $UploadSize, $Uploaded);
 			};
 		}
+
+		elseif(isset($options['progress'])){ # in KB
+			$options_[CURLOPT_NOPROGRESS] = false;
+			$options_[CURLOPT_PROGRESSFUNCTION] = $options['progress'];
+		}
+
+		if(isset($options['buffer'])) # in Byte
+			$options_[CURLOPT_BUFFERSIZE] = $options['buffer'];
 
 		if(isset($options['proxy'])){ # [ip=>127.0.0.1, port=>3000, *userpass=>'user:pass']
 			$options_[CURLOPT_PROXYAUTH] = CURLAUTH_NTLM;
