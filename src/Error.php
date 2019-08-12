@@ -108,7 +108,7 @@ class Error{
 	}
 
 	// Error handler, passes flow over the exception logger with new ErrorException.
-	public static function ErrorHandler(&$severity, &$message, &$file, &$line){
+	public static function ErrorHandler($severity, $message, $file, $line){
 		if(E_RECOVERABLE_ERROR === $severity){
 		    throw new \ErrorException($message, $severity, 0, $file, $line);
 		    return;
@@ -196,11 +196,7 @@ class Error{
 	}
 
 	public static function handleError(&$Error){
-		$code = $Error->getCode();
-		$file = $Error->getFile();
-		$line = $Error->getLine();
-		$message = $Error->getMessage();
-		self::ErrorHandler($type, $message, $file, $line);
+		self::ErrorHandler(E_ERROR, $Error->getMessage(), $Error->getFile(), $Error->getLine());
 	}
 }
 
