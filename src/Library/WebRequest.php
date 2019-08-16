@@ -20,7 +20,7 @@ class WebRequest{
 		$headers = ['Accept'=>'*/*;q=0.8'];
 
 		if($options)
-			self::implementCURLOptions($options_, $options, $headers);
+			self::implementCURLOptions($options_, $options, $headers, $url);
 
 		$header = [];
 		foreach ($headers as $key => &$value)
@@ -233,9 +233,10 @@ class WebRequest{
 		];
 
 		$headers = ['Accept'=>'*/*;q=0.8'];
+		$getRequest = '';
 
 		if($options)
-			self::implementCURLOptions($options_, $options, $headers);
+			self::implementCURLOptions($options_, $options, $headers, $getRequest);
 
 		$header = [];
 		foreach ($headers as $key => &$value)
@@ -272,12 +273,13 @@ class WebRequest{
 			return [[$parts, $fh, $path], $ch];
 		};
 
-		$getRequest = isset($options['data']);
-
 		$reqs = []; $ch = [];
 		foreach ($path as $url => &$path) {
-			if($getRequest === true)
-				$url .= '?'.http_build_query($options['data']);
+			if($getRequest !== ''){
+				if(strpos($url, '?') !== false)
+					$url .= '&'.substr($getRequest, 1);
+				else $url .= $getRequest;
+			}
 
 			$tmp = $addRequest($url, $path);
 			$reqs[] = $tmp[0];
@@ -343,7 +345,7 @@ class WebRequest{
 		curl_multi_close($mh);
 	}
 
-	private static function implementCURLOptions(&$options_, &$options, &$headers){
+	private static function implementCURLOptions(&$options_, &$options, &$headers, &$url){
 		if(isset($options['ssl'])){ # 0, 1
 			$options_[CURLOPT_SSL_VERIFYHOST] = &$options['ssl'];
 			$options_[CURLOPT_SSL_VERIFYPEER] = &$options['ssl'];
