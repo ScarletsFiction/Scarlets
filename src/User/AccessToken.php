@@ -41,6 +41,7 @@ class AccessToken{
 
 	public static function init(){
 		$config = &Config::load('auth')['auth.access_token'];
+
 		if(isset($config['driver']) === true)
 			self::$driver = &$config['driver'];
 
@@ -195,16 +196,17 @@ class AccessToken{
 		// Verify AppID and Secret Token
 		if(self::$driver === 'redis'){
 			$app = self::$db->hmGet(self::$app_table.$appID, ['app_secret']);
-			if($appSecret !== $app['app_secret'])
-				return;
+			if($appSecret !== $app['app_secret']){
+				self::$error = 'App secret was different';
+				return false;
+			}
 		}
 		else $app = self::$db->get(self::$app_table, ['app_id'], ['app_id'=>$appID, 'app_secret'=>$appSecret]);
 
-		if(!$app) return false;
-
-		// Clean old access token
-		if(self::$driver === 'database')
-			self::$db->delete(self::$token_table, ['app_id'=>$appID, 'user_id'=>$userData['userID']]);
+		if(!$app){
+			self::$error = 'App was not found';
+			return false;
+		}
 
 		self::$appID = &$appID;
 		self::$tokenID = 0;
@@ -218,7 +220,9 @@ class AccessToken{
 			self::$db->hmSet($key, [
 				'permissions'=>self::$permissions
 			]);
+
 			self::$db->expire($key, self::$expiration);
+			self::$db->sadd(self::$token_table."$appID:$userData[userID]", $tokenID);
 		}
 		else {
 			self::$tokenID = self::$db->insert(self::$token_table, [
@@ -254,6 +258,28 @@ class AccessToken{
 
 			self::$db->delete(self::$token_table, $where);
 		}
+	}
+
+	// Get user's accesstoken list
+	public static function list($appID, $userID){
+		if(self::$driver === 'redis'){
+			$list = self::$db->smembers(self::$token_table."$appID:$userID:list");
+			foreach ($list as &$tokenID) {
+				if(!self::$db->exists(self::$token_table."$appID:$userID:$tokenID")){
+					self::$db->unlink(self::$token_table."$appID:$userID:$tokenID");
+					self::$db->srem(self::$token_table."$appID:$userID:list", $tokenID);
+					$tokenID = null;
+				}
+			}
+
+			return array_values(array_filter($list));
+		}
+
+		if(self::$driver === 'database')
+			return self::$db->select(self::$token_table, 'token_id', [
+				'app_id'=>$appID,
+				'user_id'=>$userID,
+			]);
 	}
 }
 
