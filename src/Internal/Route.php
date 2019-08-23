@@ -86,7 +86,7 @@ class Serve{
 			self::$pending[self::$pendingLevel][1] = true;
 	}
 
-	public static function special($data){
+	public static function routeData($data){
 		if(!isset($_REQUEST['_sf_view']))
 			return;
 

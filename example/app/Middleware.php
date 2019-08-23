@@ -73,14 +73,20 @@ class Middleware{
 	        return function($headerData = [], $footerData = []){
 	            $body = ob_get_clean();
 
-	            // This will trigger 'special' router event on ScarletsFrame
-	            // When using dynamic route mode
-	            Serve::special($headerData);
+	            // This will trigger 'routeData' views event on ScarletsFrame
+	            // When using '_sf_view' mode
+	            Serve::routeData($headerData);
+
+	            // Send the view content only
+	            if(isset($_REQUEST['_sf_view']))
+	            	Serve::raw($body);
 
 	            // Output the body with header and footer
-	            Serve::view('static.header', $headerData, true);
-	            Serve::raw($body);
-	            Serve::view('static.footer', $footerData, true);
+	            else{
+	            	Serve::view('static.header', $headerData);
+	            	Serve::raw($body);
+	            	Serve::view('static.footer', $footerData);
+	            }
 
 	            $elapsed = 1;
 	            if(\Scarlets::$isConsole)
