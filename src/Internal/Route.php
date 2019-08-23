@@ -60,10 +60,7 @@ class Serve{
 	public static $pending = []; // [func, callable]
 	public static $pendingLevel = 0;
 
-	public static function view($path, $values = [], $isMVW = false){
-		if($isMVW && isset($_REQUEST['_scarlets']) && strpos($_REQUEST['_scarlets'], '.dynamic.') !== false)
-			return;
-
+	public static function view($path, $values = []){
 		if(Scarlets::$isConsole && !self::$headerSent)
 			self::status(200);
 
@@ -90,11 +87,11 @@ class Serve{
 	}
 
 	public static function special($data){
-		if(!isset($_REQUEST['_scarlets']) || strpos($_REQUEST['_scarlets'], '.dynamic.') === false)
+		if(!isset($_REQUEST['_sf_view']))
 			return;
 
 		$temp = str_replace('-->', '--|&>', $data);
-		echo('<!-- SF-Special:'.json_encode($temp).'-->');
+		echo('<!-- SF-View-Data:'.json_encode($temp).'-->');
 	}
 
 	public static function plate($path){
