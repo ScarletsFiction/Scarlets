@@ -59,6 +59,13 @@ class Serve{
 	public static $headerSent = false;
 	public static $pending = []; // [func, callable]
 	public static $pendingLevel = 0;
+	public static $namespace = [];
+	private static $classReference = [
+		'Scarlets\Route\Serve',
+		'Scarlets\Library\Language',
+		'Scarlets\Library\CSRF',
+		'Scarlets\Route\Query'
+	];
 
 	public static function view($path, $values = []){
 		if(Scarlets::$isConsole && !self::$headerSent)
@@ -70,14 +77,20 @@ class Serve{
 		$p = &$_POST;
 
 		// Class reference
-		$serve = 'Scarlets\Route\Serve';
-		$lang = 'Scarlets\Library\Language';
-		$csrf = 'Scarlets\Library\CSRF';
-		$q = 'Scarlets\Route\Query';
+		$serve = &self::$classReference[0];
+		$lang = &self::$classReference[1];
+		$csrf = &self::$classReference[2];
+		$q = &self::$classReference[3];
 
 		// User defined variable
-		foreach ($values as $key => $value)
+		foreach ($values as $key => &$value)
 			${$key} = $value;
+
+		// Add namespace to this scope
+		foreach (self::$namespace as $key => &$value) {
+			$key = explode('\\', $key);
+			${end($key)} = $value;
+		}
 
 		include $path;
 
@@ -157,7 +170,7 @@ class Serve{
 		if(self::$headerSent) return;
 
 		if(Scarlets::$isConsole === true) 
-			Scarlets\Route::$statusCode = $statusCode ?: 500;
+			Scarlets\Route::$statusCode = &$statusCode ?: 500;
 		else
 			http_response_code($statusCode ?: 500);
 

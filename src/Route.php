@@ -18,6 +18,7 @@ class Route{
 	public static $statusCode = 404;
 	public static $this = false;
 	public static $ended = false;
+	public static $_currentURL = '';
 	private static $namespace = false;
 	private static $prefix = false;
 	private static $name = false;
@@ -27,13 +28,13 @@ class Route{
 
 	private static function implementCurrentScope(&$url, &$func, &$opts){
 		if(self::$namespace && !is_callable($func))
-			$func = implode('\\', self::$namespace).'\\'.$func;
+			$func = implode('\\', self::$namespace).'\\'.$func; // ToDo: Improve performance
 
 		if(self::$prefix){
 			if(substr($url, 0, 1) !== '/')
 				$url = "/$url";
 
-			$url = '/'.implode('/', self::$prefix).$url;
+			$url = '/'.implode('/', self::$prefix).$url; // ToDo: Improve performance
 
 			if(strpos($url, '//') !== false)
 				trigger_error("The route can't have double slash \"$url\"");
@@ -210,7 +211,7 @@ class Route{
 	// ---- Temporary scope based function ----
 		private static $scopeConstrain = [];
 		private static $constrainLength = [];
-		private static function scopeBased($part, $arg1, $func){
+		private static function scopeBased($part, $arg1, $func){ // ToDo: Improve performance
 			$current = &self::${$part};
 			if($current === false)
 				$current = [];
@@ -249,7 +250,7 @@ class Route{
 					continue;
 				}
 				$ref = &self::${$temp};
-				
+
 				$count = count($ref);
 				if($count !== 0){
 					array_pop($ref);
@@ -263,19 +264,19 @@ class Route{
 		public static function namespaces($namespace, $func = false){
 			return self::scopeBased('namespace', $namespace, $func);
 		}
-		
+
 		public static function prefix($url, $func = false){
 			// Execute only if there are a matched url
-			if(!Scarlets::$isConsole && strpos($_SERVER['REQUEST_URI'], $url) === false)
+			if(!Scarlets::$isConsole && strpos(self::$_currentURL, $url) === false)
 				self::$skipScope = true;
 
 			return self::scopeBased('prefix', $url, $func);
 		}
-		
+
 		public static function name($name, $func = false){
 			return self::scopeBased('name', $name, $func);
 		}
-		
+
 		public static function middleware($controller, $func = false){
 			return self::scopeBased('middleware', $controller, $func);
 		}
@@ -291,13 +292,27 @@ class Route{
 		return $types;
 	}
 
+	// Handle Template Only
+	public static function template($url, $path){
+		if('/'.implode('/', Route::$prefix)."$url" !== self::$_currentURL)
+			return;
+
+		if(isset($_GET['_sf_view']) === false || isset($path[$_GET['_sf_view']]) === false)
+			return;
+
+		$path = Scarlets::$registry['path.plate'].str_replace('.', '/', $path[$_GET['_sf_view']]).'.php';
+		Route::$statusCode = 200;
+
+		echo str_replace(["  ", "\n", "\r"], '', file_get_contents($path));
+	}
+
 	public static function handleURL($url, $func, $opts, $checkOnly = false){
 		if(\Scarlets::$maintenance === true)
 			Serve::maintenance();
 
 		$matched = $haveMatchAll = false;
 		$args = [];
-		$requestURI = explode('?', $_SERVER['REQUEST_URI'], 2)[0];
+		$requestURI = self::$_currentURL;
 
 		if(substr($url, 0, 1) !== '/')
 			$url = "/$url";
@@ -483,3 +498,4 @@ class Route{
 
 // Refer to 'Route' class itself
 Route::$this = new Route;
+Route::$_currentURL = explode('?', $_SERVER['REQUEST_URI'], 2)[0];
