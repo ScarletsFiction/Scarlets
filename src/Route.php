@@ -303,7 +303,7 @@ class Route{
 		$path = Scarlets::$registry['path.plate'].str_replace('.', '/', $path[$_GET['_sf_view']]).'.php';
 		Route::$statusCode = 200;
 
-		echo str_replace(["  ", "\n", "\r"], '', file_get_contents($path));
+		Serve::end(str_replace(["  ", "\n", "\r"], '', file_get_contents($path)));
 	}
 
 	public static function handleURL($url, $func, $opts, $checkOnly = false){
