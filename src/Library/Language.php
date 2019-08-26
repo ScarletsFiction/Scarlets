@@ -7,7 +7,7 @@ use \Scarlets;
 	handled by the browser instead of server
 */
 class Language{
-	public static $current = '';
+	public static $default = '';
 	public static $loaded = [];
 
 	/*
@@ -67,7 +67,7 @@ class Language{
 
 	public static function &get($key, $values = [], $languageID=0){
 		$loaded = &self::$loaded;
-		if(!$languageID) $languageID = self::$current;
+		if(!$languageID) $languageID = self::$default;
 
 		// Check if language file are loaded
 		if(!isset($loaded[$languageID]) || !isset($loaded[$languageID][$key]))
@@ -75,11 +75,11 @@ class Language{
 
 		$value = $loaded[$languageID][$key];
 		for ($i=0; $i < count($values); $i++) { 
-			$value = str_replace("(:$i)", $values[$i], $value);
+			$value = str_replace("{{$i}}", $values[$i], $value);
 		}
 
 		return $value;
 	}
 }
 
-Language::$current = Scarlets\Config::$data['app.language'];
+Language::$default = Scarlets\Config::$data['app.language'];

@@ -1,5 +1,5 @@
 <?php
 
 return [
-    'current_date' => 'Sekarang tanggal :1 (UTC)',
+    'current_date' => 'Sekarang tanggal {date} UTC',
 ];
