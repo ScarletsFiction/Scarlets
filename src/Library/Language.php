@@ -15,18 +15,28 @@ class Language{
 	
 		(id) Storage ID that configured on the application
 	*/
-	public static function load($languageID, $file=0){
+	public static function &load($languageID, $file=0){
+		$loaded = &self::$loaded;
+		if(isset($loaded[$languageID]))
+			return $loaded[$languageID];
+
 		$path = Scarlets::$registry['path.lang']."/$languageID/";
 		if(file_exists($path)){
-			$loaded = &self::$loaded;
 			$loaded[$languageID] = [];
 			$ref = &$loaded[$languageID];
 
 			// Single load
 			if($file !== 0 && !Scarlets::$isConsole){
+				$empty = '';
+
+				// Protect from path climbing
+				$file = str_replace(['./', '../'], $empty, $file);
+
+				if(!file_exists("$path$file.php"))
+					return $empty;
+
 				$keys = include "$path$file.php";
 				foreach ($keys as $key => $value) {
-
 					// Sub key 1
 					if(is_array($value)){
 						foreach ($value as $key2 => $value2) {
@@ -37,7 +47,7 @@ class Language{
 
 					$ref["$file.$key"] = $value;
 				}
-				return;
+				return $loaded;
 			}
 
 			// Else, load all
@@ -60,7 +70,7 @@ class Language{
 					$ref["$file.$key"] = $value;
 				}
 			}
-			return;
+			return $loaded;
 		}
 		trigger_error("LanguageID not exist: $languageID", 1);
 	}
@@ -75,7 +85,7 @@ class Language{
 
 		$value = $loaded[$languageID][$key];
 		for ($i=0; $i < count($values); $i++) { 
-			$value = str_replace("{{$i}}", $values[$i], $value);
+			$value = str_replace("{$i}", $values[$i], $value);
 		}
 
 		return $value;
