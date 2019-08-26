@@ -35,7 +35,7 @@ class Language{
 				// Protect from path climbing
 				$file = str_replace(['./', '../'], $empty, $file);
 
-				if(!file_exists("$path$file.php"))
+				if(!file_exists("$path/$file.php"))
 					return $empty;
 
 				$keys = include "$path$file.php";
@@ -78,20 +78,21 @@ class Language{
 		trigger_error("LanguageID not exist: $languageID", 1);
 	}
 
-	public static function &get($key, $values = [], $languageID=0){
+	public static function &get($key, $values = [], $languageID=false){
 		$loaded = &self::$loaded;
-		if(!$languageID) $languageID = self::$default;
+		if($languageID === false)
+			$languageID = &self::$default;
 
 		// Check if language file are loaded
 		if(!isset($loaded[$languageID]) || !isset($loaded[$languageID][$key]))
 			self::load($languageID, explode('.', $key)[0]);
 
-		$value = $loaded[$languageID][$key];
-		for ($i=0; $i < count($values); $i++) { 
-			$value = str_replace("{$i}", $values[$i], $value);
+		$ret = &$loaded[$languageID][$key];
+		foreach ($values as $key => &$value) {
+			$ret = str_replace("{$key}", $value, $ret);
 		}
 
-		return $value;
+		return $ret;
 	}
 }
 
