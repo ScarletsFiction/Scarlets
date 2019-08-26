@@ -9,6 +9,7 @@ use \Scarlets;
 class Language{
 	public static $default = '';
 	public static $loaded = [];
+	private static $loaded_ = [];
 
 	/*
 		> Initialize
@@ -17,8 +18,10 @@ class Language{
 	*/
 	public static function &load($languageID, $file=0){
 		$loaded = &self::$loaded;
-		if(isset($loaded[$languageID]))
+		if(in_array("$languageID$file", self::$loaded_))
 			return $loaded[$languageID];
+
+		self::$loaded_[] = "$languageID$file";
 
 		$path = Scarlets::$registry['path.lang']."/$languageID/";
 		if(file_exists($path)){
@@ -47,7 +50,7 @@ class Language{
 
 					$ref["$file.$key"] = $value;
 				}
-				return $loaded;
+				return $ref;
 			}
 
 			// Else, load all
@@ -70,7 +73,7 @@ class Language{
 					$ref["$file.$key"] = $value;
 				}
 			}
-			return $loaded;
+			return $ref;
 		}
 		trigger_error("LanguageID not exist: $languageID", 1);
 	}
