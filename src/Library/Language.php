@@ -89,7 +89,7 @@ class Language{
 
 		$ret = &$loaded[$languageID][$key];
 		foreach ($values as $key => &$value) {
-			$ret = str_replace("{$key}", $value, $ret);
+			$ret = str_replace("{{$key}}", $value, $ret);
 		}
 
 		return $ret;
