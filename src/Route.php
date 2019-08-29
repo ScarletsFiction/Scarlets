@@ -300,7 +300,20 @@ class Route{
 		if(isset($_GET['_sf_view']) === false || isset($path[$_GET['_sf_view']]) === false)
 			return;
 
-		$path = Scarlets::$registry['path.plate'].str_replace('.', '/', $path[$_GET['_sf_view']]).'.php';
+		$plate = &Scarlets::$registry['path.plate'];
+		$ref = &$path[$_GET['_sf_view']];
+
+		if(is_array($ref)){
+			foreach ($ref as &$value) {
+				$path = $plate.str_replace('.', '/', $value).'.php';
+				Serve::raw(str_replace(["  ", "\n", "\r"], '', file_get_contents($path)));
+			}
+
+			Route::$statusCode = 200;
+			Serve::end();
+		}
+
+		$path = $plate.str_replace('.', '/', $ref).'.php';
 		Route::$statusCode = 200;
 
 		Serve::end(str_replace(["  ", "\n", "\r"], '', file_get_contents($path)));
