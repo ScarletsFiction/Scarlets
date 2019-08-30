@@ -62,7 +62,7 @@ class Serve{
 	public static $namespace = [];
 	private static $classReference = [
 		'Scarlets\Route\Serve',
-		'Scarlets\Library\Language',
+		'Scarlets\Library\Language::get',
 		'Scarlets\Library\CSRF',
 		'Scarlets\Route\Query'
 	];

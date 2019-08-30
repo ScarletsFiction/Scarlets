@@ -39,18 +39,8 @@ class Language{
 					return $empty;
 
 				$keys = include "$path$file.php";
-				foreach ($keys as $key => $value) {
-					// Sub key 1
-					if(is_array($value)){
-						foreach ($value as $key2 => $value2) {
-							$ref["$file.$key.$key2"] = $value2;
-						}
-						continue;
-					}
-
-					$ref["$file.$key"] = $value;
-				}
-				return $ref;
+				$ref[$file] = $keys;
+				return $ref[$file];
 			}
 
 			// Else, load all
@@ -60,34 +50,32 @@ class Language{
 
 				$file = basename($file);
 				$file = substr($file, 0, -4);
-				foreach ($keys as $key => $value) {
-
-					// Sub key 1
-					if(is_array($value)){
-						foreach ($value as $key2 => $value2) {
-							$ref["$file.$key.$key2"] = $value2;
-						}
-						continue;
-					}
-
-					$ref["$file.$key"] = $value;
-				}
+				$ref[$file] = &$keys;
 			}
 			return $ref;
 		}
 		trigger_error("LanguageID not exist: $languageID", 1);
 	}
 
-	public static function &get($key, $values = [], $languageID=false){
+	public static function get($key, $values = [], $languageID=false){
 		$loaded = &self::$loaded;
 		if($languageID === false)
 			$languageID = &self::$default;
 
-		// Check if language file are loaded
-		if(!isset($loaded[$languageID]) || !isset($loaded[$languageID][$key]))
-			self::load($languageID, explode('.', $key)[0]);
+		$key = explode('.', $key);
 
-		$ret = &$loaded[$languageID][$key];
+		// Check if language file are loaded
+		if(!isset($loaded[$languageID]) || !isset($loaded[$languageID][$key[0]]))
+			self::load($languageID, $key[0]);
+
+		$ret = &$loaded[$languageID];
+		foreach ($key as &$k){
+			if(isset($ret[$k]) === false)
+				return '';
+
+			$ret = $ret[$k];
+		}
+
 		foreach ($values as $key => &$value) {
 			$ret = str_replace("{{$key}}", $value, $ret);
 		}
