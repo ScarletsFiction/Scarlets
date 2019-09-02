@@ -19,6 +19,41 @@ class Handler{
 		}
 	}
 
+	// ==> Implement global request security
+	public static function security(){
+		foreach ($_GET as $key => &$value) {
+			if(strpos($key, '../') !== false){
+				\Scarlets\Log::message('Security: Request from '.$_SERVER['REMOTE_ADDR'].' was denied');
+				Route\Serve::end("Your request was invalid!");
+			}
+
+			if(strpos($value, '../') !== false){
+				\Scarlets\Log::message('Warning: Trailing path were removed from the query');
+				$_REQUEST[$key] = $value = str_replace('../', '/', $value);
+			}
+		}
+		foreach ($_POST as $key => &$value) {
+			if(strpos($key, '../') !== false){
+				\Scarlets\Log::message('Security: Request from '.$_SERVER['REMOTE_ADDR'].' was denied');
+				Route\Serve::end("Your request was invalid!");
+			}
+
+			if(strpos($value, '../') !== false){
+				\Scarlets\Log::message('Warning: Trailing path were removed from the query');
+				$_REQUEST[$key] = $value = str_replace('../', '/', $value);
+			}
+		}
+		foreach ($_FILES as $field => &$val) {
+			if(strpos($key, '../') !== false){
+				\Scarlets\Log::message('Security: Request from '.$_SERVER['REMOTE_ADDR'].' was denied');
+				Route\Serve::end("Your request was invalid!");
+			}
+
+			if(strpos($val['name'], '../') !== false)
+				$val['name'] = str_replace('../', '/', $val['name']);
+		}
+	}
+
 	public static function initExtension(){
 		self::$Extension = new Extension();
 		return self::$Extension;

@@ -39,6 +39,13 @@ class Scarlets{
 
 		// Parse received json data if exist
 		if(!self::$isConsole){
+			// Load statuses router first as HTTP fallback
+			include_once self::$registry['path.app']."/routes/status.php";
+
+			if(file_exists(self::$registry['path.maintenance_file']) === true){
+				Route\Serve::status(503, true);
+				self::$maintenance = true;
+			}
 
 			// Put to $_POST because it's usually been send from POST method
 			if(isset($_SERVER["CONTENT_TYPE"]) && strpos($_SERVER["CONTENT_TYPE"], 'application/json') !== false)
@@ -83,15 +90,10 @@ class Scarlets{
 			}
 		}
 
-		if(file_exists(self::$registry['path.maintenance_file']) === true){
-			Route\Serve::status(503, true);
-			self::$maintenance = true;
-		}
+		Route\Handler::security();
 
 		try{
 			// Include required router
-			include_once self::$registry['path.app']."/routes/status.php";
-
 			if(self::$maintenance === true && self::$isConsole === false)
 				Route\Serve::maintenance();
 
