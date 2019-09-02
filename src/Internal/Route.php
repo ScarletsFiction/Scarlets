@@ -27,7 +27,7 @@ class Handler{
 				Route\Serve::end("Your request was invalid!");
 			}
 
-			if(strpos($value, '../') !== false){
+			if(is_string($value) && strpos($value, '../') !== false){
 				\Scarlets\Log::message('Warning: Trailing path were removed from the query');
 				$_REQUEST[$key] = $value = str_replace('../', '/', $value);
 			}
@@ -38,7 +38,7 @@ class Handler{
 				Route\Serve::end("Your request was invalid!");
 			}
 
-			if(strpos($value, '../') !== false){
+			if(is_string($value) && strpos($value, '../') !== false){
 				\Scarlets\Log::message('Warning: Trailing path were removed from the query');
 				$_REQUEST[$key] = $value = str_replace('../', '/', $value);
 			}
