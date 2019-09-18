@@ -17,6 +17,7 @@ class UnitTest{
 	private static $currentStatus = true;
 	private static $statusMessage = null;
 	public static $symbol = null;
+	public static $haveError = false;
 
 	public static function it($desc, $func){
 		self::desc($desc);
@@ -49,8 +50,10 @@ class UnitTest{
 		$contents = ob_get_contents();
 		ob_end_clean();
 
-		if($error !== null)
+		if($error !== null){
+			self::$haveError = true;
 			$contents .= "$error";
+		}
 
 		$mem = Strings::formatBytes(memory_get_peak_usage()-$memory);
 

@@ -35,6 +35,8 @@ Console::command('test', function(){
 	foreach ($tests as &$file) {
 		require_once "$testsPath/$file";
 	}
+
+	exit(\Scarlets\Internal\UnitTest::$haveError ? 1 : 0);
 });
 
 Console::command(['maintenance {0}', 'maintenance'], function($action = ''){
