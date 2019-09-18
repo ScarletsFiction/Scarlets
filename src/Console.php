@@ -179,6 +179,7 @@ class Console{
 				if($matched){
 					// Process the unique arguments
 					$arguments = [];
+					$argumentsNamed = [];
 					for ($i=0, $n=count($uniques); $i < $n; $i++) {
 						$index = &$uniques[$i];
 
@@ -194,13 +195,26 @@ class Console{
 							break;
 						}
 
-						if(!is_numeric($number))
+						if(!is_numeric($number)){
+							$argumentsNamed[$number] = $pattern[$index];
 							continue;
+						}
 
 						$arguments[$number] = $pattern[$index];
 					}
 
 					ksort($arguments);
+
+					if(count($argumentsNamed) !== 0){
+						$reflection = new \ReflectionFunction($command[2]);
+						$params = $reflection->getParameters();
+
+						for ($i=0, $n=count($params); $i < $n; $i++) {
+							$name = $params[$i]->name;
+						    if(isset($argumentsNamed[$name]))
+						    	array_splice($arguments, $i, 0, $argumentsNamed[$name]);
+						}
+					}
 
 					$return = call_user_func_array($command[2], $arguments);
 					if($return){
