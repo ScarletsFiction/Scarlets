@@ -105,7 +105,7 @@ class Console{
 
 		$firstword = &$pattern[0];
 		unset($pattern[0]);
-		$pattern = array_values(array_filter($pattern));
+		$pattern = array_values($pattern);
 		$argsLen = count($pattern);
 
 		if($argsLen === 1 && in_array($pattern[0], ['/h', '/?', '-h', '--help'])){
@@ -153,6 +153,7 @@ class Console{
 				// Check arguments
 				$uniques = &$command[0];
 				$args = &$command[1];
+
 				for ($i=0; $i < count($args); $i++) {
 
 					// It's unique
@@ -178,7 +179,7 @@ class Console{
 				if($matched){
 					// Process the unique arguments
 					$arguments = [];
-					for ($i=0; $i < count($uniques); $i++) {
+					for ($i=0, $n=count($uniques); $i < $n; $i++) {
 						$index = &$uniques[$i];
 
 						$number = str_replace(['{', '}'], '', $args[$index]);
@@ -193,10 +194,8 @@ class Console{
 							break;
 						}
 
-						if(!is_numeric($number)){
-							echo(self::chalk("Parameter index should be a numeric value but got `$number`", 'red'));
-							return;
-						}
+						if(!is_numeric($number))
+							continue;
 
 						$arguments[$number] = $pattern[$index];
 					}
@@ -328,10 +327,7 @@ class Console{
 				$number = explode('}', $number);
 				if($number[1] !== '') continue;
 
-				if(is_numeric($number[0]))
-					$uniqueIndex[] = &$number[0];
-				elseif($number[0] === '*')
-					$uniqueIndex[] = $i;
+				$uniqueIndex[] = $i;
 			}
 		}
 
