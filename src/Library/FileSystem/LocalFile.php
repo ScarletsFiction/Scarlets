@@ -67,7 +67,7 @@ class LocalFile{
 
 		if(is_dir($path)){
 			$bytes = 0;
-			$data = new RecursiveIteratorIterator(new RecursiveDirectoryIterator(realpath($directory)));
+			$data = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator(realpath($directory)));
 			foreach ($data as $file)
 			{
 				$bytes += $file->getSize();
@@ -121,10 +121,10 @@ class LocalFile{
 	public static function search($path, $regex, $recursive=false){
 		if($path[0]==='{') self::realpath($path);
 		
-	    $dirIte = new RecursiveDirectoryIterator($path, RecursiveDirectoryIterator::SKIP_DOTS);
+	    $dirIte = new \RecursiveDirectoryIterator($path, \RecursiveDirectoryIterator::SKIP_DOTS);
 	    if($recursive)
-	    	$dirIte = new RecursiveIteratorIterator($dirIte, RecursiveIteratorIterator::SELF_FIRST);
-	    $found = new RegexIterator($recIte, $regex, RegexIterator::GET_MATCH);
+	    	$dirIte = new \RecursiveIteratorIterator($dirIte, \RecursiveIteratorIterator::SELF_FIRST);
+	    $found = new \RegexIterator($dirIte, $regex, \RegexIterator::GET_MATCH);
 	    return array_keys(iterator_to_array($found));
 	}
 
@@ -158,7 +158,7 @@ class LocalFile{
 			if(!$recursive)
 				rmdir($path);
 			else {
-				$iterator = new DirectoryIterator($path);
+				$iterator = new \DirectoryIterator($path);
 				foreach($iterator as $fileinfo){
 					if($fileinfo->isDot()) continue;
 					if($fileinfo->isDir()){
@@ -276,8 +276,8 @@ class LocalFile{
 		if($sourcePath[0]==='{') self::realpath($sourcePath);
 		if($outZipPath[0]==='{') self::realpath($outZipPath);
 		
-		$zip = new ZipArchive();
-		if($zip->open($outZipPath, ZIPARCHIVE::CREATE | ZIPARCHIVE::OVERWRITE))
+		$zip = new \ZipArchive();
+		if($zip->open($outZipPath, \ZIPARCHIVE::CREATE | \ZIPARCHIVE::OVERWRITE))
 			return false;
 		
 		$pathInfo = pathInfo(realpath($sourcePath));
@@ -301,7 +301,7 @@ class LocalFile{
 		if($path[0]==='{') self::realpath($path);
 		if($to[0]==='{') self::realpath($to);
 		
-		$zip = new ZipArchive();
+		$zip = new \ZipArchive();
 		$zipStatus = $zip->open($path);
 		
 		if ($zipStatus === true){
@@ -324,14 +324,14 @@ class LocalFile{
 	public static function zipStatus($path){
 		if($path[0]==='{') self::realpath($path);
 		
-		$zip = new ZipArchive();
-		$res = $zip->open(realpath($path), ZipArchive::CHECKCONS);
+		$zip = new \ZipArchive();
+		$res = $zip->open(realpath($path), \ZipArchive::CHECKCONS);
 		if ($res !== true) {
-			if($res === ZipArchive::ER_NOZIP)
+			if($res === \ZipArchive::ER_NOZIP)
 				return 'Not a zip file';
-			elseif($res === ZipArchive::ER_INCONS)
+			elseif($res === \ZipArchive::ER_INCONS)
 				return 'Consistency check failed';
-			elseif($res === ZipArchive::ER_CRC )
+			elseif($res === \ZipArchive::ER_CRC )
 				return 'Checksum failed';
 			return $res;
 		}
