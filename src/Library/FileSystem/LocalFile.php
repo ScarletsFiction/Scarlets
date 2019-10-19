@@ -106,8 +106,8 @@ class LocalFile{
 	public static function mkdir($path){
 		if($path[0]==='{') self::realpath($path);
 		
-	    if(!is_dir(dirname($path)))
-	        mkdir(dirname($path).'/', 0777, TRUE);
+	    if(!is_dir($path))
+	        mkdir($path.'/', 0777, TRUE);
 	}
 
 	public static function put($path, $value){
