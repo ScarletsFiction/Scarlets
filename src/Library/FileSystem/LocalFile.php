@@ -20,7 +20,7 @@ class LocalFile{
 		self::$storage = &$config['filesystem.storage'];
 	}
 
-	private static function realpath(&$path){
+	private static function realpath(&$path, $createDir = false){
 		if($path[0] !== '{')
 			return;
 
@@ -28,18 +28,23 @@ class LocalFile{
 		$ref = &self::$storage[substr($path[0], 1)];
 		$path = preg_replace('/(?:\/|^)\.+?(?:\/|$)/', '/', $ref['path'].$path[1]);
 
-		if(isset($ref['auto-directory']) && $ref['auto-directory'] === true && is_file($path) === false && is_dir($path) === false)
-			self::mkdir($path);
+		if($createDir && isset($ref['auto-directory']) &&
+			$ref['auto-directory'] === true &&
+			strpos($path, '.') === false &&
+			is_file($path) === false &&
+			is_dir($path) === false
+		)
+			self::mkdir(dirname($path));
 	}
 
 	public static function path($path){
-		self::realpath($path);
+		self::realpath($path, true);
 		return $path;
 	}
 
 	public static function contents($path){
 		self::realpath($path);
-		if(is_dir($path) === false)
+		if(!is_dir($path))
 			return [];
 
 		$dir = scandir($path);
@@ -50,7 +55,7 @@ class LocalFile{
 	}
 
 	public static function load($path){
-		if($path[0]==='{') self::realpath($path);
+		if($path[0] === '{') self::realpath($path);
 
 		if(file_exists($path) === false)
 			return '';
@@ -63,7 +68,7 @@ class LocalFile{
 	}
 
 	public static function size($path){
-		if($path[0]==='{') self::realpath($path);
+		if($path[0] === '{') self::realpath($path);
 
 		if(is_dir($path)){
 			$bytes = 0;
@@ -74,19 +79,22 @@ class LocalFile{
 			}
 			return $bytes;
 		}
-		if(file_exists($path) === false) return 0;
+
+		if(file_exists($path) === false)
+			return 0;
+
 		if(is_file($path))
 			return filesize($path);
 	}
 
 	public static function append($path, $value){
-		if($path[0]==='{') self::realpath($path);
+		if($path[0] === '{') self::realpath($path, true);
 		
 		file_put_contents($path, $value, FILE_APPEND);
 	}
 
 	public static function prepend($path, $value){
-		if($path[0]==='{') self::realpath($path);
+		if($path[0]==='{') self::realpath($path, true);
 		
 		file_put_contents("$path._temp", '');
 		$fhandle = fopen("$path._temp", 'w');
@@ -104,14 +112,14 @@ class LocalFile{
 	}
 
 	public static function mkdir($path){
-		if($path[0]==='{') self::realpath($path);
-		
+		if($path[0] === '{') self::realpath($path);
+
 	    if(!is_dir($path))
 	        mkdir($path.'/', 0777, TRUE);
 	}
 
 	public static function put($path, $value){
-		if($path[0]==='{') self::realpath($path);
+		if($path[0]==='{') self::realpath($path, true);
 		
 	    if(!is_dir(dirname($path)))
 	        mkdir(dirname($path).'/', 0777, TRUE);
@@ -299,7 +307,7 @@ class LocalFile{
 	
 	public static function extractZip($path, $to, $password=''){
 		if($path[0]==='{') self::realpath($path);
-		if($to[0]==='{') self::realpath($to);
+		if($to[0]==='{') self::realpath($to, true);
 		
 		$zip = new \ZipArchive();
 		$zipStatus = $zip->open($path);
