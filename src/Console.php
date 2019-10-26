@@ -155,16 +155,37 @@ class Console{
 				$args = &$command[1];
 
 				for ($i=0; $i < count($args); $i++) {
-
 					// It's unique
 					if(isset($uniques[$uniqueCheck]) && $uniques[$uniqueCheck] === $i){
 						$matched = true;
 						$uniqueCheck++;
-					} else {
+					}
+					else {
+						// true if all argument index exist
+						if(isset($args[$i]) && isset($pattern[$i])){
+							if($args[$i] === $pattern[$i]) // static args was equal
+								$matched = true;
 
-						// true if all argument index exist, and true if it's dynamic args or static args was equal
-						if(isset($args[$i]) && isset($pattern[$i]) && ($args[$i][0] === '{' || $args[$i] === $pattern[$i]))
-							$matched = true;
+							else{ // dynamic args was equal
+								$begin = explode('{', $args[$i])[0];
+								if($begin !== '' && explode($begin, $pattern[$i])[0] === ''){
+									$matched = false;
+									continue 2;
+								}
+
+								// Check if match the end
+								$end = explode('}', $args[$i]);
+								if(count($end) === 1 || end($end) !== ''){
+									$end = explode(end($end), $pattern[$i]);
+									if(count($end) === 1 || end($end) !== ''){
+										$matched = false;
+										continue 2;
+									}
+								}
+
+								$matched = true;
+							}
+						}
 
 						else{
 							$matched = false;
@@ -206,7 +227,7 @@ class Console{
 					ksort($arguments);
 
 					if(count($argumentsNamed) !== 0){
-						$reflection = new \ReflectionFunction($command[2]);
+						$reflection = new \ReflectionMethod($command[2]);
 						$params = $reflection->getParameters();
 
 						for ($i=0, $n=count($params); $i < $n; $i++) {
@@ -333,13 +354,16 @@ class Console{
 
 		$uniqueIndex = [];
 		for ($i=0; $i < $patternLen; $i++) {
-			if(strpos($pattern[$i], '{') === 0){
+			if(strpos($pattern[$i], '{') !== false){
 				$number = explode('{', $pattern[$i]);
-				if($number[0] !== '') continue;
+				if($number[0] !== '')
+					$pattern[$i] = $number[1];
 
 				$number = &$number[1];
+
 				$number = explode('}', $number);
-				if($number[1] !== '') continue;
+				if($number[1] !== '')
+					$pattern[$i] = $number[0];
 
 				$uniqueIndex[] = $i;
 			}

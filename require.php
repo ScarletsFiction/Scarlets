@@ -37,11 +37,14 @@ class Scarlets{
 		if(Config::$data['app.url_path'] !== false)
 			Route\Query::$home = &Config::$data['app.url_path'];
 
+		// Register app middleware
+		\App\Middleware::register();
+
+		// Load statuses router first as HTTP fallback
+		include_once self::$registry['path.app']."/routes/status.php";
+
 		// Parse received json data if exist
 		if(!self::$isConsole){
-			// Load statuses router first as HTTP fallback
-			include_once self::$registry['path.app']."/routes/status.php";
-
 			if(file_exists(self::$registry['path.maintenance_file']) === true){
 				Route\Serve::status(503, true);
 				self::$maintenance = true;

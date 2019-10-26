@@ -93,7 +93,7 @@ class LocalFile{
 			return $default;
 
 		$data = file_get_contents($this->path."/$key.cache");
-		if(substr($data, 1, 1) === ':')
+		if(substr($data, 1, 1) === ':' || is_numeric(substr($data, 2, 1)))
 			$data = unserialize($data);
 
 		unlink($this->path."/$key.cache");

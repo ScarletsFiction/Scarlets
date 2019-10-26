@@ -116,8 +116,8 @@ class Server {
 
 		    // Check if it requested a file
 			$path = Scarlets::$registry['path.public'].explode('?', $headers['URI'], 2)[0];
-		    $file = @fopen($path, 'rb');
-			if($file){
+			if(file_exists($path) && !is_dir($path)){
+		    	$file = @fopen($path, 'rb');
 				$info = pathinfo($path);
 				if(isset($info['extension'])){
 					socket_write($socket, 'HTTP/1.1 200 OK');
