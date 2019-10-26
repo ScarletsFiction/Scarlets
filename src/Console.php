@@ -227,7 +227,11 @@ class Console{
 					ksort($arguments);
 
 					if(count($argumentsNamed) !== 0){
-						$reflection = new \ReflectionMethod($command[2]);
+						if(is_string($command[2]))
+							$reflection = new \ReflectionMethod($command[2]);
+						else
+							$reflection = new \ReflectionFunction($command[2]);
+
 						$params = $reflection->getParameters();
 
 						for ($i=0, $n=count($params); $i < $n; $i++) {
