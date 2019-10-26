@@ -82,16 +82,16 @@ class WebRequest{
 		}
 		else {
 			$mh = curl_multi_init(); $ch = [];
-			for ($i=0, $n = count($url); $i < $n; $i++) { 
-				$ch[$i] = curl_init($url[$i]);
-				curl_setopt_array($ch[$i], $options_);
-				curl_multi_add_handle($mh, $ch[$i]); 
+			foreach ($url as $key => &$value) {
+				$ch[$key] = curl_init($value);
+				curl_setopt_array($ch[$key], $options_);
+				curl_multi_add_handle($mh, $ch[$key]); 
 			}
 			self::multiHandleCURL($mh, $ch, false, false);
 
 			$results = [];
-			foreach ($ch as &$value) {
-				$results[] = $preprocess(curl_multi_getcontent($value), $value);
+			foreach ($ch as $key => &$value) {
+				$results[$key] = $preprocess(curl_multi_getcontent($value), $value);
 			}
 			return $results;
 		}
@@ -408,7 +408,7 @@ class WebRequest{
 				return ($Downloaded > ($options['limitSize'] * 1024)) ? 1 : 0;
 
 				if(isset($options['progress']))
-					$options['progress']($DownloadSize, $Downloaded, $UploadSize, $Uploaded);
+					$options['progress']($resource, $DownloadSize, $Downloaded, $UploadSize, $Uploaded);
 			};
 		}
 
