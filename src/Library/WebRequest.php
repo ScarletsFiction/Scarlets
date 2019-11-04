@@ -460,4 +460,16 @@ class WebRequest{
 			return 0;
 		return (float)$data['headers']['Content-Length'];
 	}
+
+	public static function lastRedirection($url){
+		$ch = curl_init($url);
+
+		curl_setopt($ch, CURLOPT_USERAGENT, self::$userAgent);
+		curl_setopt($ch, CURLOPT_HEADER, true);
+		curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+		curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+		curl_exec($ch);
+
+		return curl_getinfo($ch, CURLINFO_EFFECTIVE_URL);
+	}
 }
