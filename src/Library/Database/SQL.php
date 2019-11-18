@@ -640,16 +640,20 @@ class SQL{
 			$objectName[] = $this->validateColumn($columns[$i]);
 			$objectName_[] = '?';
 
-			$objectData[] = $object[$columns[$i]];
+			$objectData[] = &$object[$columns[$i]];
 		}
+
 		$query = 'INSERT INTO ' . $this->validateTable($tableName) . ' (' . implode(', ', $objectName) . ') VALUES (' . implode(', ', $objectName_) . ')';
 
 		if($getInsertID === false){
 			if($multiple != false){ // Check if not false or not empty
 				$mask = '('.implode(', ', $objectName_).')';
-				foreach($multiple as $row){
-					$objectData[] = &$row;
+				foreach($multiple as &$row){
 					$query .= ",$mask";
+
+					for($i = 0; $i < count($columns); $i++){
+						$objectData[] = &$row[$columns[$i]];
+					}
 				}
 			}
 			return $this->query($query, $objectData);
