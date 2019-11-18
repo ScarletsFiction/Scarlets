@@ -43,6 +43,8 @@ class Handler{
 				$_REQUEST[$key] = $value = str_replace('../', '/', $value);
 			}
 		}
+
+		if(isset($_FILES))
 		foreach ($_FILES as $field => &$val) {
 			if(strpos($key, '../') !== false){
 				\Scarlets\Log::message('Security: Request from '.$_SERVER['REMOTE_ADDR'].' was denied');
