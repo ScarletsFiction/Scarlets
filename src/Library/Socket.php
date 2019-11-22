@@ -27,16 +27,15 @@ class Socket{
         $clients = [$sock];
 
         $write = $except = NULL; // We doesn't use this
-        $second = 1;
         $garbageWaiting = 0; // Max to 100
 
         // Avoid too many function call in loop
         while(1){
-            usleep(10); // Avoid CPU Burn
+            usleep(10);
             $read = $clients; // $read client that have data
-            
+
             // Check if there are some data from client that can be read
-            if(socket_select($read, $write, $except, $second) === 0)
+            if(socket_select($read, $write, $except, 0) === 0)
                 continue;
 
             // Check for new client connection

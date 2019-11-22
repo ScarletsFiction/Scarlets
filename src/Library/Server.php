@@ -60,7 +60,7 @@ class Server {
 		self::setHeader($cookie);
 	}
 
-	public static function start($port, $address, $options){
+	public static function start($port, $address, &$options){
 		// Use this console as web server
 		Scarlets::Website();
 
@@ -84,7 +84,7 @@ class Server {
 	    echo "\nUse CTRL+C 2 times to exit\n\n";
 
 		// Create the socket server
-		Scarlets\Library\Socket::create($address, $port, function($socket, $data) use($options) {
+		Scarlets\Library\Socket::create($address, $port, function($socket, &$data) use(&$options) {
 			self::$requestMicrotime = microtime(true);
 
 		    // Run any start event if exist
@@ -177,12 +177,14 @@ class Server {
 
 		    // Output request to the console
 		    if($options & 1)
-		    	print_r("$_SERVER[REMOTE_ADDR] ($headers[METHOD])> $headers[URI]");
+		    	print_r(Scarlets\Console::chalk($_SERVER['REMOTE_ADDR'], 'gray', true)." ".
+		    		Scarlets\Console::chalk($headers['METHOD'], 'green')."> ".
+		    		Scarlets\Console::chalk($headers['URI'], 'yellow'));
 
 		    $httpstatuscode = self::request($socket, $headers, $body);
 
 		    if($options & 1){
-				print_r(" [$httpstatuscode]\n");
+				print_r(Scarlets\Console::chalk(" [$httpstatuscode]\n", 'green'));
 				print_r($headers['User-Agent']."\n");
 		    }
 
