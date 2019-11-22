@@ -55,7 +55,7 @@ class AccessToken{
 					'app_id' => 'int(11)',
 					'user_id' => 'int(11)',
 					'expiration' => 'int(11)',
-					'permissions' => ['text', 'COLLATE', 'latin1_swedish_ci']
+					'permissions' => ['text', 'COLLATE', 'latin1_bin']
 				]);
 			});
 
@@ -63,7 +63,7 @@ class AccessToken{
 			self::$db->onTableMissing($config['app_table'], function(){
 				self::$db->createTable($config['app_table'], [
 					'app_id' => ['bigint(19)', 'primary', 'key', 'AUTO_INCREMENT'],
-					'app_secret' => ['text', 'COLLATE', 'latin1_swedish_ci']
+					'app_secret' => ['text', 'COLLATE', 'latin1_bin']
 				]);
 			});
 
@@ -125,7 +125,8 @@ class AccessToken{
 			$permissions = &self::$db->hmGet(self::$token_table."$temp[0]:$temp[2]:$temp[1]", ['permissions'])['permissions'];
 		else
 			$permissions = self::$db->get(self::$token_table, 'permissions', [
-				'token_id'=>self::$tokenID, 'user_id'=>self::$userID
+				'token_id'=>self::$tokenID,
+				'user_id'=>self::$userID
 			]);
 
 		if(!$permissions || self::$expiration <= time()){
