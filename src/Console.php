@@ -22,6 +22,7 @@ class Console{
 		];
 	*/
 	public static $commands = [];
+	public static $commandList = []; // for autocompletion
 	public static $commandsDescription = [];
 	public static $found = false;
 	public static $args = false;
@@ -352,6 +353,11 @@ class Console{
 		if($description)
 			self::$commandsDescription[$key] = &$description;
 
+		if(!isset(self::$commandList[$key]))
+			self::$commandList[$key] = ['help'=>&$description];
+		elseif(self::$commandList[$key]['help'] === '')
+			self::$commandList[$key]['help'] = &$description;
+
 		if($special)
 			$key = "$key.s";
 		else
@@ -390,6 +396,11 @@ class Console{
 			trigger_error("Console help's pattern can't have a space ($pattern)");
 
 		self::$commands["$pattern.h"] = &$callback;
+
+		if(!isset(self::$commandList[$pattern]))
+			self::$commandList[$pattern] = ['help'=>&$callback];
+		elseif(self::$commandList[$pattern]['help'] === '')
+			self::$commandList[$pattern]['help'] = &$callback;
 	}
 
 	public static function isConsole(){
@@ -633,19 +644,33 @@ class Console{
 
 	private static $oldConsoleContent = '';
 	public static function redraw($content){
-		
+		// ToDo
 	}
 
-	function &waitKey($timeout = false, $callbackLoop = false){
-	    if(is_callable('readline_callback_handler_install') === false)
-	        die("`Console::listenKey` wouldn't work because `readline_callback_handler_install` was undefined on this PHP distribution");
+	// backspace-> "\b" ; tab-> "\t" ; space-> " "
+	public static function &waitKey($timeout = false, $callbackLoop = false){
+	    // If you find this polyfill and want to copy it, please credit to StefansArya
+		$polyfill = false;
+
+	    // Add polyfill
+	    if(is_callable('readline_callback_handler_install') === false){
+	    	$polyfill = proc_open(__DIR__.'/Internal/Console_getch.bat', [
+	    	    STDIN,
+	    	    ['pipe', 'w']
+	    	], $pipes);
+
+	   		$stdin = $pipes[1];
+	    }
+	    else{
+	    	readline_callback_handler_install('', function(){});
+	   		$stdin = STDIN;
+	    }
 
 	    if($timeout !== false)
 	        $timeout *= 1000000;
 
-	    readline_callback_handler_install('', function(){});
+	    $read = [$stdin];
 	    $write = $except = NULL; // We doesn't use this
-	    $read = [STDIN];
 
 	    if($callbackLoop){
 	        while(1){
@@ -661,11 +686,18 @@ class Console{
 	                continue;
 	            }
 
-	            if($callbackLoop(stream_get_contents(STDIN, 1)) === true)
+	        	$char = mb_substr(stream_get_contents($stdin, 2), 0, 1);
+	        	if($char === "\r")
+	        		continue;
+
+	            if($callbackLoop($char) === true)
 	                break;
 	        }
 
-	        readline_callback_handler_remove();
+	        if($polyfill === false)
+	        	readline_callback_handler_remove();
+	        else proc_terminate($polyfill);
+
 	        return $write;
 	    }
 	    else{
@@ -675,19 +707,24 @@ class Console{
 	        if(count($read) === 0)
 	            return $write;
 
-	        $char = stream_get_contents(STDIN, 1);
-	        readline_callback_handler_remove();
+	        $char = mb_substr(stream_get_contents($stdin, 2), 0, 1);
+
+	        if($polyfill === false)
+	        	readline_callback_handler_remove();
+	        else proc_terminate($polyfill);
+
 	        return $char;
 	    }
 	}
 
 	private static function autoComplete(&$currentText, &$index){
-		$info = readline_info(); // line_buffer => all text, point => total length
+		$info = readline_info('line_buffer'); // line_buffer => all text, point => total length
 
 		$matches = ['aye', 'eya'];
 
 		self::saveCursor();
-		print_r([$currentText, $index, $info]);
+		$desc = print_r([$currentText, $index, $info], true);
+		echo self::style('<black lighter>'.str_replace("\n", "\n\033[K\r", $desc).'</black>');
 		self::loadCursor();
 		return $matches;
 	}
