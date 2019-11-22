@@ -51,6 +51,10 @@ class Console{
 
 		\Scarlets::$interactiveCLI = true;
 
+		readline_completion_function(function($input, $index){
+			return self::autoComplete($input, $index);
+		});
+
 		$config = &\Scarlets\Config::$data;
 		while(1){
 			if(self::interpreter(readline($config['app.console_user'].'> ')))
@@ -435,7 +439,11 @@ class Console{
 		return $list;
 	}
 
+	// https://misc.flogisoft.com/bash/tip_colors_and_formatting
 	public static function chalk($text, $color = 'green', $lighter = false, $background = null){
+		if(is_string($color) === false) // $lighter => isBackground
+			return sprintf("\x1b[%s8;5;%sm%s\x1b[0m", $lighter ? 4 : 3, $color, $text);
+
 		if($color === 'black')
 			$color = '30';
 		elseif($color === 'red')
@@ -624,7 +632,7 @@ class Console{
 	}
 
 	private static $oldConsoleContent = '';
-	public static function rewrite($content){
+	public static function redraw($content){
 		
 	}
 
@@ -671,6 +679,17 @@ class Console{
 	        readline_callback_handler_remove();
 	        return $char;
 	    }
+	}
+
+	private static function autoComplete(&$currentText, &$index){
+		$info = readline_info(); // line_buffer => all text, point => total length
+
+		$matches = ['aye', 'eya'];
+
+		self::saveCursor();
+		print_r([$currentText, $index, $info]);
+		self::loadCursor();
+		return $matches;
 	}
 
 	public static function nested($name, $nest){
