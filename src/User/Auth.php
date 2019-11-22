@@ -34,9 +34,9 @@ class Auth{
 		self::$database->onTableMissing(self::$table, function(){
 			self::$database->createTable(self::$table, [
 				'user_id' => ['bigint(19)', 'primary', 'key', 'AUTO_INCREMENT'],
-				'username' => ['text', 'COLLATE', 'latin1_swedish_ci'],
-				'password' => ['text', 'COLLATE', 'latin1_swedish_ci'],
-				'email' => ['text', 'COLLATE', 'latin1_swedish_ci'],
+				'username' => ['text', 'COLLATE', 'latin1_bin'],
+				'password' => ['text', 'COLLATE', 'latin1_bin'],
+				'email' => ['text', 'COLLATE', 'latin1_bin'],
 				'failed_login' => ['tinyint(10)', 'default', 0],
 				'login_time' => ['int(11)', 'default', 0],
 				'last_created' => ['int(11)', 'default', 0]
@@ -75,7 +75,7 @@ class Auth{
 			if(filter_var($username, FILTER_VALIDATE_EMAIL))
 				return 'Email not valid';
 
-			$where_ = ['email[~]'=>";$username"];
+			$where_ = ['email[,]'=>$username];
 		}
 
 		// Username
@@ -167,7 +167,7 @@ class Auth{
 		$temp = self::$database->get(self::$table, ['user_id', 'username'], [
 			'OR'=>[
 				'username'=>$data['username'],
-				'email[~]'=>";$data[email]"
+				'email[,]'=>$data['email']
 			]
 		]);
 
@@ -177,15 +177,27 @@ class Auth{
 			return 'Email already used';
 		}
 
-		// Add email separator for preserving multiple email
-		$data['email'] = ";$data[email]";
-
 		// Hash password
 		$data['password'] = password_hash($data['password'], PASSWORD_BCRYPT, ['cost'=>10]);
 		if(!$data['password']) trigger_error('Failed to hash password');
 
 		$userID = self::$database->insert(self::$table, $data, true);
 		return $userID;
+	}
+
+	// Add email into user_id/username
+	// return true if success
+	// return 'error message'
+	public static function addEmail($userID, $email){
+		// Validate email
+		if(!filter_var($email, FILTER_VALIDATE_EMAIL))
+			return 'Email not valid';
+
+		if(self::$database->type === 'SQL' && self::$database->has(self::$table, ['email[,]'=>$email]))
+			return 'Email already used';
+
+		self::$database->update(self::$table, ['email[,]'=>$email], ['user_id'=>$userID]);
+		return true;
 	}
 }
 Auth::init();
