@@ -31,11 +31,10 @@ class Socket{
 
         // Avoid too many function call in loop
         while(1){
-            usleep(10);
             $read = $clients; // $read client that have data
 
             // Check if there are some data from client that can be read
-            if(socket_select($read, $write, $except, 0) === 0)
+            if(socket_select($read, $write, $except, 1) === 0)
                 continue;
 
             // Check for new client connection

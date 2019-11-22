@@ -47,15 +47,13 @@ class Console{
 	public static function interactiveShell(){
 		// self::clear();
 		echo("Welcome to ScarletsFramework!\n\n");
-		$fp = fopen('php://stdin','r');
 		$lastInput = microtime();
 
 		\Scarlets::$interactiveCLI = true;
 
 		$config = &\Scarlets\Config::$data;
 		while(1){
-			echo($config['app.console_user'].'> ');
-			if(self::interpreter(rtrim(fgets($fp, 1024))))
+			if(self::interpreter(readline($config['app.console_user'].'> ')))
 		    	break;
 
  			// Too fast or caused by CTRL+Z then enter
@@ -68,7 +66,6 @@ class Console{
 		    $lastInput = $time;
 		}
 
-		fclose($fp);
 		exit;
 	}
 
@@ -628,6 +625,55 @@ class Console{
 
 	private static $oldConsoleContent = '';
 	public static function rewrite($content){
+		
+	}
+
+	function &waitKey($timeout = false, $callbackLoop = false){
+	    if(is_callable('readline_callback_handler_install') === false)
+	        die("`Console::listenKey` wouldn't work because `readline_callback_handler_install` was undefined on this PHP distribution");
+
+	    if($timeout !== false)
+	        $timeout *= 1000000;
+
+	    readline_callback_handler_install('', function(){});
+	    $write = $except = NULL; // We doesn't use this
+	    $read = [STDIN];
+
+	    if($callbackLoop){
+	        while(1){
+	            $read_ = $read; // Make a copy
+
+	            if($timeout !== false)
+	                stream_select($read_, $write, $except, 0, $timeout);
+
+	            if(count($read_) === 0){
+	                if($callbackLoop(false) === true)
+	                    break;
+
+	                continue;
+	            }
+
+	            if($callbackLoop(stream_get_contents(STDIN, 1)) === true)
+	                break;
+	        }
+
+	        readline_callback_handler_remove();
+	        return $write;
+	    }
+	    else{
+	        if($timeout !== false)
+	            stream_select($read, $write, $except, 0, $timeout);
+
+	        if(count($read) === 0)
+	            return $write;
+
+	        $char = stream_get_contents(STDIN, 1);
+	        readline_callback_handler_remove();
+	        return $char;
+	    }
+	}
+
+	public static function nested($name, $nest){
 		
 	}
 }
