@@ -46,7 +46,7 @@ class Handler{
 
 		if(isset($_FILES))
 		foreach ($_FILES as $field => &$val) {
-			if(strpos($key, '../') !== false){
+			if(strpos($field, '../') !== false){
 				\Scarlets\Log::message('Security: Request from '.$_SERVER['REMOTE_ADDR'].' was denied');
 				Route\Serve::end("Your request was invalid!");
 			}
