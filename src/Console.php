@@ -52,11 +52,6 @@ class Console{
 
 		\Scarlets::$interactiveCLI = true;
 
-		self::waitKey(10, function(&$char){
-			echo $char;
-		});
-		exit;
-
 		readline_completion_function(function($input, $index){
 			return self::autoComplete($input, $index);
 		});
