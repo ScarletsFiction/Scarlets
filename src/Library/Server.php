@@ -71,7 +71,13 @@ class Server {
 		$_SERVER['SERVER_NAME'] = &$address;
 
 	    echo Scarlets\Console::chalk("\nScarlets server started on ", 'green');
-	    if($address !== 'public')
+
+	    if($address === 'public'){
+	    	$address = 'network';
+	    	echo "Deprecated: `public` parameter was will changed into `network`\n";
+	    }
+
+	    if($address !== 'network')
 	   		echo 'http://'.$address.($port !== 80 ? ':'.$port : '');
 	   	else {
 	   		$IPs = Scarlets\Library\Socket::getIPAddress();
