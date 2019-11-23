@@ -22,7 +22,7 @@ class Console{
 		];
 	*/
 	public static $commands = [];
-	public static $commandList = []; // for autocompletion
+	public static $nested = []; // for autocompletion
 	public static $commandsDescription = [];
 	public static $found = false;
 	public static $args = false;
@@ -40,7 +40,7 @@ class Console{
 		// Start executing command
 		else{
 			if(in_array($argv[1], ['/h', '/?', '-h', '--help']))
-				$argv = ['help'];
+				$argv = ['desc'];
 			self::interpreter(array_values($argv));
 		}
 	}
@@ -51,6 +51,11 @@ class Console{
 		$lastInput = microtime();
 
 		\Scarlets::$interactiveCLI = true;
+
+		self::waitKey(10, function(&$char){
+			echo $char;
+		});
+		exit;
 
 		readline_completion_function(function($input, $index){
 			return self::autoComplete($input, $index);
@@ -72,6 +77,10 @@ class Console{
 		}
 
 		exit;
+	}
+
+	private static function autoShell(){
+
 	}
 
 	public static function &waitInput(){
@@ -353,10 +362,10 @@ class Console{
 		if($description)
 			self::$commandsDescription[$key] = &$description;
 
-		if(!isset(self::$commandList[$key]))
-			self::$commandList[$key] = ['help'=>&$description];
-		elseif(self::$commandList[$key]['help'] === '')
-			self::$commandList[$key]['help'] = &$description;
+		if(!isset(self::$nested[$key]))
+			self::$nested[$key] = ['desc'=>&$description];
+		elseif(self::$nested[$key]['desc'] === '')
+			self::$nested[$key]['desc'] = &$description;
 
 		if($special)
 			$key = "$key.s";
@@ -397,10 +406,10 @@ class Console{
 
 		self::$commands["$pattern.h"] = &$callback;
 
-		if(!isset(self::$commandList[$pattern]))
-			self::$commandList[$pattern] = ['help'=>&$callback];
-		elseif(self::$commandList[$pattern]['help'] === '')
-			self::$commandList[$pattern]['help'] = &$callback;
+		if(!isset(self::$nested[$pattern]))
+			self::$nested[$pattern] = ['desc'=>&$callback];
+		elseif(self::$nested[$pattern]['desc'] === '')
+			self::$nested[$pattern]['desc'] = &$callback;
 	}
 
 	public static function isConsole(){
@@ -654,7 +663,10 @@ class Console{
 
 	    // Add polyfill (ToDo: non blocking)
 	    if(is_callable('readline_callback_handler_install') === false){
-	    	$polyfill = proc_open(__DIR__.'/Internal/Console_getch.bat', [
+	    	if(self::compilePolyfill() === false)
+	    		return $polyfill;
+
+	    	$polyfill = proc_open(__DIR__.'/Internal/Console_getch.exe', [
 	    	    STDIN,
 	    	    ['pipe', 'w']
 	    	], $pipes);
@@ -668,6 +680,9 @@ class Console{
 
 	   	stream_set_blocking($stdin, 0);
 
+	   	if($timeout === 0 || $timeout === null)
+	   		$timeout = false;
+
 	    if($timeout !== false){
 	        $timeout *= 1000000;
 
@@ -678,8 +693,8 @@ class Console{
 	    $read = [$stdin];
 	    $write = $except = NULL; // We doesn't use this
 
-	    if($callbackLoop){
-	        while(1){
+	    if($callbackLoop){$i=3;
+	        while($i--){
 	            $read_ = $read; // Make a copy
 
 	            if($timeout !== false)
@@ -692,22 +707,9 @@ class Console{
 	                continue;
 	            }
 
-	        	if($polyfill !== false){
-		        	$char = fread($stdin, 8);
-
-		        	if($char === "z\r"){ // pressed enter
-		        		fread($stdin, 8);
-		        		if($callbackLoop("\n") === true)
-		        		    break;
-		        		continue;
-		        	}
-
-					$char = mb_substr($char, 0, 1);
-
-		        	if($char === "\r")
-		        		continue;
-		        }
-		        else $char = fread($stdin, 8);
+	        	if($polyfill !== false)
+		        	$char = str_replace("\r\n", '', fread($stdin, 16));
+		        else $char = fread($stdin, 16);
 
 	            if($callbackLoop($char) === true)
 	                break;
@@ -715,7 +717,7 @@ class Console{
 
 	        if($polyfill === false)
 	        	readline_callback_handler_remove();
-	        else proc_terminate($polyfill);
+	        else exec('taskkill /f /im Console_getch.exe 2> NULL');
 
 	        return $write;
 	    }
@@ -728,16 +730,12 @@ class Console{
 	            return $write;
 
 	        if($polyfill !== false){
-		        $char = fread($stdin, 8);
+		        $char = str_replace("\r\n", '', fread($stdin, 16));
 
-		        if($char === "z\r") // pressed enter
-		        	 $char = "\n";
-		       	else $char = mb_substr($char, 0, 1);
-
-		       	proc_terminate($polyfill);
+		       	exec('taskkill /f /im Console_getch.exe 2> NULL');
 		    }
 		    else{
-		    	$char = fread($stdin, 8);
+		    	$char = fread($stdin, 16);
 		    	readline_callback_handler_remove();
 		    }
 
@@ -745,19 +743,45 @@ class Console{
 	    }
 	}
 
-	private static function autoComplete(&$currentText, &$index){
-		$info = readline_info('line_buffer'); // line_buffer => all text, point => total length
+	private static function compilePolyfill(){
+		if(file_exists(__DIR__.'/Internal/Console_getch.exe'))
+			return true;
+	
+		echo "\nCompiling console polyfill for Win32...";
 
+		$use = 'gcc';
+		if(exec("which $use 2> NULL") === ''){
+			$use = 'clang';
+
+			if(exec("which $use 2> NULL") === ''){
+				$use = 'cl';
+
+				if(exec("which $use 2> NULL") === ''){
+					echo "\nCompile failed: gcc, clang, or cl was not found";
+					return false;
+				}
+			}
+		}
+
+		exec("$use ".__DIR__."/Internal/Console_getch.cpp -O3 -o ".__DIR__."/Internal/Console_getch.exe");
+		return true; 
+	}
+
+	// $nested = [$name=>$nest]
+	public static function nested($name, $nest){
+		$nested[$name] = &$nest;
+	}
+
+	// Find candidate from $nested
+	private static function autoComplete(&$currentText, &$index){ // $currentText-> after space this will be empty
+		$info = readline_info('line_buffer'); // line_buffer-> all text, point-> total length
 		$matches = ['aye', 'eya'];
 
 		self::saveCursor();
 		$desc = print_r([$currentText, $index, $info], true);
 		echo self::style('<black lighter>'.str_replace("\n", "\n\033[K\r", $desc).'</black>');
 		self::loadCursor();
-		return $matches;
-	}
 
-	public static function nested($name, $nest){
-		
+		return $matches;
 	}
 }
