@@ -22,7 +22,7 @@ Console::command('cls', function(){
 
 Console::command('test', function(){
 	$testsPath = Scarlets::$registry['path.app'].'/tests';
-	$tests = Scarlets\Library\FileSystem\LocalFile::contents($testsPath);
+	$tests = Scarlets\Library\FileSystem\LocalFile::search($testsPath, '/\.php$/', true);
 
 	echo "Current memory allocation: ";
 	echo \Scarlets\Extend\Strings::formatBytes(memory_get_usage());
@@ -33,7 +33,7 @@ Console::command('test', function(){
 	$it = '\Scarlets\Internal\UnitTest::it';
 	$describe = '\Scarlets\Internal\UnitTest::describe';
 	foreach ($tests as &$file) {
-		require_once "$testsPath/$file";
+		require_once $file;
 	}
 
 	exit(\Scarlets\Internal\UnitTest::$haveError ? 1 : 0);
