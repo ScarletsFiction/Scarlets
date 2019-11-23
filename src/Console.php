@@ -644,15 +644,15 @@ class Console{
 
 	private static $oldConsoleContent = '';
 	public static function redraw($content){
-		// ToDo
+		// ToDo: write array to console window
 	}
 
-	// backspace-> "\b" ; tab-> "\t" ; space-> " "
+	// backspace-> "\b" ; tab-> "\t" ; enter-> "\n" ; space-> " "
 	public static function &waitKey($timeout = false, $callbackLoop = false){
 	    // If you find this polyfill and want to copy it, please credit to StefansArya
 		$polyfill = false;
 
-	    // Add polyfill
+	    // Add polyfill (ToDo: non blocking)
 	    if(is_callable('readline_callback_handler_install') === false){
 	    	$polyfill = proc_open(__DIR__.'/Internal/Console_getch.bat', [
 	    	    STDIN,
@@ -666,8 +666,14 @@ class Console{
 	   		$stdin = STDIN;
 	    }
 
-	    if($timeout !== false)
+	   	stream_set_blocking($stdin, 0);
+
+	    if($timeout !== false){
 	        $timeout *= 1000000;
+
+	        if(stream_get_meta_data($stdin)['blocked'] === true)
+	        	echo self::chalk("[Win32 bug] stream timeout can't be triggered\n", 'red');
+	    }
 
 	    $read = [$stdin];
 	    $write = $except = NULL; // We doesn't use this
@@ -686,9 +692,22 @@ class Console{
 	                continue;
 	            }
 
-	        	$char = mb_substr(stream_get_contents($stdin, 2), 0, 1);
-	        	if($char === "\r")
-	        		continue;
+	        	if($polyfill !== false){
+		        	$char = fread($stdin, 8);
+
+		        	if($char === "z\r"){ // pressed enter
+		        		fread($stdin, 8);
+		        		if($callbackLoop("\n") === true)
+		        		    break;
+		        		continue;
+		        	}
+
+					$char = mb_substr($char, 0, 1);
+
+		        	if($char === "\r")
+		        		continue;
+		        }
+		        else $char = fread($stdin, 8);
 
 	            if($callbackLoop($char) === true)
 	                break;
@@ -702,16 +721,25 @@ class Console{
 	    }
 	    else{
 	        if($timeout !== false)
-	            stream_select($read, $write, $except, 0, $timeout);
+	            if(false === stream_select($read, $write, $except, 0, $timeout))
+	            	die("stream_select failed");
 
 	        if(count($read) === 0)
 	            return $write;
 
-	        $char = mb_substr(stream_get_contents($stdin, 2), 0, 1);
+	        if($polyfill !== false){
+		        $char = fread($stdin, 8);
 
-	        if($polyfill === false)
-	        	readline_callback_handler_remove();
-	        else proc_terminate($polyfill);
+		        if($char === "z\r") // pressed enter
+		        	 $char = "\n";
+		       	else $char = mb_substr($char, 0, 1);
+
+		       	proc_terminate($polyfill);
+		    }
+		    else{
+		    	$char = fread($stdin, 8);
+		    	readline_callback_handler_remove();
+		    }
 
 	        return $char;
 	    }
