@@ -62,8 +62,11 @@ class Console{
 					$ord = ord($char);
 
 					// exit on CTRL+C, CTRL+Z, or the listener was killed
-					if($ord === 3 || $ord === 26 || $char === '')
+					if($ord === 3 || $ord === 26 || $char === ''){
+				    	echo('Shutting down Scarlets Console...');
+				    	self::clearShadow();
 						return true;
+					}
 
 					AutoShell::write($char);
 				});
@@ -93,7 +96,7 @@ class Console{
 			// self::waitKey(0, function(&$char){
 			// 	AutoShell::write($char);
 			// });
-			
+
 			readline_completion_function(function($input, $index){
 				return AutoComplete::readline($input, $index);
 			});
@@ -137,7 +140,7 @@ class Console{
 		return $result;
 	}
 
-	private static function interpreter($pattern){
+	public static function interpreter($pattern){
 		if(\Scarlets::$interactiveCLI === true){ // parse line
 			if($pattern === ''){
 				echo("\r");
@@ -673,12 +676,23 @@ class Console{
 		echo "\e[?25h";
 	}
 
+	private static $shadowLine = 0;
 	public static function writeShadow($text){
-		$text = str_replace("\n", "\n\033[K\r", $text);
-
 		echo "\e[?25l\033[s"; //save
+		echo str_repeat("\n\033[K\r", self::$shadowLine); // clear last line
+		echo "\033[u\e[?25h"; //load
 		echo "\e[90m$text\x1b[0m"; //write on gray color
 		echo "\033[u\e[?25h"; //load
+
+		self::$shadowLine = substr_count($text, "\n");
+	}
+
+	public static function clearShadow(){
+		echo "\e[?25l\033[s"; //save
+		echo str_repeat("\n\033[K\r", self::$shadowLine); // clear last line
+		echo "\033[u\e[?25h"; //load
+
+		self::$shadowLine = 0;
 	}
 
 	public static function size(){

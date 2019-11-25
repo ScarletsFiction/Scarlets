@@ -71,8 +71,17 @@ class AutoShell{
 			self::redraw();
 		}
 		elseif($ord === 13){ // enter
-			echo "\n$current";
+			Console::clearShadow();
+
+			echo "\n";
+			Console::interpreter($current);
+			echo self::$leftText;
+
 			self::$cursorIndex = self::$maxIndex = 0;
+			self::$writtenToShell = '';
+			self::$writtenLength = [];
+			self::$ban = 0;
+			return;
 		}
 		else{
 			$current = substr_replace($current, $char, self::countCharCode(0, self::$cursorIndex), 0);
@@ -87,7 +96,7 @@ class AutoShell{
 			echo "\033[{$len}C";
 		}
 
-		self::debug();
+		// self::debug();
 	}
 
 	private static function countCharCode($start, $end){
