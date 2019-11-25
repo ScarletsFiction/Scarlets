@@ -1,5 +1,7 @@
 <?php 
 namespace Scarlets;
+use \Scarlets\Internal\Console\AutoShell;
+use \Scarlets\Internal\Console\AutoComplete;
 
 /*
 ---------------------------------------------------------------------------
@@ -51,31 +53,68 @@ class Console{
 		$lastInput = microtime();
 
 		\Scarlets::$interactiveCLI = true;
-
-		readline_completion_function(function($input, $index){
-			return self::autoComplete($input, $index);
-		});
-
 		$config = &\Scarlets\Config::$data;
-		while(1){
-			if(self::interpreter(readline($config['app.console_user'].'> ')))
-		    	break;
+		echo $config['app.console_user'].'> ';
 
- 			// Too fast or caused by CTRL+Z then enter
- 			$time = microtime();
-		    if($lastInput === $time){
-		    	echo('Shutting down Scarlets Console...');
-		    	break;
-		    }
+		if(PHP_OS === 'WINNT' || PHP_OS === 'WIN32'){
+			if(self::compilePolyfill()){ //  // using console polyfill
+				self::waitKey(0, function(&$char){
+					$ord = ord($char);
 
-		    $lastInput = $time;
+					// exit on CTRL+C, CTRL+Z, or the listener was killed
+					if($ord === 3 || $ord === 26 || $char === '')
+						return true;
+
+					AutoShell::write($char);
+				});
+			}
+			else{
+				readline_completion_function(function($input, $index){
+					return AutoComplete::readline($input, $index);
+				});
+
+				while(1){
+					if(self::interpreter(readline($config['app.console_user'].'> ')))
+				    	break;
+
+					// Too fast or caused by CTRL+Z then enter
+					$time = microtime();
+				    if($lastInput === $time){
+				    	echo('Shutting down Scarlets Console...');
+				    	break;
+				    }
+
+				    $lastInput = $time;
+					echo $config['app.console_user'].'> ';
+				}
+			}
+		}
+		else{
+			// self::waitKey(0, function(&$char){
+			// 	AutoShell::write($char);
+			// });
+			
+			readline_completion_function(function($input, $index){
+				return AutoComplete::readline($input, $index);
+			});
+
+			while(1){
+				if(self::interpreter(readline($config['app.console_user'].'> ')))
+			    	break;
+
+				// Too fast or caused by CTRL+Z then enter
+				$time = microtime();
+			    if($lastInput === $time){
+			    	echo('Shutting down Scarlets Console...');
+			    	break;
+			    }
+
+			    $lastInput = $time;
+				echo $config['app.console_user'].'> ';
+			}
 		}
 
 		exit;
-	}
-
-	private static function autoShell(){
-
 	}
 
 	public static function &waitInput(){
@@ -634,6 +673,14 @@ class Console{
 		echo "\e[?25h";
 	}
 
+	public static function writeShadow($text){
+		$text = str_replace("\n", "\n\033[K\r", $text);
+
+		echo "\e[?25l\033[s"; //save
+		echo "\e[90m$text\x1b[0m"; //write on gray color
+		echo "\033[u\e[?25h"; //load
+	}
+
 	public static function size(){
 		$line = explode("\n    ", `mode`);
 		$found = ['lines'=>0, 'columns'=>0];
@@ -651,6 +698,7 @@ class Console{
 		// ToDo: write array to console window
 	}
 
+	private static $shutdownWaitKey = false;
 	// backspace-> "\b" ; tab-> "\t" ; enter-> "\n" ; space-> " "
 	public static function &waitKey($timeout = false, $callbackLoop = false){
 	    // If you find this polyfill and want to copy it, please credit to StefansArya
@@ -667,6 +715,11 @@ class Console{
 	    	], $pipes);
 
 	   		$stdin = $pipes[1];
+
+	   		if(self::$shutdownWaitKey === false)
+		   		\Scarlets::onShutdown(function(){
+		   			exec('taskkill /f /im Console_getch.exe 2> NULL');
+		   		}, true);
 	    }
 	    else{
 	    	readline_callback_handler_install('', function(){});
@@ -688,8 +741,8 @@ class Console{
 	    $read = [$stdin];
 	    $write = $except = NULL; // We doesn't use this
 
-	    if($callbackLoop){$i=3;
-	        while($i--){
+	    if($callbackLoop){
+	        while(true){
 	            $read_ = $read; // Make a copy
 
 	            if($timeout !== false)
@@ -703,8 +756,8 @@ class Console{
 	            }
 
 	        	if($polyfill !== false)
-		        	$char = str_replace("\r\n", '', fread($stdin, 16));
-		        else $char = fread($stdin, 16);
+		        	$char = str_replace("\r\n", '', fread($stdin, 64));
+		        else $char = fread($stdin, 64);
 
 	            if($callbackLoop($char) === true)
 	                break;
@@ -725,12 +778,12 @@ class Console{
 	            return $write;
 
 	        if($polyfill !== false){
-		        $char = str_replace("\r\n", '', fread($stdin, 16));
+		        $char = str_replace("\r\n", '', fread($stdin, 64));
 
 		       	exec('taskkill /f /im Console_getch.exe 2> NULL');
 		    }
 		    else{
-		    	$char = fread($stdin, 16);
+		    	$char = fread($stdin, 64);
 		    	readline_callback_handler_remove();
 		    }
 
@@ -765,18 +818,5 @@ class Console{
 	// $nested = [$name=>$nest]
 	public static function nested($name, $nest){
 		$nested[$name] = &$nest;
-	}
-
-	// Find candidate from $nested
-	private static function autoComplete(&$currentText, &$index){ // $currentText-> after space this will be empty
-		$info = readline_info('line_buffer'); // line_buffer-> all text, point-> total length
-		$matches = ['aye', 'eya'];
-
-		self::saveCursor();
-		$desc = print_r([$currentText, $index, $info], true);
-		echo self::style('<black lighter>'.str_replace("\n", "\n\033[K\r", $desc).'</black>');
-		self::loadCursor();
-
-		return $matches;
 	}
 }
