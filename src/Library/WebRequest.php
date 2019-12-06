@@ -437,16 +437,21 @@ class WebRequest{
 	// From client browser to this server
 	public static function receiveFile($field, $directory, $allowedExt, $rename = ''){
 		if(!empty($_FILES)){
+			if($directory === '')
+				return false;
+
 			$file = &$_FILES[$field];
 			$targetFile = realpath($directory).'/'. ($rename !== '' ? $rename : $file['name']);
 
 			// Validate the filetype
-			$extension = strtolower(pathinfo($file['name'])['extension']);
-			if(in_array($extension, $allowedExt)){
-				// Save the file
-				move_uploaded_file($file['tmp_name'], $targetFile);
-				return true;
-			} 
+			if(isset($file['name']) && strpos($file['name'], '.') !== false){
+				$extension = strtolower(pathinfo($file['name'])['extension']);
+				if(in_array($extension, $allowedExt)){
+					// Save the file
+					move_uploaded_file($file['tmp_name'], $targetFile);
+					return true;
+				} 
+			}
 
 			// The file type wasn't allowed
 			else return false;
