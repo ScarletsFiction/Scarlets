@@ -437,8 +437,10 @@ class WebRequest{
 	// From client browser to this server
 	public static function receiveFile($field, $directory, $allowedExt, $rename = ''){
 		if(!empty($_FILES)){
-			if($directory === '')
+			if($directory === ''){
+				\Scarlets\Log::message("Cannot upload because the directory path was empty");
 				return false;
+			}
 
 			$file = &$_FILES[$field];
 			$targetFile = realpath($directory).'/'. ($rename !== '' ? $rename : $file['name']);
