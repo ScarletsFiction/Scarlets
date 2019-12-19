@@ -237,7 +237,7 @@ class AccessToken{
 		// Simplify structure
 		return Crypto::encrypt(implode('|', [
 			self::$appID,
-			self::$tokenID,
+			self::$tokenID+0,
 			self::$userID,
 			self::$expiration
 		]), false, false, true);

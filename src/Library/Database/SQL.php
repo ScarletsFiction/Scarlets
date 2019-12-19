@@ -659,16 +659,19 @@ class SQL{
 			return $this->query($query, $objectData);
 		}
 
+		if($getInsertID === true || $getInsertID === 1)
+			$getInsertID = NULL;
+
 		// The script below will only be executer for taking all the insert ID
 		$statement = $this->query($query, $objectData);
-		$lastInsertId = $this->connection->lastInsertId();
+		$lastInsertId = $this->connection->lastInsertId($getInsertID);
 
 		// Multiple insert
 		if($multiple !== false){ // Check if not false
 			$lastInsertId = [$lastInsertId];
 			foreach($multiple as $row){
 				$statement->execute($row);
-				$lastInsertId[] = $this->connection->lastInsertId();
+				$lastInsertId[] = $this->connection->lastInsertId($getInsertID);
 			}
 		}
 

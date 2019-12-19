@@ -182,7 +182,7 @@ class Auth{
 		if(!$data['password']) trigger_error('Failed to hash password');
 
 		$userID = self::$database->insert(self::$table, $data, true);
-		return $userID;
+		return $userID+0;
 	}
 
 	// Add email into user_id/username
