@@ -1,6 +1,7 @@
 <?php
 namespace Scarlets\Library;
 use \Scarlets;
+use \Scarlets\Library\FileSystem\LocalFile;
 
 /*
 	It would be better if language translation are
@@ -33,7 +34,7 @@ class Language{
 				$empty = '';
 
 				// Protect from path climbing
-				$file = str_replace(['./', '../'], $empty, $file);
+				$file = LocalFile::realpath($file);
 
 				if(!file_exists("$path/$file.php"))
 					return $empty;

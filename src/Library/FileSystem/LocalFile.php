@@ -20,7 +20,7 @@ class LocalFile{
 		self::$storage = &$config['filesystem.storage'];
 	}
 
-	private static function realpath(&$path, $createDir = false){
+	public static function realpath(&$path, $createDir = false){
 		if($path[0] !== '{')
 			return;
 
@@ -28,7 +28,7 @@ class LocalFile{
 		$ref = &self::$storage[substr($path[0], 1)];
 
 		// Avoid path climbing
-		$path = str_replace(['../', '..\\', '//', '\\\\'], '/', $ref['path'].$path[1]);
+		$path = preg_replace('/\/{2,}|\\\\{2,}|(?:^|\/|\\\\)\.{2,}(?:\/|\\\\)|(?:\/|\\\\)\.{2,}/m', '', $ref['path'].$path[1]);
 
 		if($createDir && isset($ref['auto-directory']) &&
 			$ref['auto-directory'] === true &&
