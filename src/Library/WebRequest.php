@@ -1,6 +1,7 @@
 <?php 
 namespace Scarlets\Library;
 use \Scarlets;
+use \Scarlets\Library\FileSystem\LocalFile;
 use \Scarlets\Extend\Strings;
 
 class WebRequest{
@@ -438,12 +439,12 @@ class WebRequest{
 	public static function receiveFile($field, $directory, $allowedExt, $rename = ''){
 		if(!empty($_FILES)){
 			if($directory === ''){
-				\Scarlets\Log::message("Cannot upload because the directory path was empty");
+				\Scarlets\Log::message("Can't save file because the directory path was empty");
 				return false;
 			}
 
 			$file = &$_FILES[$field];
-			$targetFile = realpath($directory).'/'. ($rename !== '' ? $rename : $file['name']);
+			$targetFile = LocalFile::realpath("$directory/". ($rename !== '' ? $rename : $file['name']));
 
 			// Validate the filetype
 			if(isset($file['name']) && strpos($file['name'], '.') !== false){

@@ -26,7 +26,9 @@ class LocalFile{
 
 		$path = explode('}', $path);
 		$ref = &self::$storage[substr($path[0], 1)];
-		$path = preg_replace('/(?:\/|^)\.+?(?:\/|$)/', '/', $ref['path'].$path[1]);
+
+		// Avoid path climbing
+		$path = str_replace(['../', '..\\', '//', '\\\\'], '/', $ref['path'].$path[1]);
 
 		if($createDir && isset($ref['auto-directory']) &&
 			$ref['auto-directory'] === true &&

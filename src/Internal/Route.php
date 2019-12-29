@@ -5,7 +5,6 @@ use \Scarlets;
 use \Scarlets\Internal;
 
 class Handler{
-	public static $Extension = false;
 	public static function Initialize(){
 		// Create some reference to registry
 		Scarlets\Route::$instantOutput = &Scarlets\Config::$data['app.instant'];
@@ -21,44 +20,17 @@ class Handler{
 
 	// ==> Implement global request security
 	public static function security(){
-		foreach ($_GET as $key => &$value) {
-			if(strpos($key, '../') !== false){
-				\Scarlets\Log::message('Security: Request from '.$_SERVER['REMOTE_ADDR'].' was denied');
-				Route\Serve::end("Your request was invalid!");
-			}
-
-			if(is_string($value) && strpos($value, '../') !== false){
-				\Scarlets\Log::message('Warning: Trailing path were removed from the query');
-				$_REQUEST[$key] = $value = str_replace('../', '/', $value);
-			}
-		}
-		foreach ($_POST as $key => &$value) {
-			if(strpos($key, '../') !== false){
-				\Scarlets\Log::message('Security: Request from '.$_SERVER['REMOTE_ADDR'].' was denied');
-				Route\Serve::end("Your request was invalid!");
-			}
-
-			if(is_string($value) && strpos($value, '../') !== false){
-				\Scarlets\Log::message('Warning: Trailing path were removed from the query');
-				$_REQUEST[$key] = $value = str_replace('../', '/', $value);
-			}
-		}
-
+		// Avoid path transversal on file upload
 		if(isset($_FILES))
 		foreach ($_FILES as $field => &$val) {
-			if(strpos($field, '../') !== false){
+			if(strpos($field, '..') !== false && (strpos($field, '../') !== false || strpos($field, '..\\') !== false)){
 				\Scarlets\Log::message('Security: Request from '.$_SERVER['REMOTE_ADDR'].' was denied');
 				Route\Serve::end("Your request was invalid!");
 			}
 
-			if(strpos($val['name'], '../') !== false)
-				$val['name'] = str_replace('../', '/', $val['name']);
+			if(strpos($val['name'], '..') !== false && (strpos($val['name'], '../') !== false || strpos($val['name'], '..\\') !== false))
+				$val['name'] = str_replace(['../', '..\\'], '/', $val['name']);
 		}
-	}
-
-	public static function initExtension(){
-		self::$Extension = new Extension();
-		return self::$Extension;
 	}
 
 	public static function register($method, &$path, &$function, &$opts = false){
