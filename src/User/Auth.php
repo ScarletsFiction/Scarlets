@@ -177,9 +177,11 @@ class Auth{
 			return 'Email already used';
 		}
 
+		$data['email'] = ",$data[email],";
+
 		// Hash password
 		$data['password'] = password_hash($data['password'], PASSWORD_BCRYPT, ['cost'=>10]);
-		if(!$data['password']) trigger_error('Failed to hash password');
+		if(!$data['password']) throw new Exception('Failed to hash password');
 
 		$userID = self::$database->insert(self::$table, $data, true);
 		return $userID+0;
