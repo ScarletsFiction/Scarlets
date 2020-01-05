@@ -24,7 +24,10 @@ class Language{
 
 		self::$loaded_[] = "$languageID$file";
 
+		// Protect from path climbing
 		$path = Scarlets::$registry['path.lang']."/$languageID/";
+		LocalFile::realpath($path);
+
 		if(file_exists($path)){
 			$loaded[$languageID] = [];
 			$ref = &$loaded[$languageID];
@@ -32,9 +35,6 @@ class Language{
 			// Single load
 			if($file !== 0 && !Scarlets::$isConsole){
 				$empty = '';
-
-				// Protect from path climbing
-				$file = LocalFile::realpath($file);
 
 				if(!file_exists("$path/$file.php"))
 					return $empty;
@@ -55,12 +55,12 @@ class Language{
 			}
 			return $ref;
 		}
-		trigger_error("LanguageID not exist: $languageID", 1);
+		throw new Exception("LanguageID not exist: $languageID", 1);
 	}
 
-	public static function get($key, $values = [], $languageID=false){
+	public static function get($key, $values=null, $languageID=null){
 		$loaded = &self::$loaded;
-		if($languageID === false)
+		if($languageID === null)
 			$languageID = &self::$default;
 
 		$key = explode('.', $key);
@@ -74,12 +74,13 @@ class Language{
 			if(isset($ret[$k]) === false)
 				return '';
 
-			$ret = $ret[$k];
+			$ret = &$ret[$k];
 		}
 
-		foreach ($values as $key => &$value) {
-			$ret = str_replace("{{$key}}", $value, $ret);
-		}
+		if($values !== null)
+			foreach ($values as $key => &$value) {
+				$ret = str_replace("{{$key}}", $value, $ret);
+			}
 
 		return $ret;
 	}

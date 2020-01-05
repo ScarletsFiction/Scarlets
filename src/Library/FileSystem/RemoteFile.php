@@ -189,7 +189,9 @@ class RemoteFile{
 			}
 
 			if($action === 'download'){
-				WebRequest::giveFiles(LocalFile::realpath($prefix.$_POST['args'][0]));
+				$path = $prefix.$_POST['args'][0];
+				LocalFile::realpath($path);
+				WebRequest::giveFiles($path);
 				exit;
 			}
 

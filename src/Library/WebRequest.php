@@ -444,14 +444,15 @@ class WebRequest{
 			}
 
 			$file = &$_FILES[$field];
-			$targetFile = LocalFile::realpath("$directory/". ($rename !== '' ? $rename : $file['name']));
+			$path = "$directory/". ($rename !== '' ? $rename : $file['name']);
+			LocalFile::realpath($path);
 
 			// Validate the filetype
 			if(isset($file['name']) && strpos($file['name'], '.') !== false){
 				$extension = strtolower(pathinfo($file['name'])['extension']);
 				if(in_array($extension, $allowedExt)){
 					// Save the file
-					move_uploaded_file($file['tmp_name'], $targetFile);
+					move_uploaded_file($file['tmp_name'], $path);
 					return true;
 				} 
 			}
