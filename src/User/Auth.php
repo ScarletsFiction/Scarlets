@@ -178,6 +178,7 @@ class Auth{
 		}
 
 		$data['email'] = ",$data[email],";
+		$data['username'] = strtolower($data['username']);
 
 		// Hash password
 		$data['password'] = password_hash($data['password'], PASSWORD_BCRYPT, ['cost'=>10]);
