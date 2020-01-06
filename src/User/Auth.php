@@ -159,7 +159,10 @@ class Auth{
 		if(!filter_var($data['email'], FILTER_VALIDATE_EMAIL))
 			return 'Email not valid';
 
-		if(gethostbyname($data['email']) === $data['email'])
+		$emailDomain = explode('@', $data['email'])[1];
+
+		getmxrr($emailDomain, $mx);
+		if(empty($mx))
 			return 'Email not valid';
 
 		// Validate username
