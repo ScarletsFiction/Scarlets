@@ -21,14 +21,15 @@ class LocalFile{
 	}
 
 	public static function realpath(&$path, $createDir = false){
+		// Avoid path climbing
+		$path = preg_replace('/\/{2,}|\\\\{2,}|(?:^|\/|\\\\)\.{2,}(?:\/|\\\\)|(?:\/|\\\\)\.{2,}/m', '', $path);
+		$path = str_replace(["\033", "\r"], '', $path);
+
 		if($path[0] !== '{')
 			return;
 
 		$path = explode('}', $path);
 		$ref = &self::$storage[substr($path[0], 1)];
-
-		// Avoid path climbing
-		$path = preg_replace('/\/{2,}|\\\\{2,}|(?:^|\/|\\\\)\.{2,}(?:\/|\\\\)|(?:\/|\\\\)\.{2,}|\\033|\r/m', '', $ref['path'].$path[1]);
 
 		if($createDir && isset($ref['auto-directory']) &&
 			$ref['auto-directory'] === true &&
