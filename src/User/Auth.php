@@ -72,7 +72,7 @@ class Auth{
 
 		// Email
 		if(strpos($username, '@') > 3){
-			if(filter_var($username, FILTER_VALIDATE_EMAIL))
+			if(!filter_var($username, FILTER_VALIDATE_EMAIL))
 				return 'Email not valid';
 
 			$where_ = ['email[,]'=>$username];
