@@ -159,6 +159,9 @@ class Auth{
 		if(!filter_var($data['email'], FILTER_VALIDATE_EMAIL))
 			return 'Email not valid';
 
+		if(gethostbyname($data['email']) === $data['email'])
+			return 'Email not valid';
+
 		// Validate username
 		if(strlen(preg_replace('/[^a-zA-Z0-9]/', '', $data['username'])) < strlen($data['username']))
 			return 'Username not valid';
