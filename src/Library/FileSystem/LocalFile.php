@@ -30,6 +30,7 @@ class LocalFile{
 
 		$path = explode('}', $path);
 		$ref = &self::$storage[substr($path[0], 1)];
+		$path = $ref['path'].$path[1];
 
 		if($createDir && isset($ref['auto-directory']) &&
 			$ref['auto-directory'] === true &&
