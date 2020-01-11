@@ -443,8 +443,11 @@ class WebRequest{
 				return false;
 			}
 
+			if(substr($directory, -1) !== '/')
+				$directory += '/';
+
 			$file = &$_FILES[$field];
-			$path = "$directory/". ($rename !== '' ? $rename : $file['name']);
+			$path = $directory.($rename !== '' ? $rename : $file['name']);
 			LocalFile::realpath($path);
 
 			// Validate the filetype

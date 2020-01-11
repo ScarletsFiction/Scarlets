@@ -205,6 +205,10 @@ function log($msg){
 	Log::message($msg);
 }
 
+function trace($msg){
+	Log::trace($msg);
+}
+
 // Always show error on travis
 if(getenv('CI'))
 	ini_set('display_errors', 1);

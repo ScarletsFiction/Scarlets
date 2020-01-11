@@ -25,20 +25,23 @@ class LocalFile{
 		$path = preg_replace('/\/{2,}|\\\\{2,}|(?:^|\/|\\\\)\.{2,}(?:\/|\\\\)|(?:\/|\\\\)\.{2,}/m', '', $path);
 		$path = str_replace(["\033", "\r"], '', $path);
 
-		if($path[0] !== '{')
-			return;
-
-		$path = explode('}', $path);
-		$ref = &self::$storage[substr($path[0], 1)];
-		$path = $ref['path'].$path[1];
+		if($path[0] === '{'){
+			$path = explode('}', $path);
+			$ref = &self::$storage[substr($path[0], 1)];
+			$path = $ref['path'].$path[1];
+		}
 
 		if($createDir && isset($ref['auto-directory']) &&
 			$ref['auto-directory'] === true &&
 			strpos($path, '.') === false &&
 			is_file($path) === false &&
 			is_dir($path) === false
-		)
-			self::mkdir(dirname($path));
+		){
+			if(substr($path, -1) === '/'){
+				self::mkdir($path);
+			}
+			else self::mkdir(dirname($path));
+		}
 	}
 
 	public static function path($path){
