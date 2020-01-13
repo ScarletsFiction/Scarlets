@@ -2,7 +2,7 @@
 namespace Scarlets\Library;
 use \Scarlets;
 use \Scarlets\Library\FileSystem\LocalFile;
-use \Scarlets\Extend\Strings;
+use \Scarlets\Extend\MimeType;
 
 class WebRequest{
 	public static $userAgent = 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Safari/537.36';
@@ -150,7 +150,7 @@ class WebRequest{
 				$file_ext = $path_parts['extension'];
 
 			$streamable = in_array($file_ext, ['swf', 'pdf', 'gif', 'png', 'jpeg', 'jpg', 'ra', 'ram', 'ogg', 'wav', 'wmv', 'avi', 'asf', 'divx', 'mp3', 'mp4', 'mpeg', 'mpg', 'mpe', 'mov', 'swf', '3gp', 'm4a', 'aac', 'm3u']);
-		    $ctype = Strings::mimeType($file_ext);
+		    $ctype = MimeType::getMimeType($file_ext);
 
 			if($streamable){
 				header('Content-Disposition: inline;');
@@ -434,9 +434,9 @@ class WebRequest{
 			$options_[CURLOPT_HEADER] = 1;
 	}
 
-	// allowedExt = array
+	// allowedTypes = array
 	// From client browser to this server
-	public static function receiveFile($field, $directory, $allowedExt, $rename = ''){
+	public static function receiveFile($field, $directory, $allowedTypes, $rename = ''){
 		if(!empty($_FILES)){
 			if($directory === ''){
 				\Scarlets\Log::message("Can't save file because the directory path was empty");
@@ -446,22 +446,42 @@ class WebRequest{
 			if(substr($directory, -1) !== '/')
 				$directory += '/';
 
-			$file = &$_FILES[$field];
-			$path = $directory.($rename !== '' ? $rename : $file['name']);
-			LocalFile::realpath($path);
+			$isArray = false;
+			$fileName = &$_FILES[$field]['name'];
+			$fileTemp = &$_FILES[$field]['tmp_name'];
 
-			// Validate the filetype
-			if(isset($file['name']) && strpos($file['name'], '.') !== false){
-				$extension = strtolower(pathinfo($file['name'])['extension']);
-				if(in_array($extension, $allowedExt)){
+			if(is_array($fileName) === false){
+				$fileName = [$fileName];
+				$fileTemp = [$fileTemp];
+			}
+			else $isArray = true;
+
+			for ($i=0, $n=count($fileName); $i < $n; $i++) { 
+				$path = $directory.($rename !== '' ? ($isArray ? $i.$rename : $rename) : $fileName[$i]);
+
+				// Remove invalid filename character
+				$real = strlen($path);
+				$path = iconv("UTF-8", "UTF-8//IGNORE", $path);
+
+				// Use timestamp if no valid character left
+				if(strlen($path) !== $real && ($path === '' || $path[0] === '.'))
+					$path = time().rand(1,1e3).$path;
+
+				// Validate save path
+				LocalFile::realpath($path);
+
+				// Validate the filetype
+				if(MimeType::compare(mime_content_type($fileTemp[$i]), $allowedTypes)){
 					// Save the file
-					move_uploaded_file($file['tmp_name'], $path);
-					return true;
-				} 
+					move_uploaded_file($fileTemp[$i], $path);
+					continue;
+				}
+
+				// The file type wasn't allowed
+				else return false;
 			}
 
-			// The file type wasn't allowed
-			else return false;
+			return true;
 		}
 		return false;
 	}
