@@ -459,9 +459,9 @@ class WebRequest{
 			for ($i=0, $n=count($fileName); $i < $n; $i++) { 
 				$path = $directory.($rename !== '' ? ($isArray ? $i.$rename : $rename) : $fileName[$i]);
 
-				// Remove invalid filename character
+				// Remove invalid word character
 				$real = strlen($path);
-				$path = iconv("UTF-8", "UTF-8//IGNORE", $path);
+				$path = preg_replace('/[^\\pN\\pL.\\/:;\'"\\[\\]{}!@#$%^&*()_+\\-=|]+/', '', $path);
 
 				// Use timestamp if no valid character left
 				if(strlen($path) !== $real && ($path === '' || $path[0] === '.'))
