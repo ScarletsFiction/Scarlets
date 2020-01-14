@@ -18,21 +18,6 @@ class Handler{
 		}
 	}
 
-	// ==> Implement global request security
-	public static function security(){
-		// Avoid path transversal on file upload
-		if(isset($_FILES))
-		foreach ($_FILES as $field => &$val) {
-			if(strpos($field, '..') !== false && (strpos($field, '../') !== false || strpos($field, '..\\') !== false)){
-				\Scarlets\Log::message('Security: Request from '.$_SERVER['REMOTE_ADDR'].' was denied');
-				Route\Serve::end("Your request was invalid!");
-			}
-
-			if(strpos($val['name'], '..') !== false && (strpos($val['name'], '../') !== false || strpos($val['name'], '..\\') !== false))
-				$val['name'] = str_replace(['../', '..\\'], '/', $val['name']);
-		}
-	}
-
 	public static function register($method, &$path, &$function, &$opts = false){
 		$name = [];
 		if($opts !== false){
@@ -137,8 +122,8 @@ class Serve{
 				$ref = &self::$pending[$level][2];
 
 			if($ref === false)
-				trigger_error("Pending serves was not found (index: $level | total: ".(count(self::$pendingLevel) - 1).')');
-				
+				throw new Exception("Pending serves was not found (index: $level | total: ".(count(self::$pendingLevel) - 1).')');
+
 			$ref = array_merge($ref, $func);
 			return;
 		}

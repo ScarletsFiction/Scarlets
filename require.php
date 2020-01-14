@@ -93,8 +93,6 @@ class Scarlets{
 			}
 		}
 
-		Route\Handler::security();
-
 		try{
 			// Include required router
 			if(self::$maintenance === true && self::$isConsole === false)
