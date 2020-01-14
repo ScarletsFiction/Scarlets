@@ -99,8 +99,6 @@ class MimeType{
     	if(is_array($mimeType) && is_array($extension))
     		throw \Exception("Only single parameter allowed to be an array");
 
-    	\Scarlets\log([$mimeType, $extension]);
-
     	if(is_array($mimeType)){
     		foreach ($extension as &$val) {
     			$ext = &self::$mimeTypes[$val];
