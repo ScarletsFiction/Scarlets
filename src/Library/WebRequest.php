@@ -461,7 +461,7 @@ class WebRequest{
 
 				// Remove invalid word character
 				$real = strlen($path);
-				$path = preg_replace('/[^\\pN\\pL.\\/:;\'"\\[\\]{}!@#$%^&*()_+\\-=|]+/', '', $path);
+				$path = preg_replace('/[^\\pN\\pL.\\/:;\'"\\\\\/\\[\\]{}!@#$%^&*()_+\\-=|]+/', '', $path);
 
 				// Use timestamp if no valid character left
 				if(strlen($path) !== $real && ($path === '' || $path[0] === '.'))
