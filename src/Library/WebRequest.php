@@ -352,6 +352,9 @@ class WebRequest{
 			$options_[CURLOPT_SSL_VERIFYPEER] = &$options['ssl'];
 		}
 
+		if(isset($options['interface']))
+			$options_[CURLOPT_INTERFACE] = &$options['interface'];
+
 		if(isset($options['header'])) # ['X-Custom'=>'values']
 			$headers = array_merge($headers, $options['header']);
 
