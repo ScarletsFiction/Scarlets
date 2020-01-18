@@ -202,6 +202,12 @@ class Auth{
 		if(!filter_var($email, FILTER_VALIDATE_EMAIL))
 			return 'Email not valid';
 
+		$emailDomain = explode('@', $email)[1];
+
+		getmxrr($emailDomain, $mx);
+		if(empty($mx))
+			return 'Email not valid';
+
 		if(self::$database->type === 'SQL' && self::$database->has(self::$table, ['email[,]'=>$email]))
 			return 'Email already used';
 
