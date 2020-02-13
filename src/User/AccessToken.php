@@ -251,7 +251,7 @@ class AccessToken{
 		}
 
 		if(self::$driver === 'redis')
-			self::$db->unlink(self::$token_table."$appID:$userID:$tokenID", $obj);
+			self::$db->unlink(self::$token_table."$appID:$userID:$tokenID");
 		else {
 			$where = ['app_id'=>$appID, 'user_id'=>$userID];
 			if($tokenID !== '*')
