@@ -10,6 +10,7 @@
 
 namespace Scarlets\User;
 use \Scarlets;
+use \Exception;
 use \Scarlets\Config;
 use \Scarlets\User\Session;
 use \Scarlets\Library\Database;
@@ -136,7 +137,7 @@ class Auth{
 			// Check if zero or empty
 			else if(!$data['userID'] || !$sify['userID'])
 				return false;
-			
+
 			// All ok
 			else{
 				if($returnBool) return true;
