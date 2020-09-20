@@ -2,6 +2,7 @@
 namespace Scarlets\Library;
 use \Scarlets;
 use \Scarlets\Library\FileSystem\LocalFile;
+use \Exception;
 
 /*
 	It would be better if language translation are
@@ -14,7 +15,7 @@ class Language{
 
 	/*
 		> Initialize
-	
+
 		(id) Storage ID that configured on the application
 	*/
 	public static function &load($languageID, $file=0){

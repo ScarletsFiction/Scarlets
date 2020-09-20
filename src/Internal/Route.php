@@ -3,6 +3,7 @@
 namespace Scarlets\Route;
 use \Scarlets;
 use \Scarlets\Internal;
+use \Exception;
 
 class Handler{
 	public static function Initialize(){
@@ -24,7 +25,7 @@ class Handler{
 			if(is_string($opts))
 				$opts = [$opts];
 
-			for ($i = count($opts) - 1; $i >= 0; $i--) { 
+			for ($i = count($opts) - 1; $i >= 0; $i--) {
 				if(strpos($opts[$i], 'name:') !== false){
 					$name[] = substr($opts[$i], 5);
 					array_splice($opts, $i, 1);
@@ -61,6 +62,7 @@ class Serve{
 		'Scarlets\Route\Query'
 	];
 
+	// $values key must be static
 	public static function view($path, $values = []){
 		if(Scarlets::$isConsole && !self::$headerSent)
 			self::status(200);
@@ -76,7 +78,7 @@ class Serve{
 		$csrf = &self::$classReference[2];
 		$q = &self::$classReference[3];
 
-		// User defined variable
+		// Dynamic defined variable
 		foreach ($values as $key => &$value)
 			${$key} = $value;
 
@@ -107,7 +109,7 @@ class Serve{
 
 		$path = Scarlets::$registry['path.plate'].'/'.str_replace('.', '/', $path).'.php';
 		include $path;
-		
+
 		// Mark callable pending to true
 		if(self::$pendingLevel !== 0)
 			self::$pending[self::$pendingLevel][1] = true;
@@ -163,13 +165,13 @@ class Serve{
 	public static function status($statusCode, $headerOnly = false){
 		if(self::$headerSent) return;
 
-		if(Scarlets::$isConsole === true) 
+		if(Scarlets::$isConsole === true)
 			Scarlets\Route::$statusCode = &$statusCode ?: 500;
 		else
 			http_response_code($statusCode ?: 500);
 
 		if($headerOnly) return;
-		
+
 		$router = &Scarlets::$registry['Route']['STATUS'];
 
 		if(isset($router[$statusCode])){
@@ -208,7 +210,7 @@ class Serve{
 
 		self::$pendingLevel = 0;
 	}
-	
+
 	// $http = http status like 307 or redirect method like POST
 	public static function redirect($to, $http = 307, $data = false){
 		if(!is_numeric($http)){

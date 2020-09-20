@@ -5,6 +5,7 @@ use \Scarlets\Route;
 use \Scarlets\Route\Serve;
 use \Scarlets\Extend\Strings;
 use \Scarlets\Library\WebRequest;
+use \Exception;
 
 /*
 ---------------------------------------------------------------------------
@@ -144,7 +145,7 @@ class RemoteFile{
 
 				// Check IP Address
 				(isset($credential['allow-ip']) !== false && (
-					is_array($credential['allow-ip']) ? 
+					is_array($credential['allow-ip']) ?
 						($credential['allow-ip'] !== $_SERVER['REMOTE_ADDR']) : (!in_array($_SERVER['REMOTE_ADDR'], $credential['allow-ip'])
 					)
 				))
