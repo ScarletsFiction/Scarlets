@@ -17,6 +17,8 @@ class Strings{
 		}catch(\Exception $e){
 			return '';
 		}
+
+		return $found;
 	}
 
 	public static function formatBytes($bytes, $precision = 2){
@@ -25,27 +27,31 @@ class Strings{
 		$pow = floor(($bytes ? log($bytes) : 0) / log(1024));
 		$pow = min($pow, count($units) - 1);
 		$bytes /= pow(1024, $pow);
-	
+
 		return round($bytes, $precision) . '' . $units[$pow];
 	}
 
 	public static function &utf8ize(&$d){
 		if(is_array($d)){
 			$k = array_keys($d);
-			for ($i=0; $i < count($k); $i++) { 
+			for ($i=0; $i < count($k); $i++) {
 				self::utf8ize($d[$k[$i]]);
 			}
 		}
 
 		else if(is_object($d)){
 			$k = array_keys($d);
-			for ($i=0; $i < count($k); $i++) { 
+			for ($i=0; $i < count($k); $i++) {
 				self::utf8ize($d->$k[$i]);
 			}
 		}
 
 		$d = iconv('UTF-8', 'UTF-8//IGNORE', $d);
 		return $d;
+	}
+
+	public static function escapeHTML(&$str){
+		return htmlentities($str, ENT_QUOTES | ENT_HTML401 | ENT_SUBSTITUTE | ENT_DISALLOWED, 'UTF-8', true);
 	}
 
 	public static function &random($length=6, $withSymbol=false){
@@ -58,7 +64,7 @@ class Strings{
 
 		if($withSymbol)
 		$characters = array_merge($characters, ['`', '~', '!', '@', '#', '$',
-			'%', '^', '&', '*', '(', ')', '_', '-', '+', '=', '{', '[', '}', 
+			'%', '^', '&', '*', '(', ')', '_', '-', '+', '=', '{', '[', '}',
 		':', ';', '|', '\\', '"', '\'', '<', ',', '>', '.', '/', '?', ' ']);
 
 		if(is_array($length) === true)
