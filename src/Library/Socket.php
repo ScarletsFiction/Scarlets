@@ -130,11 +130,11 @@ class Socket{
 		$socket = socket_create(AF_INET, SOCK_STREAM, $protocol === 'udp' ? SOL_UDP : SOL_TCP);
 
 		if($socket === false)
-			throw new \Exception(socket_strerror(socket_last_error()));
+			trigger_error(socket_strerror(socket_last_error()));
 
 		$result = socket_connect($socket, $ip, $port);
 		if ($result === false)
-			throw new \Exception(socket_strerror(socket_last_error($socket)));
+			trigger_error(socket_strerror(socket_last_error($socket)));
 
 		return new SocketClient($socket);
 	}
