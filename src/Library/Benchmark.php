@@ -6,6 +6,7 @@ class Benchmark{
 
 	// Return elapsed time in seconds
 	public static function this($func){
+		sleep(1);
 		$start = microtime(true);
 		for ($i=0, $n=self::$iteration; $i < $n; $i++) { 
 			$func();
