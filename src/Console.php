@@ -1,4 +1,4 @@
-<?php 
+<?php
 namespace Scarlets;
 use \Scarlets\Internal\Console\AutoShell;
 use \Scarlets\Internal\Console\AutoComplete;
@@ -13,8 +13,7 @@ use \Scarlets\Internal\Console\AutoComplete;
 */
 
 class Console{
-
-	/* 
+	/*
 		> Registered Commands
 
 		$commands[firstword.argCount] = [
@@ -25,11 +24,47 @@ class Console{
 	*/
 	public static $commands = [];
 	public static $nested = []; // for autocompletion
-	public static $commandsDescription = [];
+	public static $commandsDesc = [];
 	public static $found = false;
 	public static $args = false;
 
+	// $import = ['database'=>'scarletsfiction/scarlets'];
+	public static $import = [];
+	private static $importing = false; // string
+
+	public static $registeredEnv = [];
+	public static $currentEnv = [];
+
+	public static function export($func){
+		$func();
+	}
+
+	public static function environment($name, $func=false){
+		if(self::$importing !== false)
+			return;
+
+		if($func !== false)
+			return self::registerEnv($name, $func);
+
+		self::$currentEnv[] = &$name;
+	}
+
+	public static function exitEnvironment(){
+		array_pop(self::$currentEnv);
+	}
+
+	private static function registerEnv($name, $func=false){
+		self::$registeredEnv[$name] = [];
+		self::$commands = &self::$registeredEnv[$name];
+
+		if($func !== false){
+			$func();
+		}
+	}
+
 	public static function Initialization(){
+		self::$currentEnv['root'] = &self::$commands;
+
 		$argv = &$_SERVER['argv'];
 		unset($argv[0]);
 
@@ -42,7 +77,8 @@ class Console{
 		// Start executing command
 		else{
 			if(in_array($argv[1], ['/h', '/?', '-h', '--help']))
-				$argv = ['desc'];
+				$argv = ['help'];
+
 			self::interpreter(array_values($argv));
 		}
 	}
@@ -57,7 +93,7 @@ class Console{
 		echo $config['app.console_user'].'> ';
 
 		if(PHP_OS === 'WINNT' || PHP_OS === 'WIN32'){
-			if(self::compilePolyfill()){ //  // using console polyfill
+			if(self::compilePolyfill()){ // using console polyfill
 				self::waitKey(0, function(&$char){
 					$ord = ord($char);
 
@@ -102,8 +138,10 @@ class Console{
 			});
 
 			while(1){
-				if(self::interpreter(readline($config['app.console_user'].'> ')))
-			    	break;
+				try{
+					if(self::interpreter(readline($config['app.console_user'].'> ')))
+				    	break;
+				}catch(\Scarlets\SoftStop $e){}
 
 				// Too fast or caused by CTRL+Z then enter
 				$time = microtime();
@@ -156,165 +194,177 @@ class Console{
 		$pattern = array_values($pattern);
 		$argsLen = count($pattern);
 
-		if($argsLen === 1 && in_array($pattern[0], ['/h', '/?', '-h', '--help'])){
+		try{
+			if(in_array(end($pattern), ['/h', '/?', '-h', '--help'])){
+				if($argsLen === 1 && isset(self::$commands["$firstword.h"])){ // display help if exist
+					$commands = &self::$commands["$firstword.h"];
+					echo("\n");
+					if(is_callable($commands)) $commands();
+					else print_r($commands);
+					echo("\n");
+					return;
+				}
+				else{ // display list of available command
+					$available = [];
+					foreach (self::$commands as $key => &$value) {
+						$key = explode('.', $key)[0];
+
+						if($key === $firstword){
+
+						}
+					}
+					return;
+				}
+			}
+
+			$key = "$firstword.$argsLen";
+			$commands = false;
+			if(isset(self::$commands[$key])){
+				$commands = &self::$commands[$key];
+
+				// Check if zero argument
+				if($argsLen === 0){
+					$return = call_user_func($commands);
+					if($return){
+						if(is_array($return) === true)
+							echo json_encode($return, JSON_PRETTY_PRINT);
+						else echo("\n$return");
+					}
+					echo("\n");
+					return $return;
+				}
+			} else {
+				// Check for registered special args
+				$key = "$firstword.s";
+				if(isset(self::$commands[$key])){
+					$commands = &self::$commands[$key];
+				}
+			}
+
+			if($commands){
+				// $command = [[types], [args], callback];
+				// if not have argument $command = callback;
+				foreach($commands as &$command){
+					$matched = false;
+					$uniqueCheck = 0;
+
+					// Check arguments
+					$uniques = &$command[0];
+					$args = &$command[1];
+
+					for ($i=0; $i < count($args); $i++) {
+						// It's unique
+						if(isset($uniques[$uniqueCheck]) && $uniques[$uniqueCheck] === $i){
+							$matched = true;
+							$uniqueCheck++;
+						}
+						else {
+							// true if all argument index exist
+							if(isset($args[$i]) && isset($pattern[$i])){
+								if($args[$i] === $pattern[$i]) // static args was equal
+									$matched = true;
+
+								else{ // dynamic args was equal
+									$begin = explode('{', $args[$i])[0];
+									if($begin !== '' && explode($begin, $pattern[$i])[0] === ''){
+										$matched = false;
+										continue 2;
+									}
+
+									// Check if match the end
+									$end = explode('}', $args[$i]);
+									if(count($end) === 1 || end($end) !== ''){
+										$end = explode(end($end), $pattern[$i]);
+										if(count($end) === 1 || end($end) !== ''){
+											$matched = false;
+											continue 2;
+										}
+									}
+
+									$matched = true;
+								}
+							}
+
+							else{
+								$matched = false;
+								continue 2;
+							}
+						}
+					}
+
+					if(count($args) > $argsLen) // Don't match empty space
+						continue;
+
+					if($matched){
+						// Process the unique arguments
+						$arguments = [];
+						$argumentsNamed = [];
+						for ($i=0, $n=count($uniques); $i < $n; $i++) {
+							$index = &$uniques[$i];
+
+							$number = str_replace(['{', '}'], '', $args[$index]);
+							if($number === '*'){
+								self::$args = [];
+
+								// Merge left arguments
+								$number = count($arguments);
+								$arguments[$number] = '';
+								self::$args = array_slice($pattern, $index);
+								$arguments[$number] = implode(' ', self::$args);
+								break;
+							}
+
+							if(!is_numeric($number)){
+								$argumentsNamed[$number] = $pattern[$index];
+								continue;
+							}
+
+							$arguments[$number] = $pattern[$index];
+						}
+
+						ksort($arguments);
+
+						if(count($argumentsNamed) !== 0){
+							if(is_string($command[2]))
+								$reflection = new \ReflectionMethod($command[2]);
+							else
+								$reflection = new \ReflectionFunction($command[2]);
+
+							$params = $reflection->getParameters();
+
+							for ($i=0, $n=count($params); $i < $n; $i++) {
+								$name = $params[$i]->name;
+							    if(isset($argumentsNamed[$name]))
+							    	array_splice($arguments, $i, 0, $argumentsNamed[$name]);
+							}
+						}
+
+						$return = call_user_func_array($command[2], $arguments);
+						if($return){
+							if(is_array($return) === true)
+								echo json_encode($return, JSON_PRETTY_PRINT);
+							else echo("\n".$return);
+						}
+						echo("\n");
+
+						// Reset
+						self::$args = false;
+						self::$found = false;
+						return $return;
+					}
+				}
+			}
+
 			if(isset(self::$commands["$firstword.h"])){
-				echo("\n");
 				$commands = &self::$commands["$firstword.h"];
 				if(is_callable($commands)) $commands();
 				else print_r($commands);
 				echo("\n");
 				return;
 			}
-		}
 
-		$key = "$firstword.$argsLen";
-		$commands = false;
-		if(isset(self::$commands[$key])){
-			$commands = &self::$commands[$key];
-
-			// Check if zero argument
-			if($argsLen === 0){
-				$return = call_user_func($commands);
-				if($return){
-					if(is_array($return) === true)
-						echo json_encode($return, JSON_PRETTY_PRINT);
-					else echo("\n$return");
-				}
-				echo("\n");
-				return $return;
-			}
-		} else {
-			// Check for registered special args
-			$key = "$firstword.s";
-			if(isset(self::$commands[$key])){
-				$commands = &self::$commands[$key];
-			}
-		}
-
-		if($commands){
-			// $command = [[types], [args], callback];
-			// if not have argument $command = callback;
-			foreach($commands as &$command){
-				$matched = false;
-				$uniqueCheck = 0;
-
-				// Check arguments
-				$uniques = &$command[0];
-				$args = &$command[1];
-
-				for ($i=0; $i < count($args); $i++) {
-					// It's unique
-					if(isset($uniques[$uniqueCheck]) && $uniques[$uniqueCheck] === $i){
-						$matched = true;
-						$uniqueCheck++;
-					}
-					else {
-						// true if all argument index exist
-						if(isset($args[$i]) && isset($pattern[$i])){
-							if($args[$i] === $pattern[$i]) // static args was equal
-								$matched = true;
-
-							else{ // dynamic args was equal
-								$begin = explode('{', $args[$i])[0];
-								if($begin !== '' && explode($begin, $pattern[$i])[0] === ''){
-									$matched = false;
-									continue 2;
-								}
-
-								// Check if match the end
-								$end = explode('}', $args[$i]);
-								if(count($end) === 1 || end($end) !== ''){
-									$end = explode(end($end), $pattern[$i]);
-									if(count($end) === 1 || end($end) !== ''){
-										$matched = false;
-										continue 2;
-									}
-								}
-
-								$matched = true;
-							}
-						}
-
-						else{
-							$matched = false;
-							continue 2;
-						}
-					}
-				}
-
-				if(count($args) > $argsLen) // Don't match empty space
-					continue;
-
-				if($matched){
-					// Process the unique arguments
-					$arguments = [];
-					$argumentsNamed = [];
-					for ($i=0, $n=count($uniques); $i < $n; $i++) {
-						$index = &$uniques[$i];
-
-						$number = str_replace(['{', '}'], '', $args[$index]);
-						if($number === '*'){
-							self::$args = [];
-
-							// Merge left arguments
-							$number = count($arguments);
-							$arguments[$number] = '';
-							self::$args = array_slice($pattern, $index);
-							$arguments[$number] = implode(' ', self::$args);
-							break;
-						}
-
-						if(!is_numeric($number)){
-							$argumentsNamed[$number] = $pattern[$index];
-							continue;
-						}
-
-						$arguments[$number] = $pattern[$index];
-					}
-
-					ksort($arguments);
-
-					if(count($argumentsNamed) !== 0){
-						if(is_string($command[2]))
-							$reflection = new \ReflectionMethod($command[2]);
-						else
-							$reflection = new \ReflectionFunction($command[2]);
-
-						$params = $reflection->getParameters();
-
-						for ($i=0, $n=count($params); $i < $n; $i++) {
-							$name = $params[$i]->name;
-						    if(isset($argumentsNamed[$name]))
-						    	array_splice($arguments, $i, 0, $argumentsNamed[$name]);
-						}
-					}
-
-					$return = call_user_func_array($command[2], $arguments);
-					if($return){
-						if(is_array($return) === true)
-							echo json_encode($return, JSON_PRETTY_PRINT);
-						else echo("\n".$return);
-					}
-					echo("\n");
-
-					// Reset
-					self::$args = false;
-					self::$found = false;
-					return $return;
-				}
-			}
-		}
-
-		if(isset(self::$commands["$firstword.h"])){
-			$commands = &self::$commands["$firstword.h"];
-			if(is_callable($commands)) $commands();
-			else print_r($commands);
-			echo("\n");
-			return;
-		}
-
-		echo(self::chalk($firstword, 'yellow')." command with $argsLen argument was not registered\n");
-		return;
+			echo(self::chalk($firstword, 'yellow')." command with $argsLen argument was not registered\n");
+		}catch(\Scarlets\SoftStop $e){}
 	}
 
 	public static function args($pattern, $callback){
@@ -374,7 +424,7 @@ class Console{
 	/*
 		> Command Register
 		Command with no argument or help can only being registered once
-	
+
 		(pattern) ..
 		(callback) ..
 	*/
@@ -385,7 +435,7 @@ class Console{
 			}
 
 			if($description)
-				self::$commandsDescription[explode(' ', $pattern[0])[0]] = &$description;
+				self::$commandsDesc[explode(' ', $pattern[0])[0]] = &$description;
 			return;
 		}
 
@@ -397,7 +447,7 @@ class Console{
 		$patternLen = count($pattern);
 
 		if($description)
-			self::$commandsDescription[$key] = &$description;
+			self::$commandsDesc[$key] = &$description;
 
 		if(!isset(self::$nested[$key]))
 			self::$nested[$key] = ['desc'=>&$description];
@@ -459,7 +509,7 @@ class Console{
 	    if(array_key_exists('SHELL', $_ENV))
 	        return true;
 
-	    if(empty($_SERVER['REMOTE_ADDR']) && !isset($_SERVER['HTTP_USER_AGENT']) && count($_SERVER['argv']) > 0) 
+	    if(empty($_SERVER['REMOTE_ADDR']) && !isset($_SERVER['HTTP_USER_AGENT']) && count($_SERVER['argv']) > 0)
 	        return true;
 
 	    if(!array_key_exists('REQUEST_METHOD', $_SERVER))
@@ -476,11 +526,11 @@ class Console{
 			$type = array_pop($key);
 			$key = implode('.', $key);
 
-			if(isset(self::$commandsDescription[$key])){
-				$list[$key] = self::$commandsDescription[$key] . ($type === 'h'?' {help}':'');
+			if(isset(self::$commandsDesc[$key])){
+				$list[$key] = self::$commandsDesc[$key] . ($type === 'h'?' {help}':'');
 				continue;
 			}
-			
+
 			if(isset($list[$key]))
 				continue;
 
@@ -626,7 +676,7 @@ class Console{
 	}
 
 	public static function table($data){
-		$spacing = [0,0,0,0,0,0];
+		$spacing = [0,0,0,0,0,0,0,0,0,0,0];
 		$len = count(reset($data)) - 1; // We don't need to calculate the last column
 
 		// Find longest text
@@ -646,7 +696,7 @@ class Console{
 			foreach($value as &$space){
 				print($space);
 				if($i != $len-1)
-					for ($a=0; $a < $spacing[$i] - strlen($space); $a++) { 
+					for ($a=0; $a < $spacing[$i] - strlen($space); $a++) {
 						print ' ';
 					}
 				$i++;
@@ -657,7 +707,7 @@ class Console{
 
 	# ref: http://tldp.org/HOWTO/Bash-Prompt-HOWTO/x361.html
 	public static function resetLine($text){
-		echo "\033[K\r$text";
+		echo "\r\033[K$text";
 	}
 
 	public static function saveCursor(){
@@ -679,7 +729,7 @@ class Console{
 	private static $shadowLine = 0;
 	public static function writeShadow($text){
 		echo "\e[?25l\033[s"; //save
-		echo str_repeat("\n\033[K\r", self::$shadowLine); // clear last line
+		echo str_repeat("\n\r\033[K", self::$shadowLine); // clear last line
 		echo "\033[u\e[?25h"; //load
 		echo "\e[90m$text\x1b[0m"; //write on gray color
 		echo "\033[u\e[?25h"; //load
@@ -689,7 +739,7 @@ class Console{
 
 	public static function clearShadow(){
 		echo "\e[?25l\033[s"; //save
-		echo str_repeat("\n\033[K\r", self::$shadowLine); // clear last line
+		echo str_repeat("\n\r\033[K", self::$shadowLine); // clear last line
 		echo "\033[u\e[?25h"; //load
 
 		self::$shadowLine = 0;
@@ -808,7 +858,7 @@ class Console{
 	private static function compilePolyfill(){
 		if(file_exists(__DIR__.'/Internal/Console_getch.exe'))
 			return true;
-	
+
 		echo "\nCompiling console polyfill for Win32...";
 
 		$use = 'gcc';
@@ -826,7 +876,7 @@ class Console{
 		}
 
 		exec("$use ".__DIR__."/Internal/Console_getch.cpp -O3 -o ".__DIR__."/Internal/Console_getch.exe");
-		return true; 
+		return true;
 	}
 
 	// $nested = [$name=>$nest]

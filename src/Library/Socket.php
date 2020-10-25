@@ -53,8 +53,10 @@ class Socket{
 				$keep = true;
 
 				// when readCallback return true,  disconnect and remove the socket
-				if(trim($data) !== '' && !$readCallback($read_sock, $data))
-					continue;
+				try{
+					if(trim($data) !== '' && !$readCallback($read_sock, $data))
+						continue;
+				}catch(SoftStop $e){}
 
 				// Remove disconnected client from the list
 				unset($clients[array_search($read_sock, $clients)]);
@@ -103,7 +105,10 @@ class Socket{
 				continue;
 			}
 
-			$readCallback($socket, $data);
+			try{
+				$readCallback($socket, $data);
+			}catch(\Scarlets\SoftStop $e){}
+
 			socket_close($socket);
 		}
 	}

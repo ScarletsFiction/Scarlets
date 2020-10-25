@@ -13,7 +13,7 @@ use \Scarlets\Config;
 */
 
 Console::command('exit', function(){
-	return true;
+	exit;
 }, 'Exit this console (CTRL+Z and enter)');
 
 Console::command('cls', function(){
@@ -45,7 +45,7 @@ Console::command(['maintenance {0}', 'maintenance'], function($action = ''){
 		return file_exists($path) ? "Status: On" : "Status: Off";
 
 	if(function_exists('opcache_reset')){
-		opcache_reset();
+		exec("kill -USR2 1");
 		echo("Opcache flushed\n");
 	}
 

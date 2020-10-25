@@ -1,4 +1,4 @@
-<?php 
+<?php
 namespace Scarlets;
 use \Scarlets;
 use \Scarlets\Log;
@@ -134,9 +134,9 @@ class Error{
 	    // Save to last error
 	    self::$lastError[] = "$file$line";
 	    $reg = &Scarlets::$registry;
-	    
+
 	    if(isset($reg['error']) && $reg['error']) return;
-	    
+
 	    if(!Scarlets::$isConsole) $reg['error'] = true;
 
 		$message = self::simplifyErrorMessage($severity, $message, $file, $line);
@@ -152,8 +152,12 @@ class Error{
 			exit;
 		}
 		else{
-			if(Scarlets::$isConsole)
+			if(Scarlets::$isConsole){
 				print($message."\n\n");
+
+				// Stop execution but don't exit the interactive CLI
+				throw new SoftStop();
+			}
 			else{
 				print(str_replace("\n", "<br>\n", $message)."<br><br>\n\n");
 				exit;
@@ -199,6 +203,8 @@ class Error{
 		self::ErrorHandler(E_ERROR, $Error->getMessage(), $Error->getFile(), $Error->getLine());
 	}
 }
+
+class SoftStop extends \Exception{}
 
 // Shortcut for logging
 function log($msg){
