@@ -90,10 +90,10 @@ class Console{
 
 		\Scarlets::$interactiveCLI = true;
 		$config = &\Scarlets\Config::$data;
-		echo $config['app.console_user'].'> ';
 
 		if(PHP_OS === 'WINNT' || PHP_OS === 'WIN32'){
-			if(self::compilePolyfill()){ // using console polyfill
+			if(false && self::compilePolyfill()){ // using console polyfill
+				echo $config['app.console_user'].'> ';
 				self::waitKey(0, function(&$char){
 					$ord = ord($char);
 
@@ -124,7 +124,6 @@ class Console{
 				    }
 
 				    $lastInput = $time;
-					echo $config['app.console_user'].'> ';
 				}
 			}
 		}
@@ -138,10 +137,8 @@ class Console{
 			});
 
 			while(1){
-				try{
-					if(self::interpreter(readline($config['app.console_user'].'> ')))
-				    	break;
-				}catch(\Scarlets\SoftStop $e){}
+				if(self::interpreter(readline($config['app.console_user'].'> ')))
+					break;
 
 				// Too fast or caused by CTRL+Z then enter
 				$time = microtime();
