@@ -137,12 +137,15 @@ class Pattern{
 				return $false;
 
 			elseif($param_obtained === false) {
+				if(is_array($argData))
+					$argData = $argData[0];
+
 				$split = explode($argData, $text, 2);
 				$text = isset($split[1]) ? $split[1] : $split[0];
 			}
 		}
 
-		if(!($options & 4) && strlen($text) !== 0) 
+		if(!($options & 4) && strlen($text) !== 0)
 			return $false;
 
 		$args['>_option'] = $options;
