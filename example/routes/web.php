@@ -66,31 +66,36 @@ Route::name('list', function(){
 
 // Register Middleware
 Route\Middleware::$register['limit'] = function($request = 2, $seconds = 30){
-    $total = Cache::get('request.limit', 0);
+    // Edit from /config/cache.php -> storage -> app
+    $cache = Cache::connect('app');
+    $total = $cache->get('request.limit', 0);
 
     if($total < $request){
         // Set expiration when it's the first request only ($total == 0)
         $expire = $total === 0 ? $seconds : 0;
 
         // Put the request count on cache
-        Cache::set('request.limit', $total + 1, $expire);
-
-        // Continue request
-        return false;
+        $cache->set('request.limit', $total + 1, $expire);
     }
 
     // Block request
     else{
-        Serve::status(404);
-        return true;
+        Serve::status(403);
+        Serve::end("Forbidden (Limit reached)");
     }
 };
 
 // Limit to 2 request per 60 seconds
 Route::middleware('limit:2,60', function(){
     Route::get('limit', function(){
-        Serve::raw("Limited request");
+        Serve::raw("Still accessible");
     });
+});
+
+Route::get('unlimit', function(){
+    $cache = Cache::connect('app');
+    $cache->set('request.limit', 0);
+    Serve::raw("Limit cleared");
 });
 
 RemoteFile::listen('incoming', 'put', function($path){
