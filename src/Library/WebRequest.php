@@ -1,4 +1,4 @@
-<?php 
+<?php
 namespace Scarlets\Library;
 use \Scarlets;
 use \Scarlets\Library\FileSystem\LocalFile;
@@ -49,7 +49,7 @@ class WebRequest{
 						else $cookies = $header['Set-Cookie'];
 					}
 					else $cookies = false;
-					
+
 					if(isset($options['cookiefile']) && $cookies !== false){
 						file_put_contents($options['cookiefile'], $cookies);
 
@@ -60,7 +60,7 @@ class WebRequest{
 					$return = [];
 					$return['error_no'] = $err;
 					$return['error_msg'] = $errmsg;
-					
+
 					// http://php.net/manual/en/function.curl-getinfo.php#41332
 					$return['http_code'] = $http_code;
 					$return['headers'] = $header;
@@ -86,7 +86,7 @@ class WebRequest{
 			foreach ($url as $key => &$value) {
 				$ch[$key] = curl_init($value);
 				curl_setopt_array($ch[$key], $options_);
-				curl_multi_add_handle($mh, $ch[$key]); 
+				curl_multi_add_handle($mh, $ch[$key]);
 			}
 			self::multiHandleCURL($mh, $ch, false, false);
 
@@ -185,21 +185,21 @@ class WebRequest{
 				readfile($filePath);
 				exit;
 			}
-		    
+
 			$file = @fopen($filePath, 'rb');
 			if($file){
 				fseek($file, $seek_start);
 
-				while(!feof($file)) 
+				while(!feof($file))
 				{
 					print(@fread($file, 512));
 					ob_flush();
 					flush();
-					if (connection_status()!=0) 
+					if (connection_status()!=0)
 					{
 						@fclose($file);
 						exit;
-					}			
+					}
 				}
 				@fclose($file);
 				exit;
@@ -268,7 +268,7 @@ class WebRequest{
 				    curl_setopt($ch[$i], CURLOPT_RANGE, $range);
 				}
 
-			    curl_multi_add_handle($mh, $ch[$i]); 
+			    curl_multi_add_handle($mh, $ch[$i]);
 			}
 
 			return [[$parts, $fh, $path], $ch];
@@ -427,7 +427,7 @@ class WebRequest{
 		if(isset($options['proxy'])){ # [ip=>127.0.0.1, port=>3000, *userpass=>'user:pass']
 			$options_[CURLOPT_PROXYAUTH] = CURLAUTH_NTLM;
 			$options_[CURLOPT_PROXY] = &$options['proxy']['ip'];
-			$options_[CURLOPT_PROXYPORT] = &$options['proxy']['port'];   
+			$options_[CURLOPT_PROXYPORT] = &$options['proxy']['port'];
 
 			if(isset($options['userpass']))
 				$options_[CURLOPT_PROXYUSERPWD] = &$options['proxy']['userpass'];
@@ -435,6 +435,12 @@ class WebRequest{
 
 		if(isset($options['returnheader']) || isset($options['cookiefile']))
 			$options_[CURLOPT_HEADER] = 1;
+
+		if(isset($options['timeout'])) # in seconds
+			$options_[CURLOPT_TIMEOUT] = $options['timeout'];
+
+		if(isset($options['connect_timeout'])) # in seconds
+			$options_[CURLOPT_CONNECTTIMEOUT] = $options['connect_timeout'];
 	}
 
 	// allowedTypes = array
@@ -459,7 +465,7 @@ class WebRequest{
 			}
 			else $isArray = true;
 
-			for ($i=0, $n=count($fileName); $i < $n; $i++) { 
+			for ($i=0, $n=count($fileName); $i < $n; $i++) {
 				$path = $directory.($rename !== '' ? ($isArray ? $i.$rename : $rename) : $fileName[$i]);
 
 				// Remove invalid word character
